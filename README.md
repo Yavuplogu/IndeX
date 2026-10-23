@@ -9,9 +9,15 @@ complet de plusieurs centaines d'épisodes.
 
 - [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
 - [Journal des décisions](docs/lot0/decisions.md)
+- [Règle adoptée : deux commentaires COMM concordants et association MP3–TXT](docs/regle-association-COMM.md)
 - [Résultats observés sur Linux](docs/lot0/audit-resultats.json)
 - [Versions et licences des packages inspectés](docs/lot0/dependances-observees.json)
 - [Cahier des charges V1.4 fourni](docs/Cahier_des_charges_IndeX_Codex_V1.4.md)
+
+La règle COMM adoptée ci-dessus prévaut sur le rejet systématique des commentaires
+contradictoires décrit dans la V1.4 archivée : une seule paire d'identifiant concordante
+suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusieurs paires
+ou plusieurs fichiers restent bloquantes. Cette règle est documentée, pas encore implémentée.
 
 ## Reproduire les sondes du Lot 0
 

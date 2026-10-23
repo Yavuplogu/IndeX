@@ -16,6 +16,10 @@ joint décrit les exigences et des consignes de collaboration ; ses lots ultéri
 ne sont pas des instructions d'exécution immédiate. Aucun renommage, module Flutter,
 générateur de production, synchronisation applicative ou packaging n'est effectué.
 
+Évolution validée après l'audit : l'[addendum COMM](../regle-association-COMM.md)
+définit la règle des deux commentaires concordants. Il prévaut sur les passages
+contraires de la V1.4 archivée ; la conception du matching ci-dessous en tient compte.
+
 Livrables actuels : ce document, le journal des décisions, README, AGENTS, copie
 inchangée du cahier des charges, rapports JSON et sondes reproductibles isolées dans
 `tools/lot0`. Pas de commit ni de publication automatique.
@@ -241,10 +245,22 @@ pas la gestion complète des droits persistants ; l'enregistrement Android d'un 
 document n'y est pas supporté. Utiliser `ACTION_CREATE_DOCUMENT` pour JSON et
 `ACTION_OPEN_DOCUMENT` pour l'import, sans inventer de chemin réel.
 
-Matching futur : COMM unique cohérente > nom historique > nom `TITRE SYSTEME` connu >
-titre normalisé provisoire. Un conflit fort interdit les replis automatiques. Statut
-historique du CSV et vérification du MP3 local sont séparés. Un fichier inaccessible
-ne doit pas provoquer l'effacement de tous les liens ni la perte du suivi.
+Matching futur : résolution COMM (paire concordante prioritaire, ou identifiant unique
+sans contradiction) > nom historique > nom `TITRE SYSTEME` connu > titre normalisé
+provisoire. Un seul identifiant soutenu par au moins deux trames distinctes est retenu,
+même si d'autres commentaires isolés désignent des noms différents ; ceux-ci sont
+écartés du choix et conservés dans le diagnostic. Si plusieurs identifiants ont chacun
+une paire, ou si plusieurs identifiants isolés se contredisent sans paire, aucune
+sélection automatique : ces conflits non résolus interdisent les replis.
+
+Le résultat ID3 retenu est comparé au `FICHIER MP3 D'ORIGINE` du TXT ou à son équivalent
+dans le catalogue embarqué. Une correspondance inter-fichiers unique est confirmée par
+`matching_method = id3_comment`, avec la preuve `comm_pair_v1` ou `comm_unique_v1`.
+Une paire ne résout pas les doublons de TXT/MP3 ; un identifiant retenu inconnu ne
+doit pas être remplacé arbitrairement par une similarité de titre. Les cas et le
+contrat de diagnostic sont détaillés dans l'[addendum](../regle-association-COMM.md).
+Statut historique du CSV et vérification du MP3 local sont séparés. Un fichier
+inaccessible ne doit pas provoquer l'effacement de tous les liens ni la perte du suivi.
 
 Lecture en arrière-plan prolongée Android : non promise par la seule présence du lecteur.
 Tester cycle de vie et audio focus ; si retenue pour V1, intégrer service média/notification
@@ -418,8 +434,8 @@ pas une coupure d'alimentation réelle ni un chronomètre applicatif de cinq sec
 | Domaine | Tests indispensables | Cible / porte |
 |---|---|---|
 | Parsing | BOM/sans BOM, invalid UTF-8, ordre variable, rubriques absentes/répétées/erronées, NEL, description intégrale, auteur vide, multiples musiques | Unitaires Dart, Lot 1 |
-| ID3 | Toutes les COMM de la fixture, langues/descriptions multiples, contradictions, encodages, v2.3/2.4, absence, troncatures, tags énormes bornés | Dart + oracle Mutagen indépendant, Lot 1 |
-| Matching | Priorités strictes, nom historique/CSV sans TXT, titre provisoire, doublons, conflit fort bloquant le repli, quatre statuts journal | Unitaires et intégration, Lot 2 |
+| ID3 | Toutes les COMM de la fixture, trames distinctes, A/A/B retenu par A, A/A/B/B ambigu, permutation, encodages, v2.3/2.4, absence, troncatures, tags énormes bornés | Dart + oracle Mutagen indépendant, Lot 1 |
+| Matching | Résultat COMM transmis à l'association historique MP3–TXT, nom historique/CSV sans TXT, titre provisoire, doublons, identifiant inconnu, conflits non résolus bloquant le repli, quatre statuts journal | Unitaires et intégration, Lot 2 |
 | Catalogue | CSV 10/13 colonnes, absents/ambiguïtés, staging, génération reproductible, intégrité/FTS, absence de chemins de dev et de MP3 | Builder, Lots 2–3 |
 | Migrations | Vn -> Vn+1, retrait/ajout/correction, interruption, overrides, conservation exacte liens/favoris/suivi, relecture de vieux JSON | SQLite intégration, Lot 2 puis recette |
 | Recherche | Accents/casse/apostrophes, plusieurs mots, source/musique, vide, syntaxe malveillante, snippets, classement attendu | Dart et **FTS5 des deux binaires** |

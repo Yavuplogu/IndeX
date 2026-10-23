@@ -3,6 +3,7 @@
 Ces décisions sont proposées pour revue avant le Lot 1. Aucun module applicatif
 n'est créé. La demande courante limite le travail au Lot 0 ; les étapes ultérieures
 décrites dans le cahier des charges ne constituent pas une autorisation de les exécuter.
+La décision D14 ci-dessous a été explicitement adoptée par l'utilisateur après l'audit.
 
 | Réf. | Décision | Motif / réserve |
 |---|---|---|
@@ -19,6 +20,7 @@ décrites dans le cahier des charges ne constituent pas une autorisation de les 
 | D11 | CSV par noms de colonnes, colonnes supplémentaires conservées | Les données réelles ont 13 colonnes, pas les 10 annoncées. |
 | D12 | Tolérance encadrée des écarts documentaires et rapport d'anomalies | Six fixtures, noms sans tiret, caractères U+0085, références connexes hors échantillon. |
 | D13 | Tests Linux distincts des portes de validation Windows/Android | L'environnement courant ne dispose ni de Flutter/Dart ni d'appareil cible. |
+| D14 | Deux COMM concordantes suffisent à retenir un identifiant historique et à écarter les autres commentaires isolés | Décision utilisateur du 23 octobre 2026 ; plusieurs identifiants ayant chacun une paire restent ambigus. Le résultat alimente le matching `id3_comment`, avec preuve et diagnostic conservés. Voir l'[addendum normatif](../regle-association-COMM.md). |
 
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,

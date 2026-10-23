@@ -6,6 +6,11 @@
   l'application, ni engager un lot ultérieur sans demande/validation de l'utilisateur.
   Lire `docs/lot0/conception.md`, `docs/lot0/decisions.md` et la spécification V1.4
   avant de proposer un changement. Les propositions du Lot 0 ne sont pas du code livré.
+- Appliquer l'addendum `docs/regle-association-COMM.md` avant la règle COMM de la V1.4 :
+  un seul identifiant soutenu par au moins deux trames distinctes prime sur les autres
+  commentaires isolés. Conserver les commentaires écartés dans le diagnostic ; plusieurs
+  identifiants avec une paire ou plusieurs fichiers candidats restent ambigus. La preuve
+  retenue doit alimenter le matching MP3–TXT par l'identifiant historique, pas par le titre.
 - Utiliser le checkout existant ; ne pas créer de worktree sans demande explicite.
 - Avant un lot, annoncer fichiers concernés, décisions, tests et risques ; après,
   rapporter les commandes et résultats réels. Ne pas prétendre avoir validé une
