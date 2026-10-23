@@ -1,0 +1,285 @@
+{
+  "host_sqlite": "3.53.1",
+  "csv_columns": [
+    "FICHIER MP3 D'ORIGINE",
+    "TITRE SYSTEME",
+    "TITRE WEB",
+    "DATE DE DIFFUSION",
+    "URL MP3",
+    "FICHIER TXT",
+    "CORRESPONDANCE ID3",
+    "DESCRIPTION DE L'EPISODE",
+    "LIVRES ET SOURCES",
+    "MUSIQUES DIFFUSÉES",
+    "Statut",
+    "Erreur",
+    "DateExecution"
+  ],
+  "csv_bom": true,
+  "episodes": [
+    {
+      "original_name": "mr_x_2013_04_27.mp3",
+      "current_name": "2013-04-27 'Le Masque de fer' israélien.mp3",
+      "txt_name": "2013-04-27 'Le Masque de fer' israélien.txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2013_04_27.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2013_04_27.mp3"
+          ]
+        },
+        {
+          "language": "eng",
+          "description": "ID3v1 Comment",
+          "texts": [
+            "durée  00h38m09s - par Patric"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2288.596,
+      "description_characters": 1445,
+      "literary_references": 0,
+      "music_tracks": 2,
+      "nel_characters": 0
+    },
+    {
+      "original_name": "mr_x_2013_11_23.mp3",
+      "current_name": "2013-11-23 10 mai 1941, l'étrange voyage de Rudolf Hess.mp3",
+      "txt_name": "2013-11-23 10 mai 1941, l'étrange voyage de Rudolf Hess.txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2013_11_23.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2013_11_23.mp3"
+          ]
+        },
+        {
+          "language": "eng",
+          "description": "ID3v1 Comment",
+          "texts": [
+            "durée  00h38m15s - par Patric"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2294.891,
+      "description_characters": 1403,
+      "literary_references": 1,
+      "music_tracks": 2,
+      "nel_characters": 0
+    },
+    {
+      "original_name": "mr_x_2009_05_09.mp3",
+      "current_name": "2009-05-09 11 septembre 2001 (1 sur 3) _ le jihad afghan.mp3",
+      "txt_name": "2009-05-09 11 septembre 2001 (1 sur 3) _ le jihad afghan.txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_09.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_09.mp3"
+          ]
+        },
+        {
+          "language": "eng",
+          "description": "ID3v1 Comment",
+          "texts": [
+            "Patrick PESNOT - Realisation"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2210.019,
+      "description_characters": 1757,
+      "literary_references": 6,
+      "music_tracks": 0,
+      "nel_characters": 0
+    },
+    {
+      "original_name": "mr_x_2009_05_16.mp3",
+      "current_name": "2009-05-16 11 septembre 2001 (2 sur 3).mp3",
+      "txt_name": "2009-05-16 11 septembre 2001 (2 sur 3).txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_16.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_16.mp3"
+          ]
+        },
+        {
+          "language": "eng",
+          "description": "ID3v1 Comment",
+          "texts": [
+            "Patrick PESNOT - Realisation"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2293.637,
+      "description_characters": 1555,
+      "literary_references": 8,
+      "music_tracks": 0,
+      "nel_characters": 3
+    },
+    {
+      "original_name": "mr_x_2009_05_23.mp3",
+      "current_name": "2009-05-23 11 septembre 2001 (3 sur 3).mp3",
+      "txt_name": "2009-05-23 11 septembre 2001 (3 sur 3).txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_23.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_23.mp3"
+          ]
+        },
+        {
+          "language": "eng",
+          "description": "ID3v1 Comment",
+          "texts": [
+            "Patrick PESNOT - Realisation"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2297.321,
+      "description_characters": 1289,
+      "literary_references": 4,
+      "music_tracks": 0,
+      "nel_characters": 3
+    },
+    {
+      "original_name": "mr_x_2007_05_26.mp3",
+      "current_name": "2007-05-26 13 mai 1981, l'attentat contre Jean-Paul II.mp3",
+      "txt_name": "2007-05-26 13 mai 1981, l'attentat contre Jean-Paul II.txt",
+      "txt_bom": true,
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2007_05_26.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2007_05_26.mp3"
+          ]
+        }
+      ],
+      "journal_status": "CONFIRMEE",
+      "audit_verification_status": "CONFIRMEE_PAR_MUTAGEN",
+      "duration_seconds": 2382.158,
+      "description_characters": 1957,
+      "literary_references": 3,
+      "music_tracks": 0,
+      "nel_characters": 0
+    }
+  ],
+  "source_sha256": {
+    "Journal_Files/journal.csv": "1d5b8c65c757d9e60dc7e0e68e4183b94145e350194b544a5bc3a270e495660b",
+    "MP3_Files/2007-05-26 13 mai 1981, l'attentat contre Jean-Paul II.mp3": "739a2b5ba13be02016d2ae49c8de60ba2e88e706b8f47aefcb5219928e7b2406",
+    "MP3_Files/2009-05-09 11 septembre 2001 (1 sur 3) _ le jihad afghan.mp3": "d1c6df3634f7d6d5af773f9f486e0d2148a76db943e0cd360de4233a1d0c428a",
+    "MP3_Files/2009-05-16 11 septembre 2001 (2 sur 3).mp3": "8781059ee2eb58198de2e2014aca1df79e64761a7f36181142688a7bd0fdab05",
+    "MP3_Files/2009-05-23 11 septembre 2001 (3 sur 3).mp3": "39398dad88bf567a217f52614bc36f7fb104b4f39c2f87970bc6f52c33729e77",
+    "MP3_Files/2013-04-27 'Le Masque de fer' israélien.mp3": "c3f2f94c51ce5a165c4369b19528ce9d8f9413dda14bd88a1a9b0a7c845ef5c7",
+    "MP3_Files/2013-11-23 10 mai 1941, l'étrange voyage de Rudolf Hess.mp3": "f364f2d86d5bba268d4fa3430254dd14521fde395199867e75357ee5a58ec896",
+    "TXT_Files/2007-05-26 13 mai 1981, l'attentat contre Jean-Paul II.txt": "333753d9f527b8a2811c4a97f32fb3e94fd2f3fbb533753c7be50dfd88bd8333",
+    "TXT_Files/2009-05-09 11 septembre 2001 (1 sur 3) _ le jihad afghan.txt": "a0d8335cef4a88610b5068548edb630ea161b82994265183c1ae41d61a9724b8",
+    "TXT_Files/2009-05-16 11 septembre 2001 (2 sur 3).txt": "c73dc0c2ccdfd145883f7ff4572afdda0068b79d9e7d0b3e711bc044399c94e0",
+    "TXT_Files/2009-05-23 11 septembre 2001 (3 sur 3).txt": "9e7744c4af8d7df99caa0c6fa93d6209a2b395aa001cac19589922dbdce19fd1",
+    "TXT_Files/2013-04-27 'Le Masque de fer' israélien.txt": "7b2b098680bc8aac9bcf12a89b7cee7f84a21c65744f95de5057e3058b60a423",
+    "TXT_Files/2013-11-23 10 mai 1941, l'étrange voyage de Rudolf Hess.txt": "b0a7d4be387c4ffbc918abd1c3e6834cb760d3e43010bb59e15a6d8e99c9a506"
+  },
+  "sources_unchanged": true,
+  "feasibility_checks_passed": 3,
+  "not_validated": [
+    "Flutter/Dart",
+    "Windows",
+    "Android",
+    "lecture audio réelle",
+    "fusion JSON",
+    "renommage"
+  ]
+}

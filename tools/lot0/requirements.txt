@@ -1,0 +1,2 @@
+# Audit uniquement ; aucune dépendance de l'application Flutter.
+mutagen==1.47.0
