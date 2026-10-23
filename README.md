@@ -3,10 +3,12 @@
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : Lot 0 uniquement.** Aucun module Flutter ni application livrable n'est
-encore créé. Le dépôt contient un échantillon de six épisodes, pas le catalogue
-complet de plusieurs centaines d'épisodes.
+**État : Lot 1 implémenté.** Le package Dart `index_core` fournit le parseur TXT,
+le lecteur ID3 et la résolution de preuve COMM, avec tests. Aucune application GUI
+ni persistance n'est encore livrée. Le dépôt contient un échantillon de six épisodes,
+pas le catalogue complet de plusieurs centaines d'épisodes.
 
+- [Lot 1 : API, validation, dépendances et limites](docs/lot1/bilan.md)
 - [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
 - [Journal des décisions](docs/lot0/decisions.md)
 - [Règle adoptée : deux commentaires COMM concordants et association MP3–TXT](docs/regle-association-COMM.md)
@@ -17,7 +19,23 @@ complet de plusieurs centaines d'épisodes.
 La règle COMM adoptée ci-dessus prévaut sur le rejet systématique des commentaires
 contradictoires décrit dans la V1.4 archivée : une seule paire d'identifiant concordante
 suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusieurs paires
-ou plusieurs fichiers restent bloquantes. Cette règle est documentée, pas encore implémentée.
+ou plusieurs fichiers restent bloquantes. La résolution COMM est implémentée au Lot 1 ;
+l'association globale aux fiches et la persistance restent au Lot 2.
+
+## Vérifier le Lot 1
+
+Avec Dart 3.13.5 (fourni par Flutter 3.47.7) activé, depuis la racine :
+
+```sh
+dart pub get --enforce-lockfile
+bash tools/lot1/check.sh
+```
+
+Dans l'environnement cloud préparé, activer d'abord le SDK avec
+`. /workspace/toolchains/activate-flutter.sh`. Le script de vérification réutilise
+ensuite les dépendances hors ligne, contrôle le formatage, l'analyse et les tests.
+Le cœur Dart n'effectue aucun accès réseau et ne modifie pas les fichiers fournis.
+Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites natives.
 
 ## Reproduire les sondes du Lot 0
 

@@ -4,6 +4,8 @@ Ces décisions sont proposées pour revue avant le Lot 1. Aucun module applicati
 n'est créé. La demande courante limite le travail au Lot 0 ; les étapes ultérieures
 décrites dans le cahier des charges ne constituent pas une autorisation de les exécuter.
 La décision D14 ci-dessous a été explicitement adoptée par l'utilisateur après l'audit.
+Les décisions D15–D17 enregistrent ensuite le Lot 1 explicitement lancé ; les mentions
+d'environnement et de modules absents des décisions initiales décrivent l'état historique.
 
 | Réf. | Décision | Motif / réserve |
 |---|---|---|
@@ -21,6 +23,9 @@ La décision D14 ci-dessous a été explicitement adoptée par l'utilisateur apr
 | D12 | Tolérance encadrée des écarts documentaires et rapport d'anomalies | Six fixtures, noms sans tiret, caractères U+0085, références connexes hors échantillon. |
 | D13 | Tests Linux distincts des portes de validation Windows/Android | L'environnement courant ne dispose ni de Flutter/Dart ni d'appareil cible. |
 | D14 | Deux COMM concordantes suffisent à retenir un identifiant historique et à écarter les autres commentaires isolés | Décision utilisateur du 23 octobre 2026 ; plusieurs identifiants ayant chacun une paire restent ambigus. Le résultat alimente le matching `id3_comment`, avec preuve et diagnostic conservés. Voir l'[addendum normatif](../regle-association-COMM.md). |
+| D15 | Package racine Dart `index_core`, SDK Dart 3.13.5 / Flutter 3.47.7 épinglés | Cœur partagé sans UI, sans stockage et sans dart:io ; adaptateur fichier exporté séparément. |
+| D16 | Lecteur COMM dédié borné, résolution séparée du matching ; oracle `ID3(load_v1=False)` | Les cinq commentaires ID3v1 synthétisés par Mutagen au Lot 0 ne sont pas des COMM physiques supplémentaires. Chaque MP3 réel possède deux COMM physiques. |
+| D17 | unorm_dart 0.3.3 en production, test 1.31.1 et crypto 3.0.7 en développement, lockfile versionné | Licences et SHA-256 officiels vérifiés. Parsing sans réseau et sans réécriture du corpus ; analyse et tests reproductibles via `tools/lot1/check.sh`. |
 
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,

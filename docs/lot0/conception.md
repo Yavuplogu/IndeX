@@ -2,6 +2,10 @@
 
 Date : 23 octobre 2026. Statut : **conception proposée, aucun module applicatif créé**.
 
+**Repère historique :** ce document décrit l'état lors du Lot 0. Depuis, le Lot 1
+a été lancé et implémenté : voir son [bilan](../lot1/bilan.md) pour l'état actuel,
+le SDK installé et la correction de l'observation des commentaires ID3v1/COMM.
+
 ## 1. Conclusion et périmètre
 
 La V1 est techniquement réalisable avec un catalogue SQLite prérempli, Flutter/Dart
@@ -60,7 +64,9 @@ Observations vérifiées :
   Le futur parseur doit utiliser des délimiteurs de rubriques explicites et préserver
   les sauts de ligne internes ; `splitlines()` peut transformer NEL involontairement.
 - Tous les MP3 ont des ID3v2.3, deux commentaires concordants `COMM::eng`/`COMM::fra`
-  avec l'identifiant historique ; cinq ont un troisième commentaire non pertinent.
+  avec l'identifiant historique ; Mutagen exposait cinq commentaires supplémentaires.
+  **Correction vérifiée au Lot 1 :** ces derniers sont synthétisés à partir d'ID3v1,
+  pas des troisièmes trames COMM physiques ; ils ne participent pas au comptage.
   Aucune COMM contradictoire dans l'échantillon. Les quatre états du journal ne sont
   donc **pas** couverts par ces seules fixtures, toutes déclarées `CONFIRMEE`.
 - Le nom réel du Masque de fer n'a pas le ` - ` annoncé dans certains exemples de

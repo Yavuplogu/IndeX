@@ -1,0 +1,11 @@
+name: index_core
+description: Services documentaires et ID3 hors ligne partagés par IndeX.
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: '>=3.13.5 <4.0.0'
+dependencies:
+  unorm_dart: 0.3.3
+dev_dependencies:
+  crypto: 3.0.7
+  test: 1.31.1

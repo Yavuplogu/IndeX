@@ -8,8 +8,9 @@ deux commentaires COMM contiennent des identifiants différents. La copie origin
 du cahier des charges reste inchangée pour traçabilité. La présente règle prévaut
 sur ce point ; les autres protections contre les associations ambiguës sont maintenues.
 
-Il s'agit d'une spécification pour les prochains lots, **pas d'une fonctionnalité
-déjà implémentée ou testée dans l'application**.
+La lecture des COMM et la résolution de preuve sont **implémentées et testées au Lot 1**
+dans le cœur Dart. L'association globale aux fiches, la persistance et les interfaces
+restent à implémenter aux lots suivants. Voir le [bilan du Lot 1](lot1/bilan.md).
 
 ## 1. Lecture et comptage des commentaires
 
@@ -130,9 +131,12 @@ Permuter l'ordre des trames doit donner la même décision. Vérifier également
 normalisation, les limites de lecture et les langues/descriptions identiques ou
 différentes, sans modifier les octets ni les tags des sources. Utiliser des copies
 temporaires pour les variantes synthétiques. La fixture réelle « Le Masque de fer »
-vérifie A/A/texte ; les contradictions nécessitent des fixtures dédiées.
+contient deux COMM physiques A/A. Le commentaire « texte » présenté par Mutagen dans
+l'audit initial est synthétisé à partir d'ID3v1, pas une troisième COMM physique ;
+il ne doit pas compter comme une voix. A/A/texte et les contradictions sont exercés
+par des fixtures synthétiques dédiées (voir la correction dans le bilan du Lot 1).
 
 Les résultats d'audit déjà enregistrés restent des observations du corpus d'origine.
 Les sondes actuelles de `tools/lot0` ne constituent pas des tests d'implémentation de
-cette nouvelle règle. Les tests ID3 et de matching correspondants sont à développer
-respectivement aux Lots 1 et 2, après leur autorisation.
+cette nouvelle règle. Les tests de lecture ID3 et résolution sont livrés au Lot 1 ;
+les tests de matching inter-fichiers restent au Lot 2, après son autorisation.

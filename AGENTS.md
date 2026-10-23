@@ -2,15 +2,20 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 0**. Ne pas créer les modules de
-  l'application, ni engager un lot ultérieur sans demande/validation de l'utilisateur.
-  Lire `docs/lot0/conception.md`, `docs/lot0/decisions.md` et la spécification V1.4
-  avant de proposer un changement. Les propositions du Lot 0 ne sont pas du code livré.
+- Périmètre actuellement autorisé : **Lot 1**, lancé explicitement par l'utilisateur.
+  Parseur TXT, lecteur ID3/COMM et résolution de preuve avec tests ; pas de matching
+  global/persistance (Lot 2), UI ou lecteur audio. Ne pas engager un lot ultérieur
+  sans demande/validation. Lire `docs/lot1/bilan.md`, `docs/lot0/conception.md`,
+  `docs/lot0/decisions.md` et la spécification V1.4 avant de proposer un changement.
 - Appliquer l'addendum `docs/regle-association-COMM.md` avant la règle COMM de la V1.4 :
   un seul identifiant soutenu par au moins deux trames distinctes prime sur les autres
   commentaires isolés. Conserver les commentaires écartés dans le diagnostic ; plusieurs
   identifiants avec une paire ou plusieurs fichiers candidats restent ambigus. La preuve
   retenue doit alimenter le matching MP3–TXT par l'identifiant historique, pas par le titre.
+- Le commentaire ID3v1 que Mutagen synthétise en `COMM:ID3v1 Comment` ne constitue
+  pas une trame COMM physique supplémentaire. L'oracle de test utilise `load_v1=False`.
+- Commande de vérification Lot 1 après activation Dart : `bash tools/lot1/check.sh`.
+  Respecter le lockfile ; ne pas modifier les fixtures pour faire passer un test.
 - Utiliser le checkout existant ; ne pas créer de worktree sans demande explicite.
 - Avant un lot, annoncer fichiers concernés, décisions, tests et risques ; après,
   rapporter les commandes et résultats réels. Ne pas prétendre avoir validé une

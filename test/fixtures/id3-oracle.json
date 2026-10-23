@@ -1,0 +1,155 @@
+{
+  "oracle": "Mutagen 1.47.0, ID3(load_v1=False)",
+  "episodes": [
+    {
+      "file": "2013-04-27 'Le Masque de fer' israélien.mp3",
+      "sha256": "c3f2f94c51ce5a165c4369b19528ce9d8f9413dda14bd88a1a9b0a7c845ef5c7",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2013_04_27.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2013_04_27.mp3"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "2013-11-23 10 mai 1941, l'étrange voyage de Rudolf Hess.mp3",
+      "sha256": "f364f2d86d5bba268d4fa3430254dd14521fde395199867e75357ee5a58ec896",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2013_11_23.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2013_11_23.mp3"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "2009-05-09 11 septembre 2001 (1 sur 3) _ le jihad afghan.mp3",
+      "sha256": "d1c6df3634f7d6d5af773f9f486e0d2148a76db943e0cd360de4233a1d0c428a",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_09.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_09.mp3"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "2009-05-16 11 septembre 2001 (2 sur 3).mp3",
+      "sha256": "8781059ee2eb58198de2e2014aca1df79e64761a7f36181142688a7bd0fdab05",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_16.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_16.mp3"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "2009-05-23 11 septembre 2001 (3 sur 3).mp3",
+      "sha256": "39398dad88bf567a217f52614bc36f7fb104b4f39c2f87970bc6f52c33729e77",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_23.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2009_05_23.mp3"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "2007-05-26 13 mai 1981, l'attentat contre Jean-Paul II.mp3",
+      "sha256": "739a2b5ba13be02016d2ae49c8de60ba2e88e706b8f47aefcb5219928e7b2406",
+      "id3_version": [
+        2,
+        3,
+        0
+      ],
+      "comments": [
+        {
+          "language": "eng",
+          "description": "",
+          "texts": [
+            "mr_x_2007_05_26.mp3"
+          ]
+        },
+        {
+          "language": "fra",
+          "description": "",
+          "texts": [
+            "mr_x_2007_05_26.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}
