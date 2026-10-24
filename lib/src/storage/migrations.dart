@@ -1,7 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 const applicationId = 0x49445831;
-const schemaVersion = 2;
+const schemaVersion = 3;
 
 // Version 1 réellement utilisable comme fixture de migration vers les données locales v2.
 const schemaV1 = '''
@@ -40,6 +40,30 @@ CREATE TABLE audio_scan_runs(id INTEGER PRIMARY KEY,scope TEXT NOT NULL,complete
 CREATE TABLE audio_scan_items(run_id INTEGER NOT NULL REFERENCES audio_scan_runs(id),audio_ref TEXT NOT NULL,decision_json TEXT NOT NULL);
 ''';
 
+// Index externe : les rowid sont toujours ceux des épisodes, jamais des identités métier.
+const schemaV3 = '''
+CREATE VIRTUAL TABLE episodes_fts USING fts5(
+ title, description, sources_text, music_text,
+ content='episodes', content_rowid='rowid',
+ tokenize='unicode61 remove_diacritics 2'
+);
+CREATE TRIGGER episodes_fts_insert AFTER INSERT ON episodes BEGIN
+ INSERT INTO episodes_fts(rowid,title,description,sources_text,music_text)
+ VALUES(new.rowid,new.title,new.description,new.sources_text,new.music_text);
+END;
+CREATE TRIGGER episodes_fts_delete AFTER DELETE ON episodes BEGIN
+ INSERT INTO episodes_fts(episodes_fts,rowid,title,description,sources_text,music_text)
+ VALUES('delete',old.rowid,old.title,old.description,old.sources_text,old.music_text);
+END;
+CREATE TRIGGER episodes_fts_update AFTER UPDATE OF title,description,sources_text,music_text ON episodes BEGIN
+ INSERT INTO episodes_fts(episodes_fts,rowid,title,description,sources_text,music_text)
+ VALUES('delete',old.rowid,old.title,old.description,old.sources_text,old.music_text);
+ INSERT INTO episodes_fts(rowid,title,description,sources_text,music_text)
+ VALUES(new.rowid,new.title,new.description,new.sources_text,new.music_text);
+END;
+INSERT INTO episodes_fts(episodes_fts) VALUES('rebuild');
+''';
+
 void migrate(Database db) {
   db.execute('PRAGMA foreign_keys=ON');
   final version = db.select('PRAGMA user_version').single.values.single as int;
@@ -68,6 +92,10 @@ void migrate(Database db) {
     if (version < 2) {
       db.execute(schemaV2);
       db.execute('PRAGMA user_version=2');
+    }
+    if (version < 3) {
+      db.execute(schemaV3);
+      db.execute('PRAGMA user_version=3');
     }
     db.execute('COMMIT');
   } catch (_) {

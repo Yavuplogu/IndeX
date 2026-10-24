@@ -6,7 +6,8 @@ décrites dans le cahier des charges ne constituent pas une autorisation de les 
 La décision D14 ci-dessous a été explicitement adoptée par l'utilisateur après l'audit.
 Les décisions D15–D17 enregistrent ensuite le Lot 1 explicitement lancé ; les mentions
 d'environnement et de modules absents des décisions initiales décrivent l'état historique.
-Les décisions D18–D22 ci-dessous concernent le Lot 2, lancé le 24 octobre 2026.
+Les décisions D18–D22 concernent le Lot 2 ; D23–D24 concernent le Lot 3,
+explicitement lancé le 24 octobre 2026.
 
 | Réf. | Décision | Motif / réserve |
 |---|---|---|
@@ -32,6 +33,8 @@ Les décisions D18–D22 ci-dessous concernent le Lot 2, lancé le 24 octobre 20
 | D20 | Seed documentaire déterministe, sans MP3, liens ni données personnelles | Artefact intermédiaire dans assets ; import depuis SQLite possible sans sources externes. FTS5 et packaging restent aux lots suivants. |
 | D21 | Schéma v2, transactions WAL/FULL, sources dédupliquées par snapshot, choix manuels et suivi préservés | Rollback/annulation/SIGKILL et migration v1→v2 testés ; un catalogue absent/inaccessible n'entraîne pas de suppression. |
 | D22 | Corrections utilisateur `a332d3f` intégrées et seed régénéré en `corpus-2026-10-24-lot2-r2` | 716 épisodes, aucune erreur/quarantaine/fiche à vérifier ; 29 avertissements historiques ou U+0085 conservés. Sources corrigées par l’utilisateur, sans correction implicite du moteur. |
+| D23 | Lot 3 : FTS5 externe, migration v3, triggers sur `episodes` | Titre/description/sources/musique indexés atomiquement ; migration des fiches existantes, reconstruction et contrôle FTS avec comparaison du contenu. |
+| D24 | Requêtes littérales AND, unicode61 remove_diacritics 2, BM25 10/1/2/1 | Bornes et paramètres SQL ; extraits en texte brut, filtres relationnels. Aucune lemmatisation/sémantique annoncée ; Windows/Android restent à qualifier. |
 
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,

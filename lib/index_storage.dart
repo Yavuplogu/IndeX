@@ -2,3 +2,4 @@
 library;
 
 export 'src/storage/catalog_store.dart';
+export 'src/search/sqlite_search_engine.dart';

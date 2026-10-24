@@ -146,6 +146,19 @@ void main() {
       );
       expect((report['summary'] as Map<String, Object?>)['episodes'], 716);
       expect(
+        (report['capabilities'] as Map<String, Object?>)['search_index'],
+        isTrue,
+      );
+      final loaded = CatalogStore.inMemory();
+      try {
+        loaded.importReference(output.path);
+        final engine = SqliteSearchEngine(loaded.database);
+        engine.checkIndex();
+        expect(engine.search('Pasolini'), isNotEmpty);
+      } finally {
+        loaded.close();
+      }
+      expect(
         report['sqlite_sha256'],
         (await sha256.bind(output.openRead()).first).toString(),
       );

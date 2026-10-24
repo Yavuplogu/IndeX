@@ -203,7 +203,13 @@ void main() {
         after.database.select('PRAGMA integrity_check').single.values.single,
         'ok',
       );
+      final search = SqliteSearchEngine(after.database);
+      search.checkIndex();
+      expect(search.search('complète'), hasLength(1));
       expect(after.importPlan(plan(description: 'Reprise réussie')).updated, 1);
+      search.checkIndex();
+      expect(search.search('complète'), isEmpty);
+      expect(search.search('réussie'), hasLength(1));
     },
     skip: Platform.isWindows
         ? 'SIGKILL est une sonde POSIX ; recette Windows distincte requise.'
@@ -524,42 +530,39 @@ void main() {
     expect(store.database.select('SELECT * FROM episodes'), hasLength(2));
   });
 
-  test(
-    'Migration réelle v1 vers v2 conserve les fiches et active les contraintes',
-    () async {
-      final dir = await Directory.systemTemp.createTemp('index-migration-');
-      addTearDown(() => dir.delete(recursive: true));
-      final path = '${dir.path}/v1.sqlite';
-      final old = sqlite3.open(path);
-      old.execute(schema.schemaV1);
-      old.execute('PRAGMA application_id=${schema.applicationId}');
-      old.execute('PRAGMA user_version=1');
-      old.execute(
-        "INSERT INTO episodes(id,original_name,original_raw,title,description,sources_text,music_text,source_path,source_bytes,raw_text,fingerprint,needs_review,origin,updated_at) VALUES('mrx:a.mp3','a.mp3','a.mp3','Avant migration','','','','a.txt',x'41','','ancien',0,'reference','2026-10-24')",
-      );
-      old.close();
-      final migrated = CatalogStore.open(path);
-      addTearDown(migrated.close);
-      expect(
-        migrated.database.select('PRAGMA user_version').single.values.single,
-        2,
-      );
-      expect(
-        migrated.database.select('SELECT title FROM episodes').single['title'],
-        'Avant migration',
-      );
-      expect(
-        migrated.database.select('PRAGMA foreign_keys').single.values.single,
-        1,
-      );
-      expect(
-        () => migrated.database.execute(
-          "INSERT INTO user_episode_state(episode_id) VALUES('inconnu')",
-        ),
-        throwsA(isA<SqliteException>()),
-      );
-    },
-  );
+  test('Migration réelle v1 vers le schéma courant conserve les fiches et active les contraintes', () async {
+    final dir = await Directory.systemTemp.createTemp('index-migration-');
+    addTearDown(() => dir.delete(recursive: true));
+    final path = '${dir.path}/v1.sqlite';
+    final old = sqlite3.open(path);
+    old.execute(schema.schemaV1);
+    old.execute('PRAGMA application_id=${schema.applicationId}');
+    old.execute('PRAGMA user_version=1');
+    old.execute(
+      "INSERT INTO episodes(id,original_name,original_raw,title,description,sources_text,music_text,source_path,source_bytes,raw_text,fingerprint,needs_review,origin,updated_at) VALUES('mrx:a.mp3','a.mp3','a.mp3','Avant migration','','','','a.txt',x'41','','ancien',0,'reference','2026-10-24')",
+    );
+    old.close();
+    final migrated = CatalogStore.open(path);
+    addTearDown(migrated.close);
+    expect(
+      migrated.database.select('PRAGMA user_version').single.values.single,
+      schema.schemaVersion,
+    );
+    expect(
+      migrated.database.select('SELECT title FROM episodes').single['title'],
+      'Avant migration',
+    );
+    expect(
+      migrated.database.select('PRAGMA foreign_keys').single.values.single,
+      1,
+    );
+    expect(
+      () => migrated.database.execute(
+        "INSERT INTO user_episode_state(episode_id) VALUES('inconnu')",
+      ),
+      throwsA(isA<SqliteException>()),
+    );
+  });
   test('Base étrangère ou future refusée, sans réécriture', () async {
     final dir = await Directory.systemTemp.createTemp('index-foreign-');
     addTearDown(() => dir.delete(recursive: true));

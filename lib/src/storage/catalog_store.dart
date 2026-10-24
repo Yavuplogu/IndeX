@@ -212,8 +212,10 @@ final class CatalogStore {
       source.execute('PRAGMA trusted_schema=OFF');
       if (source.select('PRAGMA application_id').single.values.single !=
               applicationId ||
-          source.select('PRAGMA user_version').single.values.single !=
-              schemaVersion)
+          !{
+            2,
+            schemaVersion,
+          }.contains(source.select('PRAGMA user_version').single.values.single))
         throw const FormatException('Catalogue de référence non reconnu.');
       if (source.select('PRAGMA integrity_check').single.values.single !=
               'ok' ||

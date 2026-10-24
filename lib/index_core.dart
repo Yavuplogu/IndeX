@@ -12,3 +12,4 @@ export 'src/catalog/models.dart';
 export 'src/catalog/journal_parser.dart';
 export 'src/catalog/planner.dart';
 export 'src/matching/matching_engine.dart';
+export 'src/search/search_engine.dart';

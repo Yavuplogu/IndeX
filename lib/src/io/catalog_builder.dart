@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../catalog/planner.dart';
 import '../storage/catalog_store.dart';
 import '../storage/migrations.dart';
+import '../search/sqlite_search_engine.dart';
 import 'catalog_sources.dart';
 
 /// Génération de développement : aucune application ni audio ne doit être lancé.
@@ -60,6 +61,7 @@ Future<Map<String, Object?>> buildCatalog({
         store.database.select('PRAGMA foreign_key_check').isNotEmpty) {
       throw StateError('Contrôle d’intégrité du catalogue échoué.');
     }
+    SqliteSearchEngine(store.database).checkIndex();
     final counts = {
       for (final name in [
         'episodes',
@@ -91,7 +93,7 @@ Future<Map<String, Object?>> buildCatalog({
       'capabilities': {
         'embedded_audio': false,
         'local_links_in_seed': false,
-        'search_index': false,
+        'search_index': true,
       },
     };
     // Un fichier final n'est publié qu'après fermeture de SQLite et vérification.

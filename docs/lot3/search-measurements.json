@@ -1,0 +1,21 @@
+{
+  "platform": "linux",
+  "sqlite_version": "3.54.0",
+  "catalog_version": "corpus-2026-10-24-lot3",
+  "queries": [
+    "rwanda",
+    "Pasolini",
+    "guerre froide",
+    "algerie",
+    "espionnage",
+    "Bizerte"
+  ],
+  "warmup_queries": 120,
+  "measured_queries": 600,
+  "limit": 30,
+  "unit": "microseconds",
+  "p50": 1620,
+  "p95": 2598,
+  "max": 5284,
+  "scope": "Moteur Dart natif sur hôte Linux cloud ; hors UI, hors plateformes cibles."
+}

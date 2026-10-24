@@ -3,13 +3,14 @@
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : Lot 2 implémenté.** Le package Dart `index_core` fournit les parseurs,
-les associations MP3–TXT et la persistance SQLite. Le corpus complet comporte
+**État : Lot 3 implémenté et testé sur Linux.** Le package Dart `index_core` fournit les parseurs,
+les associations MP3–TXT, la persistance SQLite et la recherche FTS5. Le corpus complet comporte
 716 TXT et 716 entrées CSV ; six MP3 servent aux tests. Aucune application GUI
-n'est encore livrée et l'index de recherche sera développé au Lot 3.
+n'est encore livrée. La validation des distributions Windows/Android reste à effectuer.
 
+- [Lot 3 : recherche FTS5, extraits et validation](docs/lot3/bilan.md)
 - [Lot 2 : catalogue, import, associations, migrations et anomalies](docs/lot2/bilan.md)
-- [Rapport du corpus complet](docs/lot2/catalogue-report.json)
+- [Rapport du corpus complet](docs/lot3/catalogue-report.json)
 - [SQLite documentaire prérempli](assets/catalogue.sqlite)
 - [Lot 1 : API, validation, dépendances et limites](docs/lot1/bilan.md)
 - [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
@@ -25,13 +26,13 @@ suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusi
 ou plusieurs fichiers restent bloquantes. La résolution COMM et l'association globale
 aux fiches sont implémentées, sans transformer un statut CSV en vérification ID3 locale.
 
-## Vérifier les Lots 1 et 2
+## Vérifier les Lots 1 à 3
 
 Avec Dart 3.13.5 (fourni par Flutter 3.47.7) activé, depuis la racine :
 
 ```sh
 dart pub get --enforce-lockfile
-bash tools/lot2/check.sh
+bash tools/lot3/check.sh
 ```
 
 Dans l'environnement cloud préparé, activer d'abord le SDK avec
@@ -43,19 +44,38 @@ Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites na
 ## Régénérer le catalogue documentaire
 
 ```sh
-dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-24-lot2-r2 --generated-at 2026-10-24T00:00:00Z --report docs/lot2/catalogue-report.json --replace
+dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-24-lot3 --generated-at 2026-10-24T00:00:00Z --report docs/lot3/catalogue-report.json --replace
 ```
 
-Le catalogue intermédiaire du Lot 2 contient **716 épisodes**, dont 603 avec résumé
+Le catalogue préindexé du Lot 3 contient **716 épisodes**, dont 603 avec résumé
 textuel. Après intégration des corrections sources, il ne reste aucune erreur, fiche
 à vérifier ou identité en quarantaine ; les 29 avertissements sont détaillés dans le bilan. Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace
-explicitement l'artefact généré, jamais les sources. L'intégration dans les applications,
-FTS5 et les tests d'installation vierge restent aux lots suivants.
+explicitement l'artefact généré, jamais les sources. L'intégration dans les applications
+et les tests d'installation vierge restent aux lots suivants.
+
+## Rechercher depuis Dart
+
+```dart
+import 'package:index_core/index_storage.dart';
+
+final store = CatalogStore.open('ma-base.sqlite');
+try {
+  store.importReference('assets/catalogue.sqlite');
+  final results = SqliteSearchEngine(store.database).search('guerre froide');
+  // results : identité, titre, date, extrait en texte brut, score et disponibilité.
+} finally {
+  store.close();
+}
+```
+
+Les termes sont combinés avec AND ; accents et casse sont neutralisés, sans
+recherche sémantique ni syntaxe FTS avancée. Le titre est prioritaire. Voir le
+[bilan Lot 3](docs/lot3/bilan.md) pour les filtres et les limites.
 
 ## Reproduire les sondes du Lot 0
 
 Cette section est historique : `tools/lot0/audit.py` vise l'échantillon initial de
-six lignes et ne valide pas le corpus complet actuel. Utiliser les tests du Lot 2
+six lignes et ne valide pas le corpus complet actuel. Utiliser les tests des Lots 1–3
 et le générateur ci-dessus pour les 716 entrées ; ne pas supprimer des données pour
 faire passer une sonde historique.
 

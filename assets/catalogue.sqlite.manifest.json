@@ -1,10 +1,10 @@
 {
-  "catalog_version": "corpus-2026-10-24-lot2-r2",
-  "schema_version": 2,
+  "catalog_version": "corpus-2026-10-24-lot3",
+  "schema_version": 3,
   "generated_at": "2026-10-24T00:00:00.000Z",
   "sqlite_version": "3.54.0",
-  "sqlite_sha256": "75a8ff473cdb592494a2d05b89d13d970bcfe7bce01dd4d82fa8417f855f3985",
-  "sqlite_bytes": 11649024,
+  "sqlite_sha256": "981f6c2a36752e2c5172bdeac3a9319397fccbec17de3e9d3a4578908902906b",
+  "sqlite_bytes": 12943360,
   "summary": {
     "txt_count": 716,
     "journal_rows": 716,
@@ -234,6 +234,6 @@
   "capabilities": {
     "embedded_audio": false,
     "local_links_in_seed": false,
-    "search_index": false
+    "search_index": true
   }
 }

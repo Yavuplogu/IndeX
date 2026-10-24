@@ -1,5 +1,9 @@
 # Lot 2 — Catalogue complet, associations et persistance
 
+Ce bilan est le relevé historique du Lot 2. Le [Lot 3](../lot3/bilan.md) ajoute
+depuis FTS5 et le schéma v3. Le rapport ci-dessous conserve les résultats v2 ;
+l'asset courant et son manifeste sont désormais décrits dans le bilan du Lot 3.
+
 Date : 24 octobre 2026. État : implémenté et testé sur Linux x64. Le Lot 3 n'est
 pas engagé. Aucun commit/push automatique et aucun fichier source corrigé implicitement.
 
