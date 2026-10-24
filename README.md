@@ -3,11 +3,14 @@
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : Lot 1 implémenté.** Le package Dart `index_core` fournit le parseur TXT,
-le lecteur ID3 et la résolution de preuve COMM, avec tests. Aucune application GUI
-ni persistance n'est encore livrée. Le dépôt contient un échantillon de six épisodes,
-pas le catalogue complet de plusieurs centaines d'épisodes.
+**État : Lot 2 implémenté.** Le package Dart `index_core` fournit les parseurs,
+les associations MP3–TXT et la persistance SQLite. Le corpus complet comporte
+716 TXT et 716 entrées CSV ; six MP3 servent aux tests. Aucune application GUI
+n'est encore livrée et l'index de recherche sera développé au Lot 3.
 
+- [Lot 2 : catalogue, import, associations, migrations et anomalies](docs/lot2/bilan.md)
+- [Rapport du corpus complet](docs/lot2/catalogue-report.json)
+- [SQLite documentaire prérempli](assets/catalogue.sqlite)
 - [Lot 1 : API, validation, dépendances et limites](docs/lot1/bilan.md)
 - [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
 - [Journal des décisions](docs/lot0/decisions.md)
@@ -19,16 +22,16 @@ pas le catalogue complet de plusieurs centaines d'épisodes.
 La règle COMM adoptée ci-dessus prévaut sur le rejet systématique des commentaires
 contradictoires décrit dans la V1.4 archivée : une seule paire d'identifiant concordante
 suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusieurs paires
-ou plusieurs fichiers restent bloquantes. La résolution COMM est implémentée au Lot 1 ;
-l'association globale aux fiches et la persistance restent au Lot 2.
+ou plusieurs fichiers restent bloquantes. La résolution COMM et l'association globale
+aux fiches sont implémentées, sans transformer un statut CSV en vérification ID3 locale.
 
-## Vérifier le Lot 1
+## Vérifier les Lots 1 et 2
 
 Avec Dart 3.13.5 (fourni par Flutter 3.47.7) activé, depuis la racine :
 
 ```sh
 dart pub get --enforce-lockfile
-bash tools/lot1/check.sh
+bash tools/lot2/check.sh
 ```
 
 Dans l'environnement cloud préparé, activer d'abord le SDK avec
@@ -37,7 +40,24 @@ ensuite les dépendances hors ligne, contrôle le formatage, l'analyse et les te
 Le cœur Dart n'effectue aucun accès réseau et ne modifie pas les fichiers fournis.
 Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites natives.
 
+## Régénérer le catalogue documentaire
+
+```sh
+dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-24-lot2-r2 --generated-at 2026-10-24T00:00:00Z --report docs/lot2/catalogue-report.json --replace
+```
+
+Le catalogue intermédiaire du Lot 2 contient **716 épisodes**, dont 603 avec résumé
+textuel. Après intégration des corrections sources, il ne reste aucune erreur, fiche
+à vérifier ou identité en quarantaine ; les 29 avertissements sont détaillés dans le bilan. Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace
+explicitement l'artefact généré, jamais les sources. L'intégration dans les applications,
+FTS5 et les tests d'installation vierge restent aux lots suivants.
+
 ## Reproduire les sondes du Lot 0
+
+Cette section est historique : `tools/lot0/audit.py` vise l'échantillon initial de
+six lignes et ne valide pas le corpus complet actuel. Utiliser les tests du Lot 2
+et le générateur ci-dessus pour les 716 entrées ; ne pas supprimer des données pour
+faire passer une sonde historique.
 
 Depuis la racine du dépôt, avec Python 3.11+ :
 

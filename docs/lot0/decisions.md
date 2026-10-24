@@ -6,6 +6,7 @@ décrites dans le cahier des charges ne constituent pas une autorisation de les 
 La décision D14 ci-dessous a été explicitement adoptée par l'utilisateur après l'audit.
 Les décisions D15–D17 enregistrent ensuite le Lot 1 explicitement lancé ; les mentions
 d'environnement et de modules absents des décisions initiales décrivent l'état historique.
+Les décisions D18–D22 ci-dessous concernent le Lot 2, lancé le 24 octobre 2026.
 
 | Réf. | Décision | Motif / réserve |
 |---|---|---|
@@ -26,6 +27,11 @@ d'environnement et de modules absents des décisions initiales décrivent l'éta
 | D15 | Package racine Dart `index_core`, SDK Dart 3.13.5 / Flutter 3.47.7 épinglés | Cœur partagé sans UI, sans stockage et sans dart:io ; adaptateur fichier exporté séparément. |
 | D16 | Lecteur COMM dédié borné, résolution séparée du matching ; oracle `ID3(load_v1=False)` | Les cinq commentaires ID3v1 synthétisés par Mutagen au Lot 0 ne sont pas des COMM physiques supplémentaires. Chaque MP3 réel possède deux COMM physiques. |
 | D17 | unorm_dart 0.3.3 en production, test 1.31.1 et crypto 3.0.7 en développement, lockfile versionné | Licences et SHA-256 officiels vérifiés. Parsing sans réseau et sans réécriture du corpus ; analyse et tests reproductibles via `tools/lot1/check.sh`. |
+| D18 | sqlite3 3.7.1 directement, migrations SQL explicites ; Drift différé | Aucun besoin de couche réactive UI au Lot 2. SQLite 3.54.0 exécuté sur Linux ; checksums native assets conservés. crypto 3.0.7 utilisé en production pour les empreintes. |
+| D19 | Corpus 716/716 intégré sans correction implicite | État initial avant D22 : 715 identités structurées, une quarantaine sans extension historique, quatre fiches à vérifier ; données et diagnostics conservés. Voir le [bilan Lot 2](../lot2/bilan.md). |
+| D20 | Seed documentaire déterministe, sans MP3, liens ni données personnelles | Artefact intermédiaire dans assets ; import depuis SQLite possible sans sources externes. FTS5 et packaging restent aux lots suivants. |
+| D21 | Schéma v2, transactions WAL/FULL, sources dédupliquées par snapshot, choix manuels et suivi préservés | Rollback/annulation/SIGKILL et migration v1→v2 testés ; un catalogue absent/inaccessible n'entraîne pas de suppression. |
+| D22 | Corrections utilisateur `a332d3f` intégrées et seed régénéré en `corpus-2026-10-24-lot2-r2` | 716 épisodes, aucune erreur/quarantaine/fiche à vérifier ; 29 avertissements historiques ou U+0085 conservés. Sources corrigées par l’utilisateur, sans correction implicite du moteur. |
 
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,

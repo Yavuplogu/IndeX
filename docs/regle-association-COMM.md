@@ -9,8 +9,9 @@ du cahier des charges reste inchangée pour traçabilité. La présente règle p
 sur ce point ; les autres protections contre les associations ambiguës sont maintenues.
 
 La lecture des COMM et la résolution de preuve sont **implémentées et testées au Lot 1**
-dans le cœur Dart. L'association globale aux fiches, la persistance et les interfaces
-restent à implémenter aux lots suivants. Voir le [bilan du Lot 1](lot1/bilan.md).
+dans le cœur Dart. L'association globale aux fiches et la persistance sont livrées au
+Lot 2 ; les interfaces restent aux lots suivants. Voir les bilans du
+[Lot 1](lot1/bilan.md) et du [Lot 2](lot2/bilan.md).
 
 ## 1. Lecture et comptage des commentaires
 
@@ -83,28 +84,31 @@ inchangé, y compris s'il indique une ancienne anomalie. Signaler alors cet éca
 
 ### Exemple de résultat à transmettre et persister
 
-Exemple de contrat proposé pour la paire A/A avec un commentaire B écarté :
+Extrait d'un résultat `MatchDecision.toJson()` du Lot 2 pour la paire A/A avec un
+commentaire B écarté (les références locales et les autres champs du rapport sont omis) :
 
 ```json
 {
-  "original_mp3_name": "mr_x_2013_04_27.mp3",
+  "episode_id": "mrx:mr_x_2013_04_27.mp3",
   "matching_method": "id3_comment",
-  "matching_status": "CONFIRME",
+  "status": "confirmed",
   "local_verification_status": "CONFIRMEE",
-  "match_evidence": {
-    "rule": "comm_pair_v1",
-    "supporting_frame_count": 2,
-    "supporting_frame_indices": [0, 1],
-    "ignored_frame_indices": [2]
-  }
+  "evidence_rule": "comm_pair_v1",
+  "supporting_frames": [0, 1],
+  "ignored_comments": [{
+    "index": 2,
+    "reason": "Identifiant isolé écarté au profit de la paire concordante."
+  }]
 }
 ```
 
 Les indices renvoient à la liste complète des commentaires conservée dans le
-diagnostic, avec leurs valeurs brutes et raisons d'exclusion. `matching_status`
+diagnostic, avec leurs valeurs brutes et raisons d'exclusion. Le statut `confirmed`
 n'est confirmé **qu'après** les contrôles de correspondance unique entre fichiers.
 La règle ID3 unique sans paire reste identifiable séparément dans les preuves, par
-exemple `rule = comm_unique_v1`. Les noms exacts de stockage seront fixés au Lot 2.
+exemple `evidence_rule = comm_unique_v1`. Les liens locaux stockent cette preuve dans
+`evidence_json`, avec leur méthode et `matching_status`. Seules les décisions confirmées
+deviennent des liens automatiques ; les autres restent dans le rapport de scan.
 Les épisodes, liens et preuves restent indépendants des statuts d'écoute et favoris.
 
 ## 4. Cas de recette à ajouter aux lots 1 et 2
@@ -139,4 +143,4 @@ par des fixtures synthétiques dédiées (voir la correction dans le bilan du Lo
 Les résultats d'audit déjà enregistrés restent des observations du corpus d'origine.
 Les sondes actuelles de `tools/lot0` ne constituent pas des tests d'implémentation de
 cette nouvelle règle. Les tests de lecture ID3 et résolution sont livrés au Lot 1 ;
-les tests de matching inter-fichiers restent au Lot 2, après son autorisation.
+les tests de matching inter-fichiers sont désormais livrés au Lot 2.

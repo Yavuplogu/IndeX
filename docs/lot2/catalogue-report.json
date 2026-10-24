@@ -1,0 +1,239 @@
+{
+  "catalog_version": "corpus-2026-10-24-lot2-r2",
+  "schema_version": 2,
+  "generated_at": "2026-10-24T00:00:00.000Z",
+  "sqlite_version": "3.54.0",
+  "sqlite_sha256": "75a8ff473cdb592494a2d05b89d13d970bcfe7bce01dd4d82fa8417f855f3985",
+  "sqlite_bytes": 11649024,
+  "summary": {
+    "txt_count": 716,
+    "journal_rows": 716,
+    "episodes": 716,
+    "review_episodes": 0,
+    "documented_episodes": 603,
+    "quarantined_txt": 0,
+    "errors": 0,
+    "warnings": 29,
+    "source_digest": "028bd3616741160684f4c741442d651b3af26c2416a4ab62746e312ba7c3abaa",
+    "can_apply": true,
+    "run_id": 1,
+    "inserted": 716,
+    "updated": 0,
+    "unchanged": 0,
+    "literary_sources": 1896,
+    "music_tracks": 614,
+    "local_audio_links": 0,
+    "user_episode_state": 0,
+    "source_records": 1433
+  },
+  "issues": [
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:24",
+      "original_name": "mr_x_1998_09_05.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:73",
+      "original_name": "mr_x_2014_06_14.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:136",
+      "original_name": "mr_x_2014_05_31.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:137",
+      "original_name": "mr_x_2014_06_07.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:173",
+      "original_name": "mr_x_2014_03_15.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:214",
+      "original_name": "mr_x_2014_05_24.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:227",
+      "original_name": "mr_x_2005_03_05.mp3",
+      "message": "The remote server returned an error: (404) Not Found."
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:289",
+      "original_name": "mr_x_2014_02_22.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:293",
+      "original_name": "mr_x_2007_03_24.mp3",
+      "message": "The remote server returned an error: (404) Not Found."
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:327",
+      "original_name": "mr_x_2014_02_08.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:383",
+      "original_name": "mr_x_2014_03_29.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:408",
+      "original_name": "mr_x_2014_03_01.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:532",
+      "original_name": "mr_x_2014_06_21.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:576",
+      "original_name": "mr_x_2001_06_23.mp3",
+      "message": "The remote server returned an error: (404) Not Found."
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:621",
+      "original_name": "mr_x_2000_12_09.mp3",
+      "message": "Date invalide ou absente du nom du fichier MP3 : http://rendezvousavecmrx.free.fr/audio/mr_x_2000_19_09.mp3"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:625",
+      "original_name": "mr_x_1998_09_26.mp3",
+      "message": "Version ID3v2.2 non prise en charge"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:627",
+      "original_name": "mr_x_1998_04_25.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:635",
+      "original_name": "mr_x_2014_02_15.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:646",
+      "original_name": "mr_x_2009_09_19.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:664",
+      "original_name": "mr_x_2014_04_05.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:666",
+      "original_name": "mr_x_2014_04_12.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:674",
+      "original_name": "mr_x_2014_05_17.mp3",
+      "message": "MP3 introuvable dans div#icone_telechargement"
+    },
+    {
+      "code": "journal_source_error",
+      "severity": "warning",
+      "source": "journal.csv:715",
+      "original_name": "mr_x_2006_06_10.mp3",
+      "message": "The remote server returned an error: (404) Not Found."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-05-16 11 septembre 2001 (2 sur 3).txt",
+      "original_name": "mr_x_2009_05_16.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-05-23 11 septembre 2001 (3 sur 3).txt",
+      "original_name": "mr_x_2009_05_23.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-05-30 Le massacre de la place Tiananmen.txt",
+      "original_name": "mr_x_2009_05_30.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-06-06 Les Tamouls du Sri Lanka.txt",
+      "original_name": "mr_x_2009_06_06.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-06-20 La sulfureuse affaire Altantuya en Malaisie.txt",
+      "original_name": "mr_x_2009_06_20.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    },
+    {
+      "code": "txt_nel_preserved",
+      "severity": "warning",
+      "source": "2009-06-27 Le Congo Brazzaville.txt",
+      "original_name": "mr_x_2009_06_27.mp3",
+      "message": "Caractères U+0085 conservés dans le texte."
+    }
+  ],
+  "capabilities": {
+    "embedded_audio": false,
+    "local_links_in_seed": false,
+    "search_index": false
+  }
+}

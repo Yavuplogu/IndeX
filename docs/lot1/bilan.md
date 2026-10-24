@@ -1,5 +1,9 @@
 # Lot 1 — Parseur TXT, lecteur ID3 et résolution COMM
 
+Ce bilan décrit l'état à la fin du Lot 1. Le [Lot 2](../lot2/bilan.md) a depuis ajouté
+le corpus complet, le matching et SQLite ; les limites marquées « lots ultérieurs »
+ci-dessous constituent le relevé historique de cette étape.
+
 Statut : implémenté et vérifié sur **Linux x64**, avec Dart 3.13.5 fourni par Flutter
 3.47.7. Aucun build Windows/Android ni essai sur appareil cible n'a été effectué.
 Le Lot 2 n'est pas engagé. Aucun commit ni push automatique.
