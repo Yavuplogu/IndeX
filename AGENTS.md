@@ -7,6 +7,11 @@
   ni lecteur audio (Lot 4). Ne pas engager un lot ultérieur sans demande/validation.
   Lire `docs/lot3/bilan.md`, `docs/lot2/bilan.md`, `docs/lot0/conception.md`,
   `docs/lot0/decisions.md` et la spécification V1.4 avant de proposer un changement.
+- L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
+  Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
+  cette validation ne demande pas à elle seule le développement de l'application du Lot 4.
+  Conserver les thèmes clair/sombre, le lecteur compact, les sources/musiques structurées
+  et les identités techniques masquées. Le HTML simule l'audio et le suivi en mémoire.
 - Appliquer l'addendum `docs/regle-association-COMM.md` avant la règle COMM de la V1.4 :
   un seul identifiant soutenu par au moins deux trames distinctes prime sur les autres
   commentaires isolés. Conserver les commentaires écartés dans le diagnostic ; plusieurs
