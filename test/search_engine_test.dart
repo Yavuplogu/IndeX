@@ -262,7 +262,10 @@ void main() {
       final engine = SqliteSearchEngine(db);
       expect(engine.search('revolution').single.episodeId, 'a');
       engine.checkIndex();
-      expect(db.select('PRAGMA user_version').single.values.single, 3);
+      expect(
+        db.select('PRAGMA user_version').single.values.single,
+        schema.schemaVersion,
+      );
       expect(
         db
             .select('SELECT position_ms,is_favorite FROM user_episode_state')
@@ -309,6 +312,61 @@ void main() {
     expect(unchanged.select('PRAGMA user_version').single.values.single, 2);
     unchanged.close();
   });
+
+  test(
+    'Sélection des champs FTS : auteur seul, termes répartis et exclusion',
+    () {
+      load('Révolution', 'Diplomatie secrète.');
+      expect(
+        search.search(
+          'auteur',
+          options: const SearchOptions(fields: {SearchField.sources}),
+        ),
+        hasLength(1),
+      );
+      expect(
+        search.search(
+          'auteur',
+          options: const SearchOptions(fields: {SearchField.title}),
+        ),
+        isEmpty,
+      );
+      expect(
+        search.search(
+          'révolution diplomatie',
+          options: const SearchOptions(
+            fields: {SearchField.title, SearchField.description},
+          ),
+        ),
+        hasLength(1),
+      );
+      expect(
+        search.search(
+          'révolution diplomatie',
+          options: const SearchOptions(fields: {SearchField.title}),
+        ),
+        isEmpty,
+      );
+      expect(
+        search.search(
+          'chanson',
+          options: const SearchOptions(fields: {SearchField.music}),
+        ),
+        hasLength(1),
+      );
+      expect(
+        search.search(
+          'chanson',
+          options: const SearchOptions(fields: {SearchField.sources}),
+        ),
+        isEmpty,
+      );
+      expect(
+        () => search.search('mot', options: const SearchOptions(fields: {})),
+        throwsArgumentError,
+      );
+    },
+  );
 
   test('Corpus complet : recherche, extrait, import du seul seed et index cohérent', () async {
     store.importPlan(

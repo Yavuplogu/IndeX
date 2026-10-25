@@ -1,0 +1,35 @@
+name: Verification Windows portable
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests du coeur, widgets et recette native Windows
+        shell: pwsh
+        run: ./tools/lot4/check.ps1
+      - name: Construction de l'archive portable sans MP3
+        shell: pwsh
+        run: ./tools/lot4/package_windows.ps1
+      - name: Lancement de l'archive extraite
+        shell: pwsh
+        run: ./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.4.0_windows_x64_portable.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IndeX-windows-x64-portable
+          path: dist/*
+          if-no-files-found: error

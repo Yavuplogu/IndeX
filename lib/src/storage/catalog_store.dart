@@ -214,6 +214,7 @@ final class CatalogStore {
               applicationId ||
           !{
             2,
+            3,
             schemaVersion,
           }.contains(source.select('PRAGMA user_version').single.values.single))
         throw const FormatException('Catalogue de référence non reconnu.');
@@ -221,6 +222,13 @@ final class CatalogStore {
               'ok' ||
           source.select('PRAGMA foreign_key_check').isNotEmpty)
         throw const FormatException('Catalogue de référence corrompu.');
+      if ((source.select('PRAGMA user_version').single.values.single as int) >=
+              4 &&
+          source.select('SELECT 1 FROM local_settings LIMIT 1').isNotEmpty) {
+        throw const FormatException(
+          'Un seed ne doit pas contenir de réglages personnels.',
+        );
+      }
       if (source.select('SELECT * FROM catalog_versions').length != 1 ||
           source.select('SELECT 1 FROM local_audio_links LIMIT 1').isNotEmpty ||
           source

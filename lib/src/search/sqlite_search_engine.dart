@@ -17,6 +17,8 @@ final class SqliteSearchEngine implements SearchEngine {
     String query, {
     SearchOptions options = const SearchOptions(),
   }) {
+    if (options.fields.isEmpty)
+      throw ArgumentError('Choisir au moins un champ.');
     if (query.length > 512)
       throw ArgumentError('Requête limitée à 512 caractères.');
     if (options.limit < 1 ||
@@ -46,7 +48,18 @@ final class SqliteSearchEngine implements SearchEngine {
     if (terms.isEmpty) return const [];
     // Chaque terme est cité ; aucune syntaxe SQL ou FTS utilisateur n'est exécutée.
     // Plusieurs termes sont combinés avec AND, sans imposer leur ordre.
-    final match = terms.map((t) => '"$t"').join(' AND ');
+    const columns = {
+      SearchField.title: 'title',
+      SearchField.description: 'description',
+      SearchField.sources: 'sources_text',
+      SearchField.music: 'music_text',
+    };
+    final selected = SearchField.values
+        .where(options.fields.contains)
+        .map((f) => columns[f]!)
+        .join(' ');
+    final match =
+        '{$selected} : (' + terms.map((t) => '"$t"').join(' AND ') + ')';
     final conditions = <String>['episodes_fts MATCH ?'];
     final parameters = <Object?>[match];
     if (from != null) {

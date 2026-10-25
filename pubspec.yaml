@@ -1,6 +1,6 @@
 name: index_core
 description: Catalogue documentaire, associations ID3 et persistance SQLite hors ligne pour IndeX.
-version: 0.3.0
+version: 0.4.0
 publish_to: none
 environment:
   sdk: '>=3.13.5 <4.0.0'

@@ -3,10 +3,15 @@
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : Lot 3 implémenté et testé sur Linux.** Le package Dart `index_core` fournit les parseurs,
-les associations MP3–TXT, la persistance SQLite et la recherche FTS5. Le corpus complet comporte
-716 TXT et 716 entrées CSV ; six MP3 servent aux tests. Aucune application GUI
-n'est encore livrée. La validation des distributions Windows/Android reste à effectuer.
+**État : code du Lot 4 implémenté ; qualification Windows en attente.**
+L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
+la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Les
+contrôles Linux passent ; le workflow de construction et de recette Windows est
+préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
+
+- [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
+- [Application Flutter Windows et construction portable](apps/index_windows/README.md)
+- [Mode d'emploi Windows](docs/lot4/UTILISATION_WINDOWS.md)
 
 La dernière révision de la maquette Éditorial, claire et sombre, a été validée le
 25 octobre 2026 comme référence visuelle du Lot 4. Elle inclut les commandes de
@@ -33,13 +38,13 @@ suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusi
 ou plusieurs fichiers restent bloquantes. La résolution COMM et l'association globale
 aux fiches sont implémentées, sans transformer un statut CSV en vérification ID3 locale.
 
-## Vérifier les Lots 1 à 3
+## Vérifier les Lots 1 à 4
 
-Avec Dart 3.13.5 (fourni par Flutter 3.47.7) activé, depuis la racine :
+Avec Flutter 3.47.7 / Dart 3.13.5 activés, depuis la racine :
 
 ```sh
 dart pub get --enforce-lockfile
-bash tools/lot3/check.sh
+bash tools/lot4/check.sh
 ```
 
 Dans l'environnement cloud préparé, activer d'abord le SDK avec
@@ -57,8 +62,8 @@ dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version cor
 Le catalogue préindexé du Lot 3 contient **716 épisodes**, dont 603 avec résumé
 textuel. Après intégration des corrections sources, il ne reste aucune erreur, fiche
 à vérifier ou identité en quarantaine ; les 29 avertissements sont détaillés dans le bilan. Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace
-explicitement l'artefact généré, jamais les sources. L'intégration dans les applications
-et les tests d'installation vierge restent aux lots suivants.
+explicitement l'artefact généré, jamais les sources. Le Lot 4 intègre ce catalogue
+dans les assets Flutter ; la qualification du paquet Windows reste à exécuter.
 
 ## Rechercher depuis Dart
 

@@ -1,5 +1,8 @@
 # Lot 3 — Recherche documentaire FTS5
 
+Ce bilan conserve les résultats historiques du Lot 3. Le [Lot 4](../lot4/bilan.md)
+ajoute la GUI Windows, les champs de recherche et le schéma de travail v4.
+
 Date : 24 octobre 2026. Implémenté et testé sur Linux x64, Dart 3.13.5,
 Flutter 3.47.7, SQLite 3.54.0. Le Lot 4 n'est pas engagé. Aucun commit/push automatique.
 

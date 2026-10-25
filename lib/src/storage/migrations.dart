@@ -1,7 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 const applicationId = 0x49445831;
-const schemaVersion = 3;
+const schemaVersion = 4;
 
 // Version 1 réellement utilisable comme fixture de migration vers les données locales v2.
 const schemaV1 = '''
@@ -64,6 +64,10 @@ END;
 INSERT INTO episodes_fts(episodes_fts) VALUES('rebuild');
 ''';
 
+const schemaV4 = '''
+CREATE TABLE local_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+''';
+
 void migrate(Database db) {
   db.execute('PRAGMA foreign_keys=ON');
   final version = db.select('PRAGMA user_version').single.values.single as int;
@@ -96,6 +100,10 @@ void migrate(Database db) {
     if (version < 3) {
       db.execute(schemaV3);
       db.execute('PRAGMA user_version=3');
+    }
+    if (version < 4) {
+      db.execute(schemaV4);
+      db.execute('PRAGMA user_version=4');
     }
     db.execute('COMMIT');
   } catch (_) {

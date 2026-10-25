@@ -2,3 +2,7 @@
 build/
 coverage/
 .packages
+dist/
+index-portable.json
+index-utilisateur.sqlite*
+.index.lock

@@ -6,8 +6,16 @@ abstract interface class SearchEngine {
   });
 }
 
+enum SearchField { title, description, sources, music }
+
 final class SearchOptions {
   const SearchOptions({
+    this.fields = const {
+      SearchField.title,
+      SearchField.description,
+      SearchField.sources,
+      SearchField.music,
+    },
     this.limit = 30,
     this.offset = 0,
     this.fromDate,
@@ -15,6 +23,7 @@ final class SearchOptions {
     this.audioAvailable,
     this.hasSources,
   });
+  final Set<SearchField> fields;
   final int limit, offset;
   final DateTime? fromDate, toDate;
   final bool? audioAvailable, hasSources;

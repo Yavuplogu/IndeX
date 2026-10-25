@@ -7,6 +7,10 @@ référence visuelle et interactive pour le Lot 4 (GUI Windows), avec une décli
 mobile et deux apparences, claire et sombre. Cette validation porte sur la maquette ;
 elle ne constitue pas une validation d'une distribution Windows ou Android.
 
+Le Lot 4 a ensuite été lancé explicitement : son [bilan](../lot4/bilan.md) décrit
+le code Flutter désormais raccordé et les validations Windows restantes. Le HTML
+reste une référence de présentation, avec ses simulations de test.
+
 ## Ouvrir le HTML
 
 Ouvrir [maquettes.html](maquettes.html) dans un navigateur récent (Edge, Chrome ou

@@ -2,14 +2,14 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 3**, lancé explicitement par l'utilisateur.
-  Recherche FTS5, classement, extraits et maintenance de l'index ; aucune interface
-  ni lecteur audio (Lot 4). Ne pas engager un lot ultérieur sans demande/validation.
-  Lire `docs/lot3/bilan.md`, `docs/lot2/bilan.md`, `docs/lot0/conception.md`,
-  `docs/lot0/decisions.md` et la spécification V1.4 avant de proposer un changement.
+- Périmètre actuellement autorisé : **Lot 4**, lancé explicitement par l'utilisateur.
+  GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
+  Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
+  Le lecteur réel/Android restent au Lot 5, renommage/JSON aux Lots 5 bis/5 ter.
+  Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
-  cette validation ne demande pas à elle seule le développement de l'application du Lot 4.
+  le Lot 4 a ensuite été lancé explicitement et son code est désormais implémenté.
   Conserver les thèmes clair/sombre, le lecteur compact, les sources/musiques structurées
   et les identités techniques masquées. Le HTML simule l'audio et le suivi en mémoire.
   La dernière révision du 25 octobre 2026 est validée : logo et sous-titre dans la
@@ -30,17 +30,21 @@
   retenue doit alimenter le matching MP3–TXT par l'identifiant historique, pas par le titre.
 - Le commentaire ID3v1 que Mutagen synthétise en `COMM:ID3v1 Comment` ne constitue
   pas une trame COMM physique supplémentaire. L'oracle de test utilise `load_v1=False`.
-- Commande de vérification des Lots 1–3 après activation Dart : `bash tools/lot3/check.sh`.
+- Commande de vérification des Lots 1–4 après activation du SDK : `bash tools/lot4/check.sh`.
   Respecter le lockfile ; ne pas modifier les fixtures pour faire passer un test.
 - Le corpus complet contient 716 TXT et 716 lignes CSV. Lire `docs/lot3/catalogue-report.json` :
   716 épisodes structurés, aucune erreur, quarantaine ou fiche à vérifier après les
   corrections sources de `a332d3f` ; 29 avertissements historiques ou U+0085 préservés. Ne pas corriger
   silencieusement les données sources. Le seed `assets/catalogue.sqlite` ne contient
   aucun audio ni suivi personnel ; ne jamais l'ouvrir en écriture comme base utilisateur.
-- Schéma SQLite v3 : FTS5 externe sur les colonnes documentaires de `episodes`,
+- Schéma de travail SQLite v4 (`local_settings`), seed de référence v3 conservé : FTS5 externe sur les colonnes documentaires de `episodes`,
   maintenance par triggers dans la transaction. Ne pas modifier les tables FTS à la main.
   Utiliser `SqliteSearchEngine.rebuildIndex/checkIndex` pour reconstruction/contrôle.
   Requêtes littérales bornées, jamais une expression FTS fournie directement par l'utilisateur.
+- Flutter 3.47.7 / Dart 3.13.5 épinglés. Préparer l'asset par
+  `python3 tools/lot4/prepare_assets.py` ; ne pas versionner la copie générée dans l'app.
+  Windows doit être construit/testé sur Windows via `tools/lot4/check.ps1` et le workflow CI.
+  Ne pas déclarer Windows qualifié sur la seule base des contrôles Linux.
 - Les imports de référence doivent préserver les choix manuels, liens, suivi et ajouts
   utilisateur. Un dossier temporairement inaccessible ne justifie aucune suppression.
 - Utiliser le checkout existant ; ne pas créer de worktree sans demande explicite.
