@@ -3,6 +3,7 @@ param(
   [string]$DiagnosticsDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'process_windows.ps1')
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('IndeX-portable-' + [Guid]::NewGuid().ToString('N'))
 if (-not $DiagnosticsDirectory) {
   $DiagnosticsDirectory = Join-Path (Split-Path ([IO.Path]::GetFullPath($Archive)) -Parent) 'diagnostics-smoke'
@@ -25,6 +26,7 @@ try {
   if (-not (Test-Path $exe)) { throw "IndeX.exe absent de l’archive." }
   $report.stage = 'startup'
   $launchProcess = Start-Process -FilePath $exe -WorkingDirectory $temporary -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+  $null = $launchProcess.Handle
   $deadline = [DateTime]::UtcNow.AddSeconds(25)
   do {
     Start-Sleep -Milliseconds 250
@@ -33,7 +35,7 @@ try {
     if (-not $process) {
       $child = Get-CimInstance Win32_Process -Filter "ParentProcessId = $($launchProcess.Id)" |
         Where-Object { $_.Name -eq 'IndeX.exe' } | Select-Object -First 1
-      if ($child) { $process = Get-Process -Id $child.ProcessId }
+      if ($child) { $process = Get-TrackedProcess -ProcessId $child.ProcessId }
     }
     if (-not $process) { continue }
     $process.Refresh()
@@ -43,9 +45,13 @@ try {
   $report.stage = 'close'
   if (-not $process.CloseMainWindow()) { throw 'Demande de fermeture impossible.' }
   if (-not $process.WaitForExit(15000)) { throw "La fermeture Windows n’a pas abouti." }
-  if ($process.ExitCode -ne 0) { throw "Fermeture avec erreur : $($process.ExitCode)" }
+  $exitCode = Get-RequiredExitCode -Process $process
+  $report.exit_code = $exitCode
+  if ($exitCode -ne 0) { throw "Fermeture avec erreur : $exitCode" }
   if (-not $launchProcess.WaitForExit(5000)) { throw 'Le lanceur ne termine pas après son application.' }
-  if ($launchProcess.ExitCode -ne $process.ExitCode) { throw 'Code de sortie du lanceur différent de celui de son application.' }
+  $launcherExitCode = Get-RequiredExitCode -Process $launchProcess
+  $report.launcher_exit_code = $launcherExitCode
+  if ($launcherExitCode -ne $exitCode) { throw 'Code de sortie du lanceur différent de celui de son application.' }
   if (Get-ChildItem $portable -Recurse -File -Filter 'index-portable.json') { throw 'Un profil a été créé sans sélection utilisateur.' }
   $report.success = $true
   $report.stage = 'complete'
@@ -65,8 +71,10 @@ try {
     $process.Refresh()
     if ($process.HasExited) {
       $report.exit_code = $process.ExitCode
-      $bits = [BitConverter]::ToUInt32([BitConverter]::GetBytes([int]$process.ExitCode),0)
-      $report.exit_hex = '0x{0:X8}' -f $bits
+      if ($null -ne $report.exit_code) {
+        $bits = [BitConverter]::ToUInt32([BitConverter]::GetBytes([int]$report.exit_code),0)
+        $report.exit_hex = '0x{0:X8}' -f $bits
+      }
     } else { Stop-Process -Id $process.Id -Force; $process.WaitForExit(5000) | Out-Null }
   }
   if ($launchProcess) {
@@ -75,5 +83,7 @@ try {
     else { Stop-Process -Id $launchProcess.Id -Force; $launchProcess.WaitForExit(5000) | Out-Null }
   }
   $report | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $DiagnosticsDirectory 'resultat.json') -Encoding utf8
+  if ($process) { $process.Dispose() }
+  if ($launchProcess) { $launchProcess.Dispose() }
   Remove-Item $temporary -Recurse -Force
 }

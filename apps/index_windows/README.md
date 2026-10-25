@@ -45,3 +45,8 @@ de sortie. Les notices sont dans `documentation/` ; les ressources, DLL et le
 pointeur utilisateur restent dans `application/`. Tester la disposition sans
 compilation : `./tools/lot4/test_portable_windows.ps1`. Le smoke test Windows ferme
 la fenêtre du processus enfant et vérifie aussi la fin du lanceur.
+
+La recette acquiert le handle du processus enfant avant fermeture afin de lire
+son code même après sa disparition sous Windows. Le contrôle autonome
+`./tools/lot4/test_process_windows.ps1` vérifie la conservation des codes de sortie
+et refuse explicitement les codes absents ; il est exécuté avant la compilation CI.

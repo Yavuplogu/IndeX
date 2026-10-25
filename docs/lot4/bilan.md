@@ -1,10 +1,11 @@
 # Lot 4 — GUI Windows portable
 
-Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. La cinquième
-exécution GitHub Actions valide les tests Windows, construit **IndeX.exe en
-Release** et crée le ZIP portable. Le test du ZIP extrait révèle un crash natif
-à la fermeture. Le correctif de cycle de vie reste à valider sous Windows avant
-de qualifier le paquet.
+Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. Les derniers
+logs Windows (`logs_109036839586.zip`) valident les tests, la recette native,
+les compilations du lanceur et du programme, puis la création du ZIP. Le test de
+fermeture s'arrête sur un code de sortie vide : le processus enfant récupéré par
+identifiant n'avait pas de handle conservé. La surveillance corrigée reste à
+valider sous Windows avant qualification du paquet.
 Le lecteur audio réel et Android restent au Lot 5 ; renommage et JSON aux Lots 5 bis/5 ter.
 
 ## Livrable et comportement
@@ -150,12 +151,13 @@ dans les tests du cœur ; voir le diagnostic à la fin de ce bilan :
 5. Conservation de l'archive et de son SHA-256 comme artefact CI après succès.
 
 Les logs successifs ci-dessous documentent la progression réelle du workflow.
-La cinquième exécution réussit les tests du cœur, les widgets et le test d'intégration
-natif, puis construit le binaire Release et le ZIP avec runtime Microsoft.
+Les derniers logs valident les tests, la recette native, le binaire Release,
+le lanceur et le ZIP avec runtime Microsoft.
 **Aucun paquet Windows qualifié ni validation Android ne sont encore revendiqués.**
-Le processus du ZIP extrait plante à la fermeture ; le correctif ci-dessous doit
-encore réussir cette étape sous Windows. Le workflow conserve désormais les
-diagnostics séparément, y compris en cas d'échec du test du paquet.
+Le test de fermeture échoue actuellement parce que son objet `Process` ne fournit
+pas de code de sortie. Le handle est désormais conservé et le contrôle doit être
+rejoué sous Windows. Le workflow conserve les diagnostics séparément, y compris
+en cas d'échec du test du paquet.
 
 À compléter sur le paquet Windows précis : sélecteurs natifs avec annulation/permissions,
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
@@ -403,3 +405,43 @@ Sous PowerShell 7.5.4 sur Linux, la syntaxe des scripts, le résolveur CRT et le
 fixtures de disposition/ZIP sont validés ; la copie refuse MP3 et profils utilisateur.
 La compilation du lanceur, ses ressources et le lancement natif de l'archive doivent
 encore être vérifiés sur Windows. Aucun binaire Windows n'est qualifié par ces tests Linux.
+
+
+## Exécution `logs_109036839586.zip` — code de sortie non disponible
+
+Les logs du commit `9a22149` confirment sous Windows :
+
+- **174 tests du cœur réussis, 1 test POSIX ignoré, 11 tests Flutter réussis** ;
+- recette d'intégration native réussie ;
+- compilations Debug/Release, dont le nouveau lanceur, réussies ;
+- runtime Microsoft x64 sélectionné et nouvelle archive `IndeX/` créée ;
+- fenêtre du programme enfant détectée et demande de fermeture aboutie.
+
+L'étape suivante échoue sur `smoke_archive.ps1:46` avec **« Fermeture avec erreur : »**,
+sans code numérique. Le test compare `$null` à zéro, ce qui échoue. Ces logs
+n'établissent donc pas un nouveau crash `0xC000041D`, ni une fermeture propre :
+le code de sortie du programme n'est simplement pas disponible dans cet objet
+`Process`. L'artefact de diagnostics est bien conservé par le workflow.
+
+Le script récupérait le processus enfant avec `Get-Process` après lancement par
+le lanceur. Sous Windows, il faut ouvrir et conserver son `Handle` pendant que
+le processus est vivant pour pouvoir interroger sa sortie après sa disparition.
+`Get-TrackedProcess` réalise cette acquisition ; le handle est libéré après la
+rédaction du rapport. Le lanceur conserve également un handle explicite.
+`Get-RequiredExitCode` refuse tout code absent et tout processus encore actif :
+aucune conversion de `$null` en zéro, aucun recours au code du lanceur pour ignorer
+celui de l'application. Les codes nuls/non nuls et leur égalité restent contrôlés.
+Le rapport ne présente plus `0x00000000` si le code numérique manque.
+
+Le nouveau test PowerShell lance deux vrais processus témoins, les récupère avec
+un objet `Process` indépendant, libère l'objet d'origine puis déclenche leur sortie
+par un fichier témoin. Après `WaitForExit` et `Refresh`, les codes **0 et 7** doivent
+rester lisibles. Un processus actif et un code absent sont refusés. Sous Windows,
+un troisième témoin vérifie aussi le code négatif `-1073740771` (`0xC000041D`).
+Le workflow exécute ce test avant l'installation du SDK.
+
+Vérifications exécutées sous **PowerShell 7.5.4 sur Linux** : tests des processus
+(0/7, refus actif/absent), tests de disposition/ZIP et résolveur CRT, analyse syntaxique
+de tous les scripts du Lot 4. Aucun code applicatif, fichier source documentaire ou
+seed n'a changé. Le cas natif négatif et la fermeture du paquet complet restent
+à vérifier lors de la prochaine exécution Windows.
