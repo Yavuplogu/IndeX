@@ -21,7 +21,8 @@ en sombre dans une copie du HTML, ajouter `data-theme="dark"` à la balise `body
 
 ## Comportements utilisables
 
-- Catalogue de 716 épisodes : recherche de titre, tri alphabétique/date dans les
+- Catalogue de 716 épisodes : recherche dans les champs sélectionnés (titre, résumé,
+  sources, musiques), tri alphabétique/date dans les
   deux sens et filtres par statut d'écoute ; navigation Bibliothèque/Favoris.
 - Fiche avec onglets Résumé, Sources et Musiques ; références et morceaux dans
   des cadres séparés, avec libellés distincts des valeurs. Les sources conservent
@@ -42,7 +43,7 @@ en sombre dans une copie du HTML, ajouter `data-theme="dark"` à la balise `body
 
 ## Simulation et limites
 
-Les disponibilités MP3, écoutes et favoris sont **fictifs**. Les modifications
+Les disponibilités MP3, écoutes et favoris sont **fictifs**. Les chemins et modifications
 restent en mémoire pendant la session ; recharger la page rétablit les états de
 présentation. Aucune donnée personnelle de l'application n'est lue ou modifiée.
 
@@ -54,8 +55,11 @@ Précédent/suivant suivent le tri courant du catalogue parmi les MP3 marqués p
 l'aléatoire évite l'épisode courant quand plusieurs candidats sont disponibles.
 La répétition règle l'enchaînement en fin de simulation.
 
-La recherche HTML filtre les **titres** ; elle ne remplace pas le moteur FTS5 Dart.
-Le menu Fichiers est un emplacement visuel : sélection réelle de MP3, associations,
+La recherche HTML combine les termes dans les champs cochés ; elle ne remplace
+pas le moteur FTS5 Dart ni son classement. Au moins un champ est requis.
+Les chemins du démarrage et des Paramètres sont saisis comme exemples, sans
+vérification d’accès ni écriture. Le scan est simulé. Le menu Fichiers est un
+emplacement visuel : sélection réelle de MP3, associations,
 résolution d'anomalies et suivi persistant restent à raccorder dans l'application.
 Paramètres contient les entrées Renommage des MP3, Exporter le suivi JSON et
 Importer et fusionner un suivi JSON. Ces boutons ouvrent des aperçus de parcours
@@ -127,3 +131,76 @@ réel et Android restent au Lot 5 ; le renommage réel au Lot 5 bis ; le transfe
 JSON avec fusion réelle au Lot 5 ter. Les entrées correspondantes dans Paramètres
 fixent leur emplacement et leur parcours, sans annoncer ces fonctions comme livrées.
 La validation de la maquette ne lance pas, à elle seule, le développement du Lot 4.
+
+## Compléments Windows du 25 octobre 2026
+
+Les [spécifications complémentaires du Lot 4](../lot4/specifications.md) consignent
+les nouvelles exigences : archive portable sans installateur, dossier dédié aux
+données utilisateur, premier démarrage, report explicite du dossier MP3 et demande
+renouvelée aux ouvertures suivantes, visibilité de l'absence de dossier, sauvegarde
+avant fermeture et protection contre les arrêts brutaux.
+
+Le HTML ouvre une fenêtre de démarrage : dossier utilisateur exigé, et dossier MP3
+ou case « Préciser le dossier MP3 plus tard ». Les chemins sont fictifs dans
+la maquette. La croix capture un instantané en mémoire avant de fermer l'aperçu ;
+Rouvrir IndeX redemande les MP3 s'ils sont toujours non configurés. Un rafraîchissement
+du navigateur revient au premier démarrage : aucun suivi n'est écrit sur disque.
+Le dossier non configuré est distingué d'un fichier absent après scan.
+
+Les Paramètres reprennent les deux chemins. Le renommage explique la conversion
+exclusive nom historique → nom système du catalogue. Le transfert décrit les
+données incluses/exclues ; son aperçu d'export affiche un chemin dans `exports/`
+sous le dossier utilisateur et un nom daté sans espaces. Aucun JSON réel n'est créé.
+
+Les choix des champs de recherche sont manipulables, avec titres, résumés, auteurs,
+éditeurs et musiques. Le moteur natif devra recevoir cette sélection lors du
+raccordement de l'interface : l'API Dart actuelle ne la propose pas encore.
+
+Contrôles Chromium effectués : formulaire obligatoire/report, réouverture simulée,
+conservation du dossier utilisateur en session, configuration des dossiers dans
+Paramètres, recherche multi-champ, absence de faux « MP3 absent » sans dossier,
+chemin d'export sans espaces dans son nom, thèmes, dix lignes visibles et largeur
+mobile, sans requête réseau ni erreur JavaScript.
+
+### Raccourci réservé aux tests HTML
+
+Dans la fenêtre de démarrage, cocher **« Test HTML uniquement : ignorer la saisie
+des dossiers et ouvrir la maquette »** ferme immédiatement la fenêtre, sans
+exiger de chemin. Ce raccourci dispense du rappel au redémarrage simulé pour la
+session courante. Recharger la page rétablit le formulaire normal. Les chemins
+restent vides s'ils n'ont pas été saisis : aucun faux dossier n'est créé. Le mode
+de test affiche des disponibilités fictives, comme après un scan, pour retrouver
+les exemples de couleurs (présents, absents, écoutés) et manipuler le lecteur.
+L'indication « disponibilités MP3 — données simulées » distingue cet aperçu du
+parcours normal sans dossier MP3, qui conserve son avertissement et la lecture désactivée.
+
+La case est repérée par `data-html-test-only` et **doit être exclue du livrable
+Windows/Android**. Elle ne modifie pas l'exigence de dossier utilisateur obligatoire
+pour l'application réelle. Le parcours normal reste disponible en ne la cochant pas.
+
+### Disposition des réglages et recherche
+
+Dans Paramètres, l'ordre est **Apparence → Dossiers → Transfert du suivi → Fichiers audio**.
+La sélection des champs de recherche est placée immédiatement sous le champ de
+saisie ; le tri et le filtre d'écoute restent sous Bibliothèque. Cette disposition
+et les couleurs de démonstration sont communes aux thèmes clair et sombre.
+Enregistrer des dossiers explicitement quitte le mode de disponibilités fictives
+activé par le raccourci HTML et rétablit le parcours normal de configuration.
+
+Les quatre groupes de Paramètres (Apparence, Dossiers, Transfert du suivi, Fichiers
+audio) sont chacun encadrés. Deux boutons Fermer identiques, en haut à droite et
+en bas, ferment la même fenêtre. Le champ de recherche et la sélection des champs
+sont réunis dans un cadre, avec un espace sous les filtres avant Bibliothèque.
+Ces dispositions sont communes aux deux thèmes et vérifiées dans Chromium, avec
+dix épisodes visibles à 1440 × 900 et sans débordement à 390 × 844.
+
+La case **« Préciser le dossier MP3 plus tard »** est réservée au démarrage initial
+et aux démarrages suivants sans dossier MP3 configuré. Elle n'apparaît pas dans
+Paramètres : le champ de chemin reste modifiable, et le laisser vide retire la
+configuration sans supprimer le suivi.
+
+Le tri propose aussi **MP3 disponibles d'abord** et **MP3 absents d'abord**.
+Ces options conservent tous les épisodes, les regroupent par disponibilité et
+classent chaque groupe par date décroissante, puis identité stable. Sans dossier
+configuré ni mode de test, la disponibilité reste inconnue et le tri revient à
+la date décroissante, sans annoncer de fausses absences.
