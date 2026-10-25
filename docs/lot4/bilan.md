@@ -217,3 +217,29 @@ la même sonde réussisse après libération, pour distinguer un vrai verrou d'u
 Le test ciblé, incluant refus puis acquisition, réussit sur Linux. La suite complète
 réussit également : **174 tests Dart et 6 tests Flutter**, analyses sans problème.
 Une nouvelle exécution Windows reste nécessaire avant qualification.
+
+## Troisième exécution Windows — synchronisation du test de fermeture
+
+Les logs `logs_108975556785.zip` du commit `5a429c4` confirment la réussite de
+**tous les tests du cœur : 173 exécutés, 1 ignoré (SIGKILL POSIX)**. La sonde de
+verrou isolée réussit. L'analyse Flutter réussit également ; cinq tests Flutter
+passent, et seul le scénario de sauvegarde/fermeture échoue.
+
+Le message est `pumpAndSettle timed out`, après le délai fixe de 150 ms au second
+essai de fermeture. Le test reprenait son horloge simulée avant la fin des E/S
+réelles ; l'indicateur de sauvegarde restait donc actif. Attendre la fin des
+animations ne constitue pas une attente fiable de la sauvegarde disque.
+
+Le test attend maintenant les états observables avec une limite de 20 secondes,
+en laissant progresser les E/S et les frames de l'interface. Il vérifie toujours :
+
+- dossier de sauvegarde bloqué : erreur affichée, aucune demande de fermeture ;
+- après réparation : sauvegarde créée et session fermée avant la demande de destruction ;
+- réponse du système de fenêtre retenue par une barrière de test : la fenêtre
+  n'est considérée détruite qu'après libération de cette barrière ;
+- fermeture finale unique et nettoyage réussi.
+
+Les délais fixes de 50/150 ms ont été supprimés. La logique de sauvegarde de
+l'application n'est pas modifiée. Le test ciblé et la suite complète réussissent sur Linux : **174 tests Dart et
+6 tests Flutter**, sans problème d’analyse statique. Une nouvelle exécution Windows
+doit encore atteindre la recette native et la construction de l’archive.

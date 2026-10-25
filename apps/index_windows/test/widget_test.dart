@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,9 +8,14 @@ import 'package:index_windows/app_model.dart';
 import 'package:index_windows/window_port.dart';
 
 final class FakeWindow implements WindowPort {
+  FakeWindow({this.destroyGate});
+  final Future<void>? destroyGate;
+  bool closeRequested = false;
   int destroyed = 0;
   @override
   Future<void> destroy() async {
+    closeRequested = true;
+    if (destroyGate != null) await destroyGate;
     destroyed++;
   }
 
@@ -18,6 +24,32 @@ final class FakeWindow implements WindowPort {
   @override
   Future<void> maximizeOrRestore() async {}
 }
+
+// pumpAndSettle ne fait pas attendre les E/S réelles : leur laisser progresser
+// jusqu'à l'état attendu, avec un délai maximal, puis terminer les animations.
+Future<void> waitForCondition(
+  WidgetTester tester,
+  bool Function() condition,
+  String description,
+) async {
+  final watch = Stopwatch()..start();
+  while (!condition()) {
+    if (watch.elapsed > const Duration(seconds: 20)) {
+      fail('État attendu non atteint : $description');
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+  }
+}
+
+Future<void> waitForWidget(WidgetTester tester, Finder finder) =>
+    waitForCondition(
+      tester,
+      () => finder.evaluate().isNotEmpty,
+      finder.toString(),
+    );
 
 void main() {
   testWidgets(
@@ -115,25 +147,43 @@ void main() {
       final portable = Directory('${root.path}/app')..createSync(),
           data = Directory('${root.path}/data')..createSync();
       final model = AppModel(portableDirectory: portable);
-      final window = FakeWindow();
+      final destroyGate = Completer<void>();
+      final window = FakeWindow(destroyGate: destroyGate.future);
       await tester.runAsync(() => model.configure(data.path, '', true));
       final blocker = File('${data.path}/sauvegardes')
         ..writeAsStringSync('blocage');
       await tester.pumpWidget(IndeXApp(model: model, window: window));
-      await tester.runAsync(() async {
-        await tester.tap(find.byTooltip('Fermer'));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      });
+      await tester.runAsync(() => tester.tap(find.byTooltip('Fermer')));
+      await waitForWidget(tester, find.text('Sauvegarde impossible'));
       await tester.pumpAndSettle();
       expect(find.text('Sauvegarde impossible'), findsOneWidget);
       expect(window.destroyed, 0);
+      expect(window.closeRequested, isFalse);
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
       blocker.deleteSync();
-      await tester.runAsync(() async {
-        await tester.tap(find.byTooltip('Fermer'));
-        await Future<void>.delayed(const Duration(milliseconds: 150));
-      });
+      await tester.runAsync(() => tester.tap(find.byTooltip('Fermer')));
+      await waitForCondition(
+        tester,
+        () => window.closeRequested,
+        'sauvegarde validée puis demande de fermeture',
+      );
+      // La sauvegarde doit être validée avant même de demander la destruction.
+      expect(
+        File('${data.path}/sauvegardes/IndeX_derniere_sauvegarde.sqlite')
+            .existsSync(),
+        isTrue,
+      );
+      expect(model.session, isNull);
+      expect(window.destroyed, 0);
+      // Le système de fenêtre peut lui aussi répondre de manière asynchrone.
+      destroyGate.complete();
+      await tester.pump();
+      await waitForCondition(
+        tester,
+        () => window.destroyed == 1,
+        'fermeture effective',
+      );
       await tester.pumpAndSettle();
       expect(window.destroyed, 1);
       await tester.pumpWidget(const SizedBox());
