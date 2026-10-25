@@ -33,6 +33,13 @@ void main() {
     (tester) async {
       expect(Platform.isWindows, isTrue);
       await windowManager.ensureInitialized();
+      await windowManager.waitUntilReadyToShow(
+        const WindowOptions(
+          title: 'IndeX — recette native',
+          size: Size(1280, 900),
+        ),
+      );
+      await windowManager.show();
       await windowManager.setPreventClose(true);
       final probe = CloseProbe();
       windowManager.addListener(probe);

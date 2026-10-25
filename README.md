@@ -9,10 +9,11 @@ la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le
 contrôles Linux passent ; le workflow de construction et de recette Windows est
 préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
 
-La quatrième exécution Windows valide les tests du cœur, les widgets et la recette
-native, puis construit IndeX.exe en Release. La préparation de l'archive a échoué
-sur la sélection du runtime Microsoft ; le résolveur corrigé et ses contrôles
-PowerShell sont prêts pour une nouvelle exécution (voir le bilan).
+La cinquième exécution Windows valide les tests et la recette native, construit
+IndeX.exe en Release et crée le ZIP portable. Le test du ZIP extrait révèle un
+crash natif à la fermeture (`0xC000041D`). Le parcours de fermeture et l'ordre de
+destruction du moteur sont corrigés, avec diagnostics conservés par le workflow ;
+leur validation Windows reste à faire (voir le bilan).
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)

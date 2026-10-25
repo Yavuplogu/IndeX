@@ -31,3 +31,9 @@ L'archive comprend les DLL Flutter/plugins/SQLite et le runtime C++ app-local,
 les notices de dépendances et un manifeste de fichiers. Ces outils refusent les MP3
 et les bases/configurations personnelles dans la distribution. Ils ne créent
 ni installateur ni publication GitHub Release.
+
+Le test de l'archive écrit `dist/diagnostics-smoke/` : sorties standard/erreur,
+étape atteinte et code de sortie dans `resultat.json`, événements d'erreur Windows
+concernant IndeX si disponibles. Le workflow les conserve dans l'artefact
+`IndeX-windows-diagnostics`, même en cas d'échec ; le paquet portable n'est publié
+comme artefact qu'après réussite du test.

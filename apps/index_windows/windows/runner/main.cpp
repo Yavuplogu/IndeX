@@ -38,6 +38,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  // Plugins/Flutter must be destroyed while COM is still initialized, also if
+  // the message loop ended via WM_QUIT rather than WM_DESTROY.
+  window.Destroy();
   ::CoUninitialize();
   return EXIT_SUCCESS;
 }

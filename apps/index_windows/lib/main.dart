@@ -36,10 +36,11 @@ Future<void> main() async {
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,
     ),
-    () async {
-      await windowManager.show();
-      await windowManager.focus();
-    },
   );
+  // Ne montrer la fenêtre qu'après la création des widgets et l'enregistrement
+  // du listener de fermeture, au lieu d'exposer un HWND encore en démarrage.
+  await WidgetsBinding.instance.endOfFrame;
+  await windowManager.show();
+  await windowManager.focus();
   await model.boot();
 }

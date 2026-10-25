@@ -1,9 +1,10 @@
 # Lot 4 — GUI Windows portable
 
-Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. La quatrième
-exécution GitHub Actions valide les tests Windows et construit **IndeX.exe en
-Release**, mais l'empaquetage du runtime Microsoft a échoué. L'archive portable et
-son test de lancement restent à valider avant de qualifier le paquet Windows.
+Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. La cinquième
+exécution GitHub Actions valide les tests Windows, construit **IndeX.exe en
+Release** et crée le ZIP portable. Le test du ZIP extrait révèle un crash natif
+à la fermeture. Le correctif de cycle de vie reste à valider sous Windows avant
+de qualifier le paquet.
 Le lecteur audio réel et Android restent au Lot 5 ; renommage et JSON aux Lots 5 bis/5 ter.
 
 ## Livrable et comportement
@@ -109,7 +110,7 @@ Sur cet hôte Linux x64 :
 bash tools/lot4/check.sh
 ```
 
-Résultats : **174 tests Dart + 6 tests Flutter réussis**, formatage conforme et
+Résultats : **174 tests Dart + 7 tests Flutter réussis**, formatage conforme et
 analyses statiques sans problème. Les tests Flutter exécutent bien SQLite natif
 et chargent le seed via le bundle, au-delà d'un rendu de données fictives.
 
@@ -149,17 +150,18 @@ dans les tests du cœur ; voir le diagnostic à la fin de ce bilan :
 5. Conservation de l'archive et de son SHA-256 comme artefact CI après succès.
 
 Les logs successifs ci-dessous documentent la progression réelle du workflow.
-La quatrième exécution réussit les tests du cœur, les widgets et le test d'intégration
-natif, puis construit le binaire Release. **Aucune archive portable finale ni
-validation Android ne sont encore revendiquées.** La sélection du runtime est
-corrigée et testée sous PowerShell sur Linux ; la copie des DLL et le test du paquet
-extrait doivent encore réussir sur Windows.
+La cinquième exécution réussit les tests du cœur, les widgets et le test d'intégration
+natif, puis construit le binaire Release et le ZIP avec runtime Microsoft.
+**Aucun paquet Windows qualifié ni validation Android ne sont encore revendiqués.**
+Le processus du ZIP extrait plante à la fermeture ; le correctif ci-dessous doit
+encore réussir cette étape sous Windows. Le workflow conserve désormais les
+diagnostics séparément, y compris en cas d'échec du test du paquet.
 
 À compléter sur le paquet Windows précis : sélecteurs natifs avec annulation/permissions,
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
-du livrable Windows ; elle n'est pas remplacée par les 180 tests Linux.
+du livrable Windows ; elle n'est pas remplacée par les 181 tests Linux.
 
 ## Première exécution Windows — diagnostic des logs
 
@@ -285,3 +287,44 @@ chaînes PowerShell entre apostrophes simples de `smoke_archive.ps1`. Ces chaîn
 sont corrigées avant que cette étape ne soit atteinte. Le contrôle rapide du
 workflow analyse désormais tous les scripts PowerShell, en plus des cas du
 résolveur, pour détecter ces erreurs avant la compilation.
+
+## Cinquième exécution Windows — crash à la fermeture du ZIP extrait
+
+Les logs `logs_108982078950.zip` du commit `a41351f` confirment :
+
+- tous les tests exécutés réussissent (173 du cœur, 1 ignoré, 6 Flutter et 1 recette native) ;
+- compilation Release et sélection du runtime x64 `14.44.35112` réussies ;
+- création de `IndeX_0.4.0_windows_x64_portable.zip` ;
+- fenêtre du paquet extrait détectée, demande de fermeture acceptée, puis arrêt
+  avec le code **-1073740771**, soit **`0xC000041D`**.
+
+Ce code signale une exception fatale dans un callback Windows. Les logs ne
+contiennent ni pile native ni module fautif : l'attribution précise du crash
+reste à confirmer. Le test continue de refuser toute sortie non nulle.
+
+Le parcours existant appelait `windowManager.destroy()`, qui envoie directement
+`PostQuitMessage(0)` sous Windows. Cela court-circuite la destruction normale de
+la fenêtre ; le runner pouvait ensuite libérer COM avant le moteur Flutter et
+ses plugins. Le correctif remplace cette sortie forcée par la désactivation de
+l'interception de fermeture, puis une demande normale `WM_CLOSE`, uniquement
+après validation de la sauvegarde. Le runner appelle également `window.Destroy()`
+avant `CoUninitialize()` si la boucle de messages se termine autrement. L'accès
+au moteur lors de `WM_FONTCHANGE` est protégé pendant sa destruction.
+
+La fenêtre n'est plus montrée automatiquement par le premier rendu C++ : Dart
+l'affiche une fois les options appliquées et le listener de fermeture enregistré.
+La recette native affiche explicitement sa fenêtre pour conserver son parcours.
+Un test Flutter vérifie l'ordre des appels de fermeture ; les tests existants
+continuent de vérifier qu'un échec de sauvegarde empêche de fermer.
+
+Le test du ZIP conserve désormais les sorties du processus, le code de sortie
+numérique et hexadécimal, l'étape atteinte et, en cas d'échec, les événements
+Windows Application 1000/1001 concernant IndeX lorsqu'ils sont disponibles.
+L'artefact `IndeX-windows-diagnostics` est téléversé même en cas d'échec ; cela
+ne rend pas le ZIP défaillant admissible comme livrable.
+
+Vérifications exécutées sur Linux : `bash tools/lot4/check.sh` réussit avec
+**174 tests Dart et 7 tests Flutter**, formatage et analyses sans problème.
+PowerShell 7.5.4 valide la syntaxe de tous les scripts du Lot 4 et les cas du
+résolveur CRT. La disparition du crash natif doit encore être vérifiée par une
+nouvelle exécution Windows ; aucun résultat local ne la démontre.

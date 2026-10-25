@@ -18,5 +18,10 @@ final class NativeWindowPort implements WindowPort {
   }
 
   @override
-  Future<void> destroy() => windowManager.destroy();
+  Future<void> destroy() async {
+    // La sauvegarde est déjà validée. Repasser par WM_CLOSE pour laisser le
+    // runner détruire le moteur et les plugins avant de quitter la boucle.
+    await windowManager.setPreventClose(false);
+    await windowManager.close();
+  }
 }

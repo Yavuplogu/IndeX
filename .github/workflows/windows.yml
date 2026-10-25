@@ -34,5 +34,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: IndeX-windows-x64-portable
-          path: dist/*
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
           if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: IndeX-windows-diagnostics
+          path: dist/diagnostics-smoke/*
+          if-no-files-found: ignore
