@@ -36,6 +36,7 @@ explicitement lancé le 24 octobre 2026.
 | D23 | Lot 3 : FTS5 externe, migration v3, triggers sur `episodes` | Titre/description/sources/musique indexés atomiquement ; migration des fiches existantes, reconstruction et contrôle FTS avec comparaison du contenu. |
 | D24 | Requêtes littérales AND, unicode61 remove_diacritics 2, BM25 10/1/2/1 | Bornes et paramètres SQL ; extraits en texte brut, filtres relationnels. Aucune lemmatisation/sémantique annoncée ; Windows/Android restent à qualifier. |
 | D25 | Interface Éditorial validée pour le Lot 4 le 25 octobre 2026 | HTML autonome de référence, apparence claire/sombre dans Paramètres, catalogue compact, sources/musiques structurées et lecteur compact. Audio et suivi simulés ; aucune validation native implicite. Voir la [référence UI](../ui/README.md). |
+| D26 | Dernière révision Éditorial confirmée comme référence du Lot 4 le 25 octobre 2026 | Remplace la présentation antérieure : commandes de fenêtre, sous-titre du logo, suppression de Fiche précédente, titres des références/morceaux en en-tête, valeur vide « Aucune donnée », fond des épisodes connexes harmonisé, lettrine et police du lecteur. Les aperçus renommage/JSON sont dans Paramètres ; leurs implémentations restent aux Lots 5 bis/5 ter. Voir les [ajustements validés](../ui/README.md#ajustements-validés--25-octobre-2026). |
 
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,

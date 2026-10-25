@@ -8,6 +8,11 @@ les associations MP3–TXT, la persistance SQLite et la recherche FTS5. Le corpu
 716 TXT et 716 entrées CSV ; six MP3 servent aux tests. Aucune application GUI
 n'est encore livrée. La validation des distributions Windows/Android reste à effectuer.
 
+La dernière révision de la maquette Éditorial, claire et sombre, a été validée le
+25 octobre 2026 comme référence visuelle du Lot 4. Elle inclut les commandes de
+fenêtre, les cadres Sources/Musiques révisés, la lettrine et les entrées des futurs
+parcours de renommage et de transfert JSON dans Paramètres. Le lecteur HTML reste simulé.
+
 - [Interface Éditorial validée pour le Lot 4 — HTML autonome et utilisation](docs/ui/README.md)
 - [Lot 3 : recherche FTS5, extraits et validation](docs/lot3/bilan.md)
 - [Lot 2 : catalogue, import, associations, migrations et anomalies](docs/lot2/bilan.md)

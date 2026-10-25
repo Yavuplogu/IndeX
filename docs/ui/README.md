@@ -1,6 +1,8 @@
 # Interface Éditorial validée pour le Lot 4
 
-**Validée par l'utilisateur le 25 octobre 2026.** Cette version constitue la
+**Dernière révision validée par l’utilisateur le 25 octobre 2026**, après les
+ajustements des commandes de fenêtre, des cadres documentaires, de la lettrine
+et des Paramètres. Cette version remplace la maquette précédemment validée et constitue la
 référence visuelle et interactive pour le Lot 4 (GUI Windows), avec une déclinaison
 mobile et deux apparences, claire et sombre. Cette validation porte sur la maquette ;
 elle ne constitue pas une validation d'une distribution Windows ou Android.
@@ -23,9 +25,10 @@ en sombre dans une copie du HTML, ajouter `data-theme="dark"` à la balise `body
   deux sens et filtres par statut d'écoute ; navigation Bibliothèque/Favoris.
 - Fiche avec onglets Résumé, Sources et Musiques ; références et morceaux dans
   des cadres séparés, avec libellés distincts des valeurs. Les sources conservent
-  leurs 1 896 références et les musiques leurs 614 morceaux.
-- Épisodes connexes cliquables avec titre et date côte à côte, puis retour à la
-  fiche précédente. `data-original-name` et `data-episode-id` conservent les identités
+  leurs 1 896 références et les musiques leurs 614 morceaux. Le nom de la référence
+  ou du morceau est l’en-tête du cadre ; les lignes Référence et Morceau ne sont
+  pas répétées. Un nom de morceau vide affiche « Aucune donnée ».
+- Épisodes connexes cliquables avec titre et date côte à côte, sans bouton de retour à une fiche précédente. `data-original-name` et `data-episode-id` conservent les identités
   techniques sans afficher le nom historique `.mp3`.
 - Boutons Écouté/Non écouté et Favori, indépendants de la disponibilité audio.
   Retour à Non écouté après confirmation, avec remise à zéro de la progression.
@@ -54,7 +57,9 @@ La répétition règle l'enchaînement en fin de simulation.
 La recherche HTML filtre les **titres** ; elle ne remplace pas le moteur FTS5 Dart.
 Le menu Fichiers est un emplacement visuel : sélection réelle de MP3, associations,
 résolution d'anomalies et suivi persistant restent à raccorder dans l'application.
-L'export/import JSON et le renommage ne sont pas implémentés dans ce HTML.
+Paramètres contient les entrées Renommage des MP3, Exporter le suivi JSON et
+Importer et fusionner un suivi JSON. Ces boutons ouvrent des aperçus de parcours
+pour les Lots 5 bis/5 ter, sans renommage, export ou import réel.
 
 ## Actualiser le catalogue intégré
 
@@ -86,3 +91,39 @@ Contrôles exécutés dans **Chromium sous Linux**, le 25 octobre 2026 :
 - fonctionnement du fichier autonome sans requête réseau, aucune erreur JavaScript.
 
 Ces contrôles ne remplacent pas la recette Windows/Android des futurs packages.
+
+## Ajustements validés — 25 octobre 2026
+
+- Commandes de fenêtre en haut à droite sur ordinateur : réduire/restaurer,
+  agrandir/restaurer et fermer/rouvrir l'aperçu. Elles agissent seulement sur le
+  cadre HTML ; elles ne ferment pas l'onglet du navigateur. Masquées sur mobile.
+- Logo suivi de « Recherche et écoute de Rendez-Vous avec X ».
+- Bouton Fiche précédente supprimé. Les épisodes connexes restent cliquables.
+- Titres des références et morceaux en tête de cadre, avec la typographie et la
+  couleur des anciens en-têtes Source/Musique. Les lignes Référence et Morceau
+  sont supprimées ; les autres champs sont conservés. Si le nom du morceau est
+  vide, l’en-tête affiche « Aucune donnée ».
+- Fond d'Épisodes connexes identique à celui des libellés Auteur/Éditeur.
+- Lettrine de résumé : police du titre de la fiche et couleur de l'onglet Résumé.
+  Le titre du lecteur reprend également cette police.
+- Aperçus des parcours de renommage et de transfert manuel du suivi dans Paramètres.
+
+Ces ajustements ont été contrôlés dans Chromium en clair et sombre : noms des
+cadres et valeur de repli, lettrine et couleurs, commandes de fenêtre, paramètres,
+liens connexes, lecteur, dix lignes visibles sur ordinateur et largeur mobile,
+sans requête réseau ni erreur JavaScript. La régénération du catalogue conserve
+les modifications de présentation.
+
+## Portée de la validation pour le développement
+
+La présente validation couvre la structure, les deux thèmes, les règles de
+présentation et les interactions démontrées dans ce HTML. Elle complète le cahier
+des charges V1.4 et les décisions techniques ; les règles métier de durabilité,
+d'association et de sécurité continuent de s'appliquer.
+
+Pour le Lot 4, utiliser cette révision comme référence de la GUI Windows, en
+raccordant le catalogue SQLite/FTS5 et les parcours prévus par ce lot. Le lecteur
+réel et Android restent au Lot 5 ; le renommage réel au Lot 5 bis ; le transfert
+JSON avec fusion réelle au Lot 5 ter. Les entrées correspondantes dans Paramètres
+fixent leur emplacement et leur parcours, sans annoncer ces fonctions comme livrées.
+La validation de la maquette ne lance pas, à elle seule, le développement du Lot 4.

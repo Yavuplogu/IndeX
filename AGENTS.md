@@ -12,6 +12,11 @@
   cette validation ne demande pas à elle seule le développement de l'application du Lot 4.
   Conserver les thèmes clair/sombre, le lecteur compact, les sources/musiques structurées
   et les identités techniques masquées. Le HTML simule l'audio et le suivi en mémoire.
+  La dernière révision du 25 octobre 2026 est validée : logo et sous-titre dans la
+  navigation, commandes de fenêtre, aucun bouton Fiche précédente ; noms des références
+  et morceaux en en-tête de cadre, sans lignes Référence/Morceau répétées, morceau vide
+  affiché « Aucune donnée ». Lettrine du résumé et titre du lecteur dans la police de
+  la fiche. Renommage/export/import dans Paramètres restent des aperçus des Lots 5 bis/5 ter.
 - Appliquer l'addendum `docs/regle-association-COMM.md` avant la règle COMM de la V1.4 :
   un seul identifiant soutenu par au moins deux trames distinctes prime sur les autres
   commentaires isolés. Conserver les commentaires écartés dans le diagnostic ; plusieurs
