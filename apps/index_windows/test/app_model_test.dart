@@ -33,7 +33,10 @@ void main() {
       expect(model!.error, isEmpty);
       expect(model!.needsSetup, isTrue);
       expect(model!.catalog.firstWhere((e) => e.id == id).favorite, isTrue);
-      expect(model!.dataPath, data.path);
+      expect(
+        FileSystemEntity.identicalSync(model!.dataPath, data.path),
+        isTrue,
+      );
       model!.sort = CatalogSort.titleAZ;
       model!.reload();
       final first = model!.visible.indexWhere((e) => e.title == "L'échange");

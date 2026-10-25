@@ -9,6 +9,10 @@ la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le
 contrôles Linux passent ; le workflow de construction et de recette Windows est
 préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
 
+La première exécution Windows s'est arrêtée pendant les tests du cœur. Les correctifs
+sur les fins de ligne Git et les tests de chemins/verrou sont préparés ; une nouvelle
+exécution Windows reste nécessaire (voir le diagnostic dans le bilan).
+
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)
 - [Mode d'emploi Windows](docs/lot4/UTILISATION_WINDOWS.md)

@@ -135,7 +135,9 @@ reproductible continuent de réussir. Le SIGKILL POSIX reste ignoré sous Window
 
 ## Porte de validation Windows restante
 
-Le [workflow Windows](../../.github/workflows/windows.yml) est préparé, non exécuté ici :
+Le [workflow Windows](../../.github/workflows/windows.yml) est préparé pour les étapes
+ci-dessous. Sa première exécution, rapportée par les logs utilisateur, a échoué
+dans les tests du cœur ; voir le diagnostic à la fin de ce bilan :
 
 1. Tests du cœur et widgets sur Windows-2022 avec SDK épinglé.
 2. Test d'intégration natif : chargement du seed, FTS5, six MP3 du dépôt, suivi et
@@ -145,12 +147,44 @@ Le [workflow Windows](../../.github/workflows/windows.yml) est préparé, non ex
    via demande Windows, vérification de l'absence de profil créé sans choix utilisateur.
 5. Conservation de l'archive et de son SHA-256 comme artefact CI après succès.
 
-Le workflow pourra s'exécuter après commit/push. **Aucune archive Windows construite,
-aucun test Windows/Android exécuté ni recette utilisateur sur machine Windows propre
-ne sont revendiqués.** Les scripts PowerShell n'ont pas été exécutés sur cet hôte Linux.
+Le correctif pourra être retesté après commit/push. **Aucune archive Windows construite,
+aucune recette native complète ni validation Android ne sont revendiquées.**
+La première exécution Windows a atteint les tests du cœur, avec des échecs détaillés
+ci-dessous. Les scripts PowerShell n'ont pas été exécutés sur cet hôte Linux.
 
 À compléter sur le paquet Windows précis : sélecteurs natifs avec annulation/permissions,
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
 du livrable Windows ; elle n'est pas remplacée par les 180 tests Linux.
+
+## Première exécution Windows — diagnostic des logs
+
+L'archive `logs_108969435751.zip`, fournie par l'utilisateur le 25 octobre 2026,
+porte sur le commit `7fcd5b5`. Le SDK est installé et l'analyse Dart réussit, puis
+les tests du cœur s'arrêtent avec **163 réussites, 1 test ignoré (SIGKILL POSIX)
+et 10 échecs**. Les widgets, la recette native et la construction n'ont pas encore
+été exécutés par ce workflow ; aucune archive portable n'a été produite.
+
+Les échecs se répartissent ainsi :
+
+- Six contrôles de descriptions TXT et l'extraction exacte du Masque de fer : le
+  checkout Windows transforme les fins de ligne LF en CRLF. Les longueurs et les
+  octets divergent des fixtures de référence. Ajout de `.gitattributes` avec
+  `-text` sur le corpus et les fixtures : les octets doivent être conservés sur
+  toutes les plateformes. Aucun hash, TXT, CSV, MP3 ou résultat attendu n'est modifié.
+- Deux assertions de chemins : Windows renvoie la forme canonique longue
+  `runneradmin` au lieu de l'alias court `RUNNER~1`, avec des séparateurs différents.
+  Les tests vérifient désormais l'identité réelle du dossier, pas l'égalité de sa
+  représentation textuelle. Le même correctif est appliqué au test du modèle GUI.
+- Le test du second processus reçoit un échec non diagnostiqué. Sous Windows,
+  l'ouverture du fichier déjà verrouillé peut échouer avant l'appel à `lock`.
+  Le processus de contrôle capture les deux étapes, fournit un diagnostic JSON,
+  et le test exige le code de refus attendu et ce diagnostic ; un échec arbitraire
+  de lancement reste un échec du test, avec stdout/stderr dans le rapport.
+
+Le comportement de checkout a été reproduit avec `core.autocrlf=true` : les six
+TXT sont désormais restitués octet pour octet ; un chemin témoin non protégé subit
+bien la conversion. Les contrôles Linux du cœur et de l’application ont été rejoués : **174 tests Dart
+et 6 tests Flutter réussis**, analyses statiques sans problème.
+Une nouvelle exécution Windows reste nécessaire après publication du correctif.

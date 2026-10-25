@@ -59,7 +59,13 @@ void main() {
       await File('${portable.path}/index-portable.json').readAsString(),
     ) as Map;
     expect(pointer.keys.toSet(), {'version', 'data_directory'});
-    expect(PortableSession.configuredDirectory(portable)?.path, data.path);
+    expect(
+      FileSystemEntity.identicalSync(
+        PortableSession.configuredDirectory(portable)!.path,
+        data.path,
+      ),
+      isTrue,
+    );
     final after = await start(existing: true);
     final entry = after.episodes().firstWhere((e) => e.id == id);
     expect(entry.favorite, isTrue);
@@ -166,7 +172,16 @@ void main() {
     expect(
       result.exitCode,
       3,
-      reason: 'Un second processus ne doit pas ouvrir les données en écriture.',
+      reason:
+          'Un second processus ne doit pas ouvrir les données en écriture.\nstdout: ${result.stdout}\nstderr: ${result.stderr}',
+    );
+    final lines = (result.stdout as String)
+        .split('\n')
+        .where((line) => line.trim().startsWith('{'));
+    expect(lines, isNotEmpty);
+    expect(
+      (jsonDecode(lines.last) as Map<String, dynamic>)['status'],
+      'blocked',
     );
   });
 
@@ -208,7 +223,13 @@ void main() {
       await File('${data.path}/index-utilisateur.sqlite').exists(),
       isTrue,
     );
-    expect(PortableSession.configuredDirectory(portable)?.path, target.path);
+    expect(
+      FileSystemEntity.identicalSync(
+        PortableSession.configuredDirectory(portable)!.path,
+        target.path,
+      ),
+      isTrue,
+    );
     final occupied = await Directory('${root.path}/occupe').create();
     await File('${occupied.path}/garder').writeAsString('ok');
     await expectLater(next.relocate(occupied), throwsStateError);
