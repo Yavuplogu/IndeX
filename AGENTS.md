@@ -69,3 +69,13 @@
   avant vérification licence, API, versions, plateformes et absence d'accès réseau à l'usage.
 - Ne pas committer automatiquement ni ajouter des archives SDK, venv, bases temporaires
   ou MP3 supplémentaires. Ne jamais supprimer des fichiers existants pour satisfaire un test.
+
+- Nouvelle disposition portable autorisée : `IndeX/IndeX.exe` est le seul fichier
+  racine (lanceur C++ CRT statique). Bundle réel dans `application/`, notices dans
+  `documentation/`, pointeur dans `application/index-portable.json`. Tester le ZIP
+  via le lanceur et contrôler aussi le processus enfant ; ne pas masquer son code
+  de sortie. Test d'assemblage : `tools/lot4/test_portable_windows.ps1`.
+- Les derniers ajustements de fiche priment sur les simulations HTML antérieures :
+  mesure/rendu identiques de la lettrine, deux lignes exactes, ponctuation initiale
+  avec première lettre/chiffre ; correspondances encadrées dans les onglets et
+  navigation persistante. Voir la fin de `docs/lot4/specifications.md`.

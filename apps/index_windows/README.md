@@ -37,3 +37,11 @@ Le test de l'archive écrit `dist/diagnostics-smoke/` : sorties standard/erreur,
 concernant IndeX si disponibles. Le workflow les conserve dans l'artefact
 `IndeX-windows-diagnostics`, même en cas d'échec ; le paquet portable n'est publié
 comme artefact qu'après réussite du test.
+
+
+Le ZIP s'ouvre sur `IndeX/IndeX.exe`, unique fichier à sa racine. Ce lanceur C++
+avec CRT statique démarre le bundle Flutter de `application/` et transmet son code
+de sortie. Les notices sont dans `documentation/` ; les ressources, DLL et le
+pointeur utilisateur restent dans `application/`. Tester la disposition sans
+compilation : `./tools/lot4/test_portable_windows.ps1`. Le smoke test Windows ferme
+la fenêtre du processus enfant et vérifie aussi la fin du lanceur.

@@ -7,9 +7,10 @@ restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
 
 ## Démarrer
 
-1. Extraire **toute l'archive** dans un dossier accessible en écriture, puis lancer
-   `IndeX.exe`. Aucun installateur, compte, téléchargement ou droit administrateur.
-   Conserver les DLL et le dossier `data` à côté de l'exécutable.
+1. Extraire **toute l'archive**, ouvrir le dossier **IndeX** puis lancer son unique
+   fichier `IndeX.exe`. Aucun installateur, compte, téléchargement ou droit administrateur.
+   Conserver les sous-dossiers `application/` et `documentation/` avec ce lanceur.
+   Le dossier extrait doit être accessible en écriture.
 2. Choisir un dossier dédié aux données utilisateur. La base de travail, les favoris,
    les liens et les sauvegardes y seront enregistrés. Ce dossier est obligatoire.
 3. Choisir le dossier des MP3, ou cocher « Préciser le dossier MP3 plus tard ».
@@ -17,8 +18,8 @@ restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
 4. Si les MP3 sont fournis, attendre le scan. Le menu Fichiers montre les concordances
    et diagnostics ; les fichiers ambigus peuvent être associés après confirmation.
 
-Le fichier `index-portable.json` à côté de l'exécutable mémorise le chemin du dossier
-utilisateur. Aucun dossier utilisateur ne sera recréé silencieusement s'il manque.
+Le fichier `application/index-portable.json` mémorise le chemin du dossier
+utilisateur. La racine reste limitée au lanceur et aux sous-dossiers. Aucun dossier utilisateur ne sera recréé silencieusement s'il manque.
 Déplacer uniquement l'application ne déplace pas vos données ni vos MP3. Le dossier
 MP3 non configuré est demandé à chaque démarrage, avec la même possibilité de report.
 Les emplacements et le choix de thème se retrouvent dans Paramètres.
@@ -26,8 +27,13 @@ Les emplacements et le choix de thème se retrouvent dans Paramètres.
 ## Consulter et rechercher
 
 Choisir les champs Titre, Résumé, Sources et/ou Musiques. Au moins un champ est
-nécessaire. La recherche ignore casse et accents, combine les termes et affiche
-un extrait ; le titre a un poids plus élevé. Les tris incluent les dates, les
+nécessaire. La recherche se déclenche dès trois caractères et accepte les débuts
+de mots (« Yougo » trouve « Yougoslavie »). Elle ignore casse et accents et exige
+l'ensemble des termes ; le titre a un poids plus élevé. Les correspondances sont
+encadrées sur fond rouge clair, en rouge et en gras dans les onglets. Le cadre
+« Résultat de la recherche » explique ces repères ; les boutons Match précédent /
+Match suivant changent d'onglet et font défiler la fiche jusqu'au texte trouvé.
+Ces boutons restent accessibles pendant le défilement. Les tris incluent les dates, les
 noms et les MP3 présents/absents. L'onglet Sources ouvre aussi les épisodes connexes.
 
 Le bouton Favori enregistre immédiatement le choix. Le statut Écouté peut être
@@ -57,3 +63,30 @@ partielle peut rester dans la destination ; ne pas la prendre pour une sauvegard
 
 Cible : Windows 10/11 x64. La validation du paquet précis distribué doit être consultée
 avec son rapport de construction et de recette Windows.
+
+
+## Organisation et mise à jour du dossier portable
+
+```text
+IndeX/
+├── IndeX.exe                 ← double-cliquer ici
+├── application/              ← programme Flutter, DLL et ressources
+│   ├── IndeX.exe
+│   ├── data/
+│   └── index-portable.json   ← créé après choix du dossier utilisateur
+└── documentation/
+    ├── LISEZ-MOI.md
+    ├── manifest-fichiers.json
+    └── licences/
+```
+
+Le lanceur et le programme portent la même icône X. Ne pas extraire seulement le
+lanceur, ni déplacer les DLL séparément. Les MP3 et données utilisateur restent
+aux emplacements choisis ; ils ne sont pas dans l'archive.
+
+Pour passer de l'ancienne archive plate à cette présentation, fermer IndeX,
+extraire le nouveau ZIP dans un nouveau dossier et copier l'ancien
+`index-portable.json` vers `application/index-portable.json` pour retrouver le même
+dossier utilisateur. Conserver l'ancien dossier jusqu'à vérification du suivi.
+Sans ce pointeur, indiquer le dossier de données existant au premier lancement ;
+ne pas choisir un dossier vide pour retrouver un suivi existant.

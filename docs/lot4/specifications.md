@@ -18,7 +18,7 @@ cohérentes et les exports JSON. Sous-dossiers proposés : `sauvegardes/` et `ex
 Le catalogue de référence livré reste distinct de la base de travail.
 
 Choix technique proposé pour retrouver ce dossier aux ouvertures suivantes : un
-petit `index-portable.json` à côté de l'exécutable conserve uniquement son chemin
+petit `application/index-portable.json` conserve uniquement son chemin
 et la version de configuration. L'archive extraite doit donc pouvoir écrire ce
 fichier ; sinon afficher l'erreur et demander un emplacement accessible. Ne pas
 basculer silencieusement vers AppData ou un dossier temporaire. Les dossiers choisis
@@ -227,3 +227,33 @@ Demandes utilisateur complémentaires :
   sélectionnable. Export TXT UTF-8 dans `exports/` du dossier utilisateur,
   sous `IndeX_diagnostic_scan_<horodatage_UTC>.txt`, sans espace. Le fichier
   comprend messages, sources et rapport complet, sans modifier les MP3.
+
+
+## Nouvelle présentation portable et corrections de la fiche
+
+Les demandes suivantes complètent les ajustements précédents :
+
+- Le ZIP contient un dossier `IndeX/`, avec **un seul fichier à sa racine :
+  `IndeX.exe`**, le lanceur. Les composants Flutter restent ensemble dans
+  `application/`, les notices et le manifeste dans `documentation/`. Le pointeur
+  vers le dossier utilisateur est créé dans `application/`. Le lanceur est sans
+  installateur ni dépendance DLL à sa racine ; il attend le programme et transmet
+  son code de sortie. Le test du ZIP doit lancer ce fichier visible.
+- Même icône X typographique pour le lanceur et le programme. Barre de fenêtre
+  légèrement grisée, distincte du panneau principal en clair comme en sombre.
+- Haut du logo, cadre de recherche et titre de fiche alignés sur la même marge.
+- Lettrine sur deux lignes exactes, sans troisième ligne étroite ni ligne vide
+  ajoutée sous la lettrine. Mesure et rendu utilisent les mêmes styles de police,
+  surlignages et facteur d'agrandissement. La ponctuation initiale est groupée avec
+  la première lettre ou le premier chiffre, y compris après guillemets/apostrophes.
+  Les retours et paragraphes du texte documentaire sont conservés visuellement.
+- Épisodes connexes : même police Georgia, graisse et couleurs d'état que la liste,
+  dates à côté et fine séparation grise entre les lignes. Les boutons restent
+  cliquables même lorsque leur texte contient une correspondance.
+- Le cadre « Résultat de la recherche » explique les repères et ne répète plus
+  l'extrait. Dans les onglets et le titre, les correspondances des champs cochés
+  sont encadrées sur fond rouge clair, en rouge et en gras. Match précédent / Match
+  suivant parcourent les occurrences affichées, changent d'onglet et positionnent
+  la vue sur l'occurrence active. Le parcours boucle après la dernière ou avant
+  la première occurrence. Les boutons restent accessibles pendant le défilement ;
+  un contour plus marqué distingue l'occurrence active.

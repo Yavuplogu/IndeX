@@ -57,7 +57,7 @@ La pertinence BM25 et les extraits restent ceux du Lot 3. Le tri des titres et l
 recherche de fiche pour association manuelle utilisent une clé de présentation
 insensible aux accents/casse, sans modifier les identités métier.
 
-Le bootstrap `index-portable.json`, à côté de l'exécutable, contient seulement version
+Le bootstrap `application/index-portable.json` contient seulement version
 et chemin des données. Base `index-utilisateur.sqlite`, verrous, sauvegardes et
 futurs exports restent dans le dossier choisi. Dossier attendu manquant ou
 configuration invalide : pas de nouveau profil vide créé silencieusement.
@@ -110,7 +110,7 @@ Sur cet hôte Linux x64 :
 bash tools/lot4/check.sh
 ```
 
-Résultats : **175 tests Dart + 8 tests Flutter réussis**, formatage conforme et
+Résultats : **175 tests Dart + 11 tests Flutter réussis**, formatage conforme et
 analyses statiques sans problème. Les tests Flutter exécutent bien SQLite natif
 et chargent le seed via le bundle, au-delà d'un rendu de données fictives.
 
@@ -161,7 +161,7 @@ diagnostics séparément, y compris en cas d'échec du test du paquet.
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
-du livrable Windows ; elle n'est pas remplacée par les 183 tests Linux.
+du livrable Windows ; elle n'est pas remplacée par les 186 tests Linux.
 
 ## Première exécution Windows — diagnostic des logs
 
@@ -357,3 +357,49 @@ du titre sans sources, seuil de recherche, effacement, indication des rubriques,
 curseur main, défilement de 100 diagnostics, export et affichage sombre à 1024 × 740.
 La recette visuelle et les interactions natives doivent encore être vérifiées sur
 le prochain paquet Windows ; ces tests Linux ne qualifient pas le binaire Windows.
+
+
+## Nouvelle archive, lettrine corrigée et parcours des correspondances
+
+Le ZIP contient désormais un répertoire `IndeX/`. Seul le lanceur `IndeX.exe`
+figure comme fichier à sa racine ; `application/` conserve le bundle Flutter et
+ses DLL sans modifier leur disposition interne, `documentation/` contient notices,
+licences et manifeste. Le lanceur C++17 utilise le CRT statique MSVC, localise le
+programme à partir de son propre chemin (indépendamment du répertoire courant),
+attend sa fin et transmet son code de sortie, y compris un crash. Le programme
+continue de retrouver ses ressources et son pointeur utilisateur à côté de son
+exécutable réel, donc dans `application/`. Les versions antérieures sont décrites
+avec une migration manuelle du pointeur dans le mode d'emploi.
+
+CMake minimum 3.15 active la sélection du CRT statique pour le seul lanceur ; le
+programme Flutter conserve sa distribution de runtime app-local. Les deux exécutables
+partagent l'icône X multirésolution (16 à 256 px). Le workflow contrôle la nouvelle
+structure puis démarre le lanceur, identifie son processus enfant pour fermer sa
+fenêtre et contrôle les codes de sortie du programme et du lanceur.
+
+Le vide dans le résumé provenait d'une mesure détachée du style hérité : la coupure
+pouvait laisser trois lignes étroites, puis un retour incorrect à pleine largeur.
+`document_text.dart` mesure et affiche les mêmes `TextSpan`, styles hérités, zoom
+et strut. La coupure est prise sur la deuxième ligne mesurée, et une fin de ligne
+explicite n'est pas rendue une seconde fois comme ligne vide. La lettrine regroupe
+les signes d'ouverture jusqu'au premier caractère alphanumérique. Les cadres des
+matchs sont peints d'après les rectangles réels du paragraphe ; ils n'ajoutent
+aucun widget en ligne susceptible de modifier le retour des mots.
+
+`EpisodeSearch` indexe les occurrences des champs effectivement affichés, à partir
+des mots marqués par FTS5 pour les champs cochés. Le titre, le résumé, les références,
+auteurs/éditeurs et les champs musicaux sont concernés. Les noms techniques masqués
+ne deviennent pas des occurrences visibles. L'extrait brut reste dans le contrat
+de recherche, mais le panneau de la fiche affiche désormais une explication. Les
+commandes précédent/suivant restent dans une barre persistante, changent d'onglet
+et révèlent le rectangle de l'occurrence active. Les couleurs rouge clair/rouge,
+la barre supérieure grisée et les marges hautes sont déclinées dans les deux thèmes.
+
+Vérifications locales : **175 tests Dart et 11 tests Flutter**, analyses et formatage
+sans problème. Les tests couvrent les guillemets/apostrophes, chiffres et caractères
+composés, deux lignes exactes sous plusieurs largeurs/zoom avec texte conservé,
+alignement des trois zones, parcours entre onglets et visibilité du match actif.
+Sous PowerShell 7.5.4 sur Linux, la syntaxe des scripts, le résolveur CRT et les
+fixtures de disposition/ZIP sont validés ; la copie refuse MP3 et profils utilisateur.
+La compilation du lanceur, ses ressources et le lancement natif de l'archive doivent
+encore être vérifiés sur Windows. Aucun binaire Windows n'est qualifié par ces tests Linux.

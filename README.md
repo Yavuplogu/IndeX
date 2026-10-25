@@ -15,9 +15,10 @@ crash natif à la fermeture (`0xC000041D`). Le parcours de fermeture et l'ordre 
 destruction du moteur sont corrigés, avec diagnostics conservés par le workflow ;
 leur validation Windows reste à faire (voir le bilan).
 
-Les derniers ajustements d’interface ajoutent la navigation par flèches, la recherche
-par début de mot dès trois caractères, les correspondances mises en évidence et
-l’export TXT des diagnostics. Les couleurs et la lisibilité sont harmonisées.
+Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
+une lettrine corrigée sur deux lignes, la navigation entre correspondances dans
+les onglets et des alignements/couleurs harmonisés. Le dossier utilisateur et les
+MP3 restent aux emplacements choisis.
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)

@@ -76,6 +76,10 @@ void main() {
     expect(hit.matchedFields, {SearchField.title, SearchField.description});
     expect(hit.markedExcerpt, contains('\u0001Yougoslavie\u0002'));
     expect(hit.excerpt, isNot(contains('\u0001')));
+    expect(
+      hit.markedFields[SearchField.description],
+      'Un été en \u0001Yougoslavie\u0002.',
+    );
     final accent = search
         .search(
           'ete',

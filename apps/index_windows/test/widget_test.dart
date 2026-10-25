@@ -3,11 +3,14 @@ import 'dart:io';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
 import 'package:index_windows/window_port.dart';
+import 'package:index_windows/document_text.dart';
+import 'package:index_windows/episode_search.dart';
 
 final class FakeWindow implements WindowPort {
   FakeWindow({this.destroyGate});
@@ -159,6 +162,22 @@ void main() {
       await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
       await tester.pumpAndSettle();
       expect(find.text(model.folderLabel), findsNothing);
+      final top = tester
+          .getTopLeft(find.byKey(const ValueKey('index-brand')))
+          .dy;
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('library-search-panel')))
+            .dy,
+        top,
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('episode-detail-heading')))
+            .dy,
+        top,
+      );
+
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(
         location: tester.getCenter(find.text('Paramètres')),
@@ -189,10 +208,10 @@ void main() {
       final title = find.byWidgetPredicate(
         (w) => w is SelectableText && w.data == noSource.title,
       );
-      final top = tester.getTopLeft(title).dy;
+      final titleTop = tester.getTopLeft(title).dy;
       await tester.tap(find.text('Sources').last);
       await tester.pumpAndSettle();
-      expect(tester.getTopLeft(title).dy, top);
+      expect(tester.getTopLeft(title).dy, titleTop);
       final searchField = find
           .descendant(
             of: find.byType(LibraryPage),
@@ -256,6 +275,111 @@ void main() {
       model.setTheme(true);
       await tester.pumpAndSettle();
 
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    },
+  );
+
+  testWidgets(
+    'Correspondances : boutons persistants, changement d’onglet et focus du texte',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync(
+        'index-match-navigation-',
+      );
+      final portable = Directory('${root.path}/app')..createSync();
+      final data = Directory('${root.path}/data')..createSync();
+      final model = AppModel(portableDirectory: portable);
+      await tester.runAsync(() => model.configure(data.path, '', true));
+      model.search('France');
+      final candidate = model.visible.firstWhere((e) {
+        final doc = EpisodeSearch(e, model.catalog);
+        return doc.matches.any((m) => m.tab == 0) &&
+            doc.matches.any((m) => m.tab == 1);
+      });
+      model.select(candidate);
+      final document = EpisodeSearch(candidate, model.catalog);
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pumpAndSettle();
+      final next = find.widgetWithText(OutlinedButton, 'Match suivant');
+      final previous = find.widgetWithText(OutlinedButton, 'Match précédent');
+      await tester.ensureVisible(next);
+      for (
+        var i = 0;
+        i <= document.matches.indexWhere((m) => m.tab == 1);
+        i++
+      ) {
+        await tester.tap(next);
+        await tester.pumpAndSettle();
+        final target = document.matches[i];
+        final texts = tester.widgetList<DocumentText>(
+          find.byType(DocumentText),
+        );
+        expect(
+          texts.any(
+            (w) => w.segment.id == target.segment && w.active == target.id,
+          ),
+          isTrue,
+        );
+        expect(next.hitTestable(), findsOneWidget);
+        final activeText = find.byWidgetPredicate(
+          (w) =>
+              w is DocumentText &&
+              w.segment.id == target.segment &&
+              w.active == target.id &&
+              target.start >= w.start &&
+              target.start < (w.end ?? w.segment.text.length),
+        );
+        final displayed = tester.widget<DocumentText>(activeText);
+        final paragraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: activeText, matching: find.byType(RichText)),
+        );
+        final box = paragraph
+            .getBoxesForSelection(
+              TextSelection(
+                baseOffset: target.start - displayed.start,
+                extentOffset:
+                    target.end.clamp(
+                      displayed.start,
+                      displayed.end ?? displayed.segment.text.length,
+                    ) -
+                    displayed.start,
+              ),
+            )
+            .first;
+        final center = paragraph.localToGlobal(box.toRect().center);
+        final viewport = tester.getRect(
+          find.byKey(ValueKey('detail-${candidate.id}')),
+        );
+        expect(
+          viewport.contains(center),
+          isTrue,
+          reason: 'La correspondance doit être visible après navigation.',
+        );
+      }
+      await tester.tap(previous);
+      await tester.pumpAndSettle();
+      model.search('Portishead');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(next);
+      await tester.tap(next);
+      await tester.pumpAndSettle();
+      final musicMatches = tester.widgetList<DocumentText>(
+        find.byType(DocumentText),
+      );
+      expect(
+        musicMatches.any(
+          (w) => w.segment.id.startsWith('music/') && w.active != null,
+        ),
+        isTrue,
+      );
+      expect(next.hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.runAsync(model.release);

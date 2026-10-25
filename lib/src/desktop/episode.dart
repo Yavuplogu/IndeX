@@ -29,6 +29,7 @@ final class DesktopEpisode {
     this.excerpt = '',
     this.markedExcerpt = '',
     this.matchedFields = const {},
+    this.markedFields = const {},
   });
   final String id,
       title,
@@ -42,5 +43,6 @@ final class DesktopEpisode {
   final int positionMs;
   final String excerpt, markedExcerpt;
   final Set<SearchField> matchedFields;
+  final Map<SearchField, String> markedFields;
   final List<Map<String, Object?>> sources, music;
 }

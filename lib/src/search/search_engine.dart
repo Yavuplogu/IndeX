@@ -41,6 +41,7 @@ final class SearchHit {
     required this.audioAvailable,
     this.markedExcerpt = '',
     this.matchedFields = const {},
+    this.markedFields = const {},
   });
   final String episodeId, title;
   final DateTime? broadcastDate;
@@ -51,6 +52,7 @@ final class SearchHit {
   /// Marqueurs FTS internes U+0001/U+0002, jamais du HTML.
   final String markedExcerpt;
   final Set<SearchField> matchedFields;
+  final Map<SearchField, String> markedFields;
 
   /// BM25 SQLite : les valeurs les plus petites sont les plus pertinentes.
   final double score;

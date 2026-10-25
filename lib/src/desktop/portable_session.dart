@@ -236,6 +236,7 @@ final class PortableSession {
             excerpt: hits[row['id']]?.excerpt ?? '',
             markedExcerpt: hits[row['id']]?.markedExcerpt ?? '',
             matchedFields: hits[row['id']]?.matchedFields ?? const {},
+            markedFields: hits[row['id']]?.markedFields ?? const {},
           ),
     ];
     if (query.trim().isNotEmpty) {

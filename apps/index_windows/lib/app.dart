@@ -10,6 +10,8 @@ import 'package:index_core/index_desktop.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app_model.dart';
+import 'document_text.dart';
+import 'episode_search.dart';
 import 'window_port.dart';
 
 typedef DirectoryPicker = Future<String?> Function();
@@ -21,6 +23,9 @@ final class EditorialColors {
     : background = dark ? const Color(0xff1b1918) : const Color(0xfff5f1e9),
       panel = dark ? const Color(0xff252220) : const Color(0xfffffcf6),
       controls = dark ? const Color(0xff36302a) : const Color(0xffeee4d4),
+      titleBar = dark ? const Color(0xff302e2d) : const Color(0xffe9e8e5),
+      hitBackground = dark ? const Color(0xff502d2d) : const Color(0xfffbe4e2),
+      hitInk = dark ? const Color(0xffffb4ac) : const Color(0xff982e28),
       ink = dark ? const Color(0xfff0e8df) : const Color(0xff302b26),
       muted = dark ? const Color(0xffc2b7ac) : const Color(0xff6f6357),
       accent = dark ? const Color(0xffe5ad8e) : const Color(0xff99533d),
@@ -33,6 +38,9 @@ final class EditorialColors {
   final Color background,
       panel,
       controls,
+      titleBar,
+      hitBackground,
+      hitInk,
       ink,
       muted,
       accent,
@@ -213,8 +221,10 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
           body: SafeArea(
             child: Column(
               children: [
-                SizedBox(
+                Container(
+                  key: const ValueKey('window-title-bar'),
                   height: 32,
+                  color: c.titleBar,
                   child: Row(
                     children: [
                       Expanded(
@@ -454,7 +464,7 @@ class FolderField extends StatelessWidget {
 }
 
 class Brand extends StatelessWidget {
-  const Brand({super.key});
+  const Brand({super.key = const ValueKey('index-brand')});
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +589,7 @@ class _LibraryPageState extends State<LibraryPage> {
                       decoration: BoxDecoration(
                         border: Border(right: BorderSide(color: c.line)),
                       ),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -700,11 +710,12 @@ class _LibraryPageState extends State<LibraryPage> {
   Widget list(EditorialColors c, bool compact) => Column(
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DecoratedBox(
+              key: const ValueKey('library-search-panel'),
               decoration: BoxDecoration(
                 border: Border.all(color: c.line),
                 borderRadius: BorderRadius.circular(8),
@@ -1086,6 +1097,47 @@ class EpisodeDetail extends StatefulWidget {
 class _EpisodeDetailState extends State<EpisodeDetail> {
   int tab = 0;
   String? lastId;
+  String lastSearch = '';
+  int matchIndex = -1;
+  late EpisodeSearch document;
+  String? get activeMatch =>
+      matchIndex >= 0 && matchIndex < document.matches.length
+      ? document.matches[matchIndex].id
+      : null;
+  void moveMatch(int delta) {
+    if (document.matches.isEmpty) return;
+    setState(() {
+      matchIndex = matchIndex < 0
+          ? (delta > 0 ? 0 : document.matches.length - 1)
+          : (matchIndex + delta) % document.matches.length;
+      tab = document.matches[matchIndex].tab;
+    });
+  }
+
+  Widget documentText(
+    String id,
+    TextStyle style,
+    EditorialColors c, {
+    String empty = 'Non renseigné',
+    bool selectable = true,
+  }) {
+    final segment = document.segments[id]!;
+    if (segment.text.trim().isEmpty) return Text(empty, style: style);
+    if (segment.matches.isEmpty)
+      return id == 'title'
+          ? SelectableText(segment.text, style: style)
+          : Text(segment.text, style: style);
+    final text = DocumentText(
+      key: ValueKey(id),
+      segment: segment,
+      style: style,
+      ink: c.hitInk,
+      fill: c.hitBackground,
+      active: activeMatch,
+    );
+    return selectable ? SelectionArea(child: text) : text;
+  }
+
   AppModel get m => widget.model;
   Future<void> toggle(DesktopEpisode e) async {
     bool reset = false;
@@ -1132,72 +1184,96 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
         lastId = e.id;
         tab = 0;
       }
+      final signature =
+          '${e.id}|${m.query}|${m.fields.map((f) => f.name).join(',')}';
+      if (lastSearch != signature) {
+        lastSearch = signature;
+        matchIndex = -1;
+      }
+      document = EpisodeSearch(e, m.catalog);
       final c = EditorialColors(m.dark);
-      return Align(
-        alignment: Alignment.topCenter,
-        child: SingleChildScrollView(
-          key: ValueKey('detail-${e.id}'),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SelectableText(
-                e.title,
-                style: const TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                dateLabel(e.date),
-                style: TextStyle(color: c.muted, fontSize: 13),
-              ),
-              const SizedBox(height: 18),
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
+      final hasSearch =
+          m.query.trim().characters.length >= 3 && e.matchedFields.isNotEmpty;
+      return CustomScrollView(
+        key: ValueKey('detail-${e.id}'),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: () => unawaited(toggle(e)),
-                    icon: Icon(statusIcon(e.status), size: 18),
-                    label: Text('${statusLabel(e.status)} ↻'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      try {
-                        m.favorite(e);
-                      } catch (error) {
-                        m.error = error.toString();
-                        m.changed();
-                      }
-                    },
-                    icon: Icon(
-                      e.favorite ? Icons.star : Icons.star_border,
-                      color: c.accent,
-                      size: 18,
+                  KeyedSubtree(
+                    key: const ValueKey('episode-detail-heading'),
+                    child: documentText(
+                      'title',
+                      const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      c,
                     ),
-                    label: const Text('Favori'),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    dateLabel(e.date),
+                    style: TextStyle(color: c.muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => unawaited(toggle(e)),
+                        icon: Icon(statusIcon(e.status), size: 18),
+                        label: Text('${statusLabel(e.status)} ↻'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          try {
+                            m.favorite(e);
+                          } catch (error) {
+                            m.error = error.toString();
+                            m.changed();
+                          }
+                        },
+                        icon: Icon(
+                          e.favorite ? Icons.star : Icons.star_border,
+                          color: c.accent,
+                          size: 18,
+                        ),
+                        label: const Text('Favori'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    m.availability(e),
+                    style: TextStyle(
+                      color: m.audioKnown && !e.audioAvailable
+                          ? c.alert
+                          : c.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                m.availability(e),
-                style: TextStyle(
-                  color: m.audioKnown && !e.audioAvailable ? c.alert : c.muted,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (m.query.isNotEmpty && e.excerpt.isNotEmpty)
-                Container(
+            ),
+          ),
+          if (hasSearch)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverToBoxAdapter(
+                child: Container(
+                  key: const ValueKey('search-match-guide'),
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: c.background,
-                    border: Border.all(color: c.accent),
+                    color: c.hitBackground,
+                    border: Border.all(color: c.hitInk),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -1206,144 +1282,192 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                       Text(
                         'Résultat de la recherche',
                         style: TextStyle(
-                          color: c.accent,
+                          color: c.hitInk,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      SelectableText.rich(
-                        TextSpan(
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                            color: c.ink,
-                          ),
-                          children: searchExcerptSpans(
-                            e.markedExcerpt.isEmpty
-                                ? e.excerpt
-                                : e.markedExcerpt,
-                            c.accent,
-                          ),
+                      const Text(
+                        'Les correspondances sont encadrées sur fond rouge clair, en rouge et en gras dans la fiche et ses onglets. Utilisez les boutons pour les parcourir.',
+                      ),
+                      const SizedBox(height: 8),
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          document.matches.isEmpty
+                              ? 'Aucune correspondance dans les champs affichés.'
+                              : matchIndex < 0
+                              ? '${document.matches.length} correspondance(s)'
+                              : 'Correspondance ${matchIndex + 1} / ${document.matches.length}',
                         ),
                       ),
                     ],
                   ),
                 ),
-              Row(
-                children: [
-                  for (var i = 0; i < 3; i++)
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: tab == i ? c.accent : c.muted,
-                      ),
-                      onPressed: () => setState(() => tab = i),
-                      child: Text(
-                        ['Résumé', 'Sources', 'Musiques'][i],
-                        style: TextStyle(
-                          fontWeight: tab == i ? FontWeight.bold : null,
+              ),
+            ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _DetailToolbar(
+              height:
+                  (hasSearch ? 102.0 : 48.0) *
+                  MediaQuery.textScalerOf(context).scale(1),
+              child: Material(
+                color: c.panel,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (hasSearch)
+                        Container(
+                          color: c.hitBackground,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: document.matches.isEmpty
+                                      ? null
+                                      : () => moveMatch(-1),
+                                  icon: const Icon(Icons.navigate_before),
+                                  label: const Text('Match précédent'),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: document.matches.isEmpty
+                                      ? null
+                                      : () => moveMatch(1),
+                                  icon: const Icon(Icons.navigate_next),
+                                  label: const Text('Match suivant'),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      Row(
+                        children: [
+                          for (var i = 0; i < 3; i++)
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: tab == i ? c.accent : c.muted,
+                              ),
+                              onPressed: () => setState(() => tab = i),
+                              child: Text(
+                                ['Résumé', 'Sources', 'Musiques'][i],
+                                style: TextStyle(
+                                  fontWeight: tab == i ? FontWeight.bold : null,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Divider(color: c.line),
+                  if (tab == 0) summary(e.description, c),
+                  if (tab == 1) ...sources(e, c),
+                  if (tab == 2) ...music(e, c),
                 ],
               ),
-              Divider(color: c.line),
-              if (tab == 0) summary(e.description, c),
-              if (tab == 1) ...sources(e, c),
-              if (tab == 2) ...music(e, c),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     },
   );
   Widget summary(String text, EditorialColors c) {
     if (text.isEmpty || text == 'Aucune donnée')
       return const Text('Aucun résumé renseigné.');
-    return DropCapSummary(text: text, colors: c);
+    return DropCapSummary(
+      text: text,
+      colors: c,
+      segment: document.segments['summary'],
+      active: activeMatch,
+    );
   }
 
-  Widget card(String title, List<Widget> content, EditorialColors c) =>
-      Container(
-        margin: const EdgeInsets.only(top: 14),
-        decoration: BoxDecoration(
-          border: Border.all(color: c.line),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: c.background,
-              child: Text(
-                title.trim().isEmpty ? 'Aucune donnée' : title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: c.muted,
-                ),
-              ),
+  Widget card(String id, List<Widget> content, EditorialColors c) => Container(
+    margin: const EdgeInsets.only(top: 14),
+    decoration: BoxDecoration(
+      border: Border.all(color: c.line),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          color: c.background,
+          child: documentText(
+            id,
+            TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: c.muted,
             ),
-            ...content,
-          ],
+            c,
+            empty: 'Aucune donnée',
+          ),
         ),
-      );
-  Widget field(String label, Object? value, EditorialColors c) =>
-      IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 88,
-              padding: const EdgeInsets.all(10),
-              color: c.background,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: c.accent,
-                ),
-              ),
+        ...content,
+      ],
+    ),
+  );
+  Widget field(String label, String id, EditorialColors c) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          width: 88,
+          padding: const EdgeInsets.all(10),
+          color: c.background,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: c.accent,
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: SelectableText(
-                  value?.toString().trim().isNotEmpty == true
-                      ? value.toString()
-                      : 'Non renseigné',
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: documentText(id, const TextStyle(fontSize: 13), c),
+          ),
+        ),
+      ],
+    ),
+  );
   List<Widget> sources(DesktopEpisode e, EditorialColors c) {
     if (e.sources.isEmpty) return [const Text('Aucune source renseignée.')];
     return [
-      for (final s in e.sources)
-        card(s['title'] as String? ?? 'Aucune donnée', [
-          field('Auteur', s['author'], c),
+      for (final (i, s) in e.sources.indexed)
+        card('source/$i/title', [
+          field('Auteur', 'source/$i/author', c),
           Divider(height: 1, color: c.line),
-          field('Éditeur', s['publisher'], c),
-          ...related(s['raw_text'] as String? ?? '', c),
+          field('Éditeur', 'source/$i/publisher', c),
+          ...related(s['raw_text'] as String? ?? '', c, i),
         ], c),
     ];
   }
 
-  List<Widget> related(String raw, EditorialColors c) {
-    final refs = RegExp(r'\(([^()]+\.mp3)\)')
-        .allMatches(raw)
-        .map((m) => m[1]!)
-        .toList();
-    final byName = {for (final e in m.catalog) e.originalName: e};
-    final entries = refs
-        .where(byName.containsKey)
-        .map((name) => byName[name]!)
-        .toList();
+  List<Widget> related(String raw, EditorialColors c, int sourceIndex) {
+    final entries = relatedEpisodes(raw, m.catalog);
     if (entries.isEmpty) return [];
     return [
       Container(
@@ -1358,24 +1482,50 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
           ),
         ),
       ),
-      for (final entry in entries)
-        TextButton(
-          onPressed: () => widget.onRelated(entry),
-          style: TextButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.all(12),
+      for (final (j, entry) in entries.indexed)
+        Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: c.line)),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(entry.title, style: const TextStyle(fontSize: 12)),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                dateLabel(entry.date),
-                style: TextStyle(fontSize: 10, color: c.muted),
-              ),
-            ],
+          child: TextButton(
+            onPressed: () => widget.onRelated(entry),
+            style: TextButton.styleFrom(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: documentText(
+                    'source/$sourceIndex/related/$j/title',
+                    TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: m.audioKnown && !entry.audioAvailable
+                          ? c.missingInk
+                          : entry.status == 'ECOUTE'
+                          ? c.heardInk
+                          : c.ink,
+                    ),
+                    c,
+                    selectable: false,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  dateLabel(entry.date),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: m.audioKnown && !entry.audioAvailable
+                        ? c.missingInk
+                        : entry.status == 'ECOUTE'
+                        ? c.heardInk
+                        : c.ink,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
     ];
@@ -1384,13 +1534,13 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
   List<Widget> music(DesktopEpisode e, EditorialColors c) => e.music.isEmpty
       ? [const Text('Aucune musique renseignée.')]
       : [
-          for (final t in e.music)
-            card(t['title'] as String? ?? 'Aucune donnée', [
-              field('Artiste', t['artist'], c),
+          for (final (i, _) in e.music.indexed)
+            card('music/$i/title', [
+              field('Artiste', 'music/$i/artist', c),
               Divider(height: 1, color: c.line),
-              field('Album', t['album'], c),
+              field('Album', 'music/$i/album', c),
               Divider(height: 1, color: c.line),
-              field('Label', t['label'], c),
+              field('Label', 'music/$i/label', c),
             ], c),
         ];
 }
@@ -1899,98 +2049,25 @@ class _ManualEpisodePickerState extends State<ManualEpisodePicker> {
   }
 }
 
-/// Les marqueurs proviennent de FTS5 ; aucun balisage fourni par le corpus n'est interprété.
-List<TextSpan> searchExcerptSpans(String marked, Color accent) {
-  final spans = <TextSpan>[];
-  var bold = false;
-  final buffer = StringBuffer();
-  void flush() {
-    if (buffer.isEmpty) return;
-    spans.add(
-      TextSpan(
-        text: buffer.toString(),
-        style: bold
-            ? TextStyle(fontWeight: FontWeight.bold, color: accent)
-            : null,
-      ),
-    );
-    buffer.clear();
-  }
-
-  for (final character in marked.characters) {
-    if (character == '\u0001' || character == '\u0002') {
-      flush();
-      bold = character == '\u0001';
-    } else {
-      buffer.write(character);
-    }
-  }
-  flush();
-  return spans;
-}
-
 class DropCapSummary extends StatelessWidget {
-  const DropCapSummary({super.key, required this.text, required this.colors});
+  const DropCapSummary({
+    super.key,
+    required this.text,
+    required this.colors,
+    this.segment,
+    this.active,
+  });
   final String text;
   final EditorialColors colors;
+  final TextSegment? segment;
+  final String? active;
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) {
-      final scaler = MediaQuery.textScalerOf(context);
-      final style = TextStyle(fontSize: 15, height: 1.7, color: colors.ink);
-      final first = text.characters.first;
-      final rest = text.characters.skip(1).toString();
-      final capWidth = scaler.scale(44);
-      final lineHeight = scaler.scale(15) * 1.7;
-      final painter = TextPainter(
-        text: TextSpan(text: rest, style: style),
-        textDirection: TextDirection.ltr,
-        textScaler: scaler,
-      )..layout(maxWidth: (box.maxWidth - capWidth).clamp(1, double.infinity));
-      final lines = painter.computeLineMetrics();
-      final split = lines.length <= 2
-          ? rest.length
-          : painter
-                .getLineBoundary(
-                  painter.getPositionForOffset(Offset(0, lines[1].baseline)),
-                )
-                .end;
-      painter.dispose();
-      return SelectionArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: capWidth,
-                  height: lineHeight * 2,
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      first,
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 48,
-                        height: 1,
-                        color: colors.accent,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(child: Text(rest.substring(0, split), style: style)),
-              ],
-            ),
-            if (split < rest.length)
-              Text(
-                rest.substring(split).replaceFirst(RegExp(r'^\n'), ''),
-                style: style,
-              ),
-          ],
-        ),
-      );
-    },
+  Widget build(BuildContext context) => DropCapText(
+    segment: segment ?? TextSegment('summary', text, const []),
+    accent: colors.accent,
+    ink: colors.hitInk,
+    fill: colors.hitBackground,
+    active: active,
   );
 }
 
@@ -2029,4 +2106,22 @@ class _ScanDiagnosticsState extends State<ScanDiagnostics> {
       ),
     ),
   );
+}
+
+class _DetailToolbar extends SliverPersistentHeaderDelegate {
+  _DetailToolbar({required this.height, required this.child});
+  final double height;
+  final Widget child;
+  @override
+  double get minExtent => height;
+  @override
+  double get maxExtent => height;
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => child;
+  @override
+  bool shouldRebuild(_DetailToolbar old) => true;
 }
