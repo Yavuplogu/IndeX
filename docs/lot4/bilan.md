@@ -1,8 +1,9 @@
 # Lot 4 — GUI Windows portable
 
-Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux ; **construction
-et recette Windows non exécutées sur cet hôte**. Le Lot 4 ne doit pas être déclaré
-qualifié sur Windows tant que le workflow natif et la recette du paquet n'ont pas réussi.
+Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. La quatrième
+exécution GitHub Actions valide les tests Windows et construit **IndeX.exe en
+Release**, mais l'empaquetage du runtime Microsoft a échoué. L'archive portable et
+son test de lancement restent à valider avant de qualifier le paquet Windows.
 Le lecteur audio réel et Android restent au Lot 5 ; renommage et JSON aux Lots 5 bis/5 ter.
 
 ## Livrable et comportement
@@ -147,10 +148,12 @@ dans les tests du cœur ; voir le diagnostic à la fin de ce bilan :
    via demande Windows, vérification de l'absence de profil créé sans choix utilisateur.
 5. Conservation de l'archive et de son SHA-256 comme artefact CI après succès.
 
-Le correctif pourra être retesté après commit/push. **Aucune archive Windows construite,
-aucune recette native complète ni validation Android ne sont revendiquées.**
-La première exécution Windows a atteint les tests du cœur, avec des échecs détaillés
-ci-dessous. Les scripts PowerShell n'ont pas été exécutés sur cet hôte Linux.
+Les logs successifs ci-dessous documentent la progression réelle du workflow.
+La quatrième exécution réussit les tests du cœur, les widgets et le test d'intégration
+natif, puis construit le binaire Release. **Aucune archive portable finale ni
+validation Android ne sont encore revendiquées.** La sélection du runtime est
+corrigée et testée sous PowerShell sur Linux ; la copie des DLL et le test du paquet
+extrait doivent encore réussir sur Windows.
 
 À compléter sur le paquet Windows précis : sélecteurs natifs avec annulation/permissions,
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
@@ -243,3 +246,42 @@ Les délais fixes de 50/150 ms ont été supprimés. La logique de sauvegarde de
 l'application n'est pas modifiée. Le test ciblé et la suite complète réussissent sur Linux : **174 tests Dart et
 6 tests Flutter**, sans problème d’analyse statique. Une nouvelle exécution Windows
 doit encore atteindre la recette native et la construction de l’archive.
+
+## Quatrième exécution Windows — création de l'archive portable
+
+Les logs `logs_108978692044.zip` du commit `25a714a` attestent les réussites suivantes :
+
+- tests du cœur (173 exécutés, 1 ignoré), 6 tests Flutter et analyses statiques ;
+- recette native Windows : seed, FTS5, persistance/reprise, scan et interception de fermeture ;
+- compilation Debug pour la recette, puis **compilation Release de `IndeX.exe`**.
+
+Le script d'archive échoue après la compilation en cherchant :
+
+```text
+VC/Redist/MSVC/v143/x64
+```
+
+Le tri alphabétique des dossiers avait retenu `v143`, qui ne contient pas ce
+runtime x64. Le nouveau résolveur privilégie les dossiers de versions numériques
+et ignore tout candidat sans CRT x64 complet. Il exige `vcruntime140.dll`,
+`vcruntime140_1.dll` et `msvcp140.dll`, puis copie l'ensemble des DLL du CRT retenu.
+Le chemin sélectionné est affiché dans les logs ; l'absence de runtime valide
+produit une erreur explicite avec les dossiers contrôlés.
+
+`tools/lot4/test_runtime_windows.ps1` vérifie ce résolveur sur des répertoires
+temporaires, sans Pester ni Visual Studio : dossier v143 sans x64, tri 14.10 après
+14.9, x86 ignoré, DLL manquantes, sélection du plus récent complet, repli sur un
+ancien complet et erreurs de dossiers absents. Ces contrôles ont été exécutés
+avec **PowerShell 7.5.4 sur Linux**, ainsi qu'une analyse syntaxique de tous les
+scripts PowerShell du Lot 4. Le workflow les lance désormais avant l'installation
+du SDK et les étapes de compilation.
+
+Cela ne remplace pas une exécution de l'empaquetage sous Windows. La prochaine
+exécution doit encore produire le ZIP, lancer son contenu extrait et publier
+l'artefact. Aucune fonction applicative ni fixture du corpus n'est modifiée.
+
+L'analyse syntaxique a aussi révélé deux apostrophes typographiques dans des
+chaînes PowerShell entre apostrophes simples de `smoke_archive.ps1`. Ces chaînes
+sont corrigées avant que cette étape ne soit atteinte. Le contrôle rapide du
+workflow analyse désormais tous les scripts PowerShell, en plus des cas du
+résolveur, pour détecter ces erreurs avant la compilation.

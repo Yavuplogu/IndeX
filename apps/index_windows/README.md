@@ -21,6 +21,7 @@ La construction Windows exige Windows et Visual Studio C++/SDK. Pour les contrô
 et l'archive portable, utiliser PowerShell 7 depuis la racine :
 
 ```powershell
+./tools/lot4/test_runtime_windows.ps1
 ./tools/lot4/check.ps1
 ./tools/lot4/package_windows.ps1
 ./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.4.0_windows_x64_portable.zip

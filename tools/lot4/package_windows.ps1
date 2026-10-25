@@ -19,11 +19,11 @@ try {
   if (-not (Test-Path $vswhere)) { throw 'vswhere absent : impossible de vérifier le runtime redistribuable.' }
   $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
   if (-not $vs) { throw 'Visual Studio C++ requis.' }
-  $redist = Get-ChildItem (Join-Path $vs 'VC/Redist/MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
-  $crt = Get-ChildItem (Join-Path $redist.FullName 'x64') -Directory -Filter 'Microsoft.VC*.CRT' | Select-Object -First 1
-  if (-not $crt) { throw 'Runtime Microsoft redistribuable x64 introuvable.' }
-  Copy-Item (Join-Path $crt.FullName '*.dll') $bundle
-  foreach ($required in @('vcruntime140.dll','msvcp140.dll')) {
+  . (Join-Path $PSScriptRoot 'runtime_windows.ps1')
+  $runtime = Find-VisualCppRuntime -VisualStudioDirectory $vs
+  Write-Host "Runtime Microsoft sélectionné : $($runtime.CrtDirectory)"
+  Copy-Item (Join-Path $runtime.CrtDirectory '*.dll') $bundle
+  foreach ($required in @('vcruntime140.dll','vcruntime140_1.dll','msvcp140.dll')) {
     if (-not (Test-Path (Join-Path $bundle $required))) { throw "Runtime incomplet : $required" }
   }
   $licences = Join-Path $bundle 'licences'
@@ -36,7 +36,7 @@ try {
       if (Test-Path $path) { Copy-Item $path (Join-Path $licences "$($package.name)-LICENSE.txt"); break }
     }
   }
-  Get-ChildItem $redist.FullName -File | Where-Object { $_.Name -match 'license|licence|eula' } | ForEach-Object { Copy-Item $_.FullName (Join-Path $licences ('Microsoft-' + $_.Name)) }
+  Get-ChildItem $runtime.RedistDirectory -File | Where-Object { $_.Name -match 'license|licence|eula' } | ForEach-Object { Copy-Item $_.FullName (Join-Path $licences ('Microsoft-' + $_.Name)) }
   'Runtime Microsoft Visual C++ x64 app-local. Redistribution sous les conditions de licence Visual Studio/Microsoft Visual C++. UCRT fourni par Windows 10/11. Voir https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files' | Set-Content (Join-Path $licences 'Microsoft-runtime.txt') -Encoding utf8
   Copy-Item (Join-Path $projectDir 'docs/lot4/UTILISATION_WINDOWS.md') (Join-Path $bundle 'LISEZ-MOI.md')
   if (Get-ChildItem $bundle -Recurse -File -Filter '*.mp3') { throw 'Un MP3 serait embarqué : distribution refusée.' }

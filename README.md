@@ -9,10 +9,10 @@ la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le
 contrôles Linux passent ; le workflow de construction et de recette Windows est
 préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
 
-La troisième exécution Windows valide tous les tests du cœur. Un test Flutter de
-fermeture dépendait encore d'un délai fixe trop court pour la sauvegarde. Il attend
-désormais les états réels de sauvegarde/fermeture ; une nouvelle exécution Windows
-reste nécessaire (voir le diagnostic dans le bilan).
+La quatrième exécution Windows valide les tests du cœur, les widgets et la recette
+native, puis construit IndeX.exe en Release. La préparation de l'archive a échoué
+sur la sélection du runtime Microsoft ; le résolveur corrigé et ses contrôles
+PowerShell sont prêts pour une nouvelle exécution (voir le bilan).
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)
