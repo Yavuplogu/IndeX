@@ -188,3 +188,32 @@ TXT sont désormais restitués octet pour octet ; un chemin témoin non protég�
 bien la conversion. Les contrôles Linux du cœur et de l’application ont été rejoués : **174 tests Dart
 et 6 tests Flutter réussis**, analyses statiques sans problème.
 Une nouvelle exécution Windows reste nécessaire après publication du correctif.
+
+## Deuxième exécution Windows — sonde et hooks natifs
+
+Les logs `logs_108972184764.zip` du commit `6ea5403` montrent **172 réussites,
+1 test ignoré et 1 échec**. Les neuf échecs liés aux fins de ligne et aux chemins
+ont disparu. Widgets, recette native et construction restent non atteints.
+
+Le diagnostic enrichi du test de verrou montre cette erreur dans le sous-processus :
+
+```text
+Running build hooks... PathAccessException: Cannot delete file,
+path = '...\.dart_tool\lib\sqlite3.dll' (OS Error: Access is denied, errno = 5)
+```
+
+Le script de la sonde n'est pas encore exécuté : `dart run` déclenche les hooks du
+projet parent et tente de remplacer la DLL SQLite déjà chargée par les tests.
+La capture d'une erreur lors de l'ouverture du verrou, ajoutée précédemment,
+ne pouvait donc pas résoudre cette cause, désormais confirmée par les logs.
+
+Correction : copier la sonde, qui dépend uniquement de dart:io/dart:convert, dans
+un dossier temporaire sans pubspec et l'y lancer avec un répertoire de travail
+isolé. Les dépendances natives du projet ne sont ainsi pas reconstruites par le
+sous-processus. Le test continue d'exiger le refus du verrou ; il exige aussi que
+la même sonde réussisse après libération, pour distinguer un vrai verrou d'un
+échec général d'accès ou de lancement. Aucun test n'est ignoré pour contourner l'erreur.
+
+Le test ciblé, incluant refus puis acquisition, réussit sur Linux. La suite complète
+réussit également : **174 tests Dart et 6 tests Flutter**, analyses sans problème.
+Une nouvelle exécution Windows reste nécessaire avant qualification.

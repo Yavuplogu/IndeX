@@ -163,12 +163,16 @@ void main() {
     expect(s.episodes(), hasLength(716));
   });
   test('Le verrou refuse aussi un second processus', () async {
-    await start();
+    final session = await start();
+    // Cette sonde SDK-only ne doit pas relancer les hooks natifs du package :
+    // sous Windows ils tenteraient de remplacer sqlite3.dll déjà chargée ici.
+    final probeDirectory = await Directory('${root.path}/sonde').create();
+    final helper = await File('test/support/try_portable_lock.dart')
+        .copy('${probeDirectory.path}/try_portable_lock.dart');
     final result = await Process.run(Platform.resolvedExecutable, [
-      'run',
-      'test/support/try_portable_lock.dart',
+      helper.absolute.path,
       '${data.path}/.index.lock',
-    ]);
+    ], workingDirectory: probeDirectory.path);
     expect(
       result.exitCode,
       3,
@@ -182,6 +186,22 @@ void main() {
     expect(
       (jsonDecode(lines.last) as Map<String, dynamic>)['status'],
       'blocked',
+    );
+    // Contrôle positif : la même sonde doit réussir dès que le verrou est libéré.
+    await session.dispose();
+    final released = await Process.run(Platform.resolvedExecutable, [
+      helper.absolute.path,
+      '${data.path}/.index.lock',
+    ], workingDirectory: probeDirectory.path);
+    expect(
+      released.exitCode,
+      0,
+      reason: 'Après libération : ${released.stdout}\n${released.stderr}',
+    );
+    expect(
+      (jsonDecode((released.stdout as String).trim())
+          as Map<String, dynamic>)['status'],
+      'acquired',
     );
   });
 
