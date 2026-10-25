@@ -192,3 +192,38 @@ Ajouter au tri du catalogue les options **MP3 disponibles d'abord** et **MP3 abs
 d'abord**, sans exclure les autres épisodes. Départager chaque groupe par date
 décroissante puis identité stable. Un dossier jamais configuré ne permet pas de
 conclure à une absence de fichiers ; conserver l'avertissement prévu.
+
+
+## Ajustements après essais de l’interface Windows
+
+Demandes utilisateur complémentaires :
+
+- Fiche ancrée en haut, y compris sans résumé, source ou musique. La lettrine
+  occupe deux lignes, avec retour du texte à pleine largeur après ces deux lignes.
+- Dans la liste, les flèches haut/bas sélectionnent l’épisode précédent/suivant
+  selon les filtres et le tri actifs, ouvrent sa fiche et maintiennent la sélection
+  visible. Consulter une fiche ne doit jamais changer un épisode en lecture.
+  Au Lot 4, le lecteur est un aperçu sans audio ; il ne reprend plus le titre
+  de chaque fiche consultée.
+- Curseur main pour les commandes actives, menus et éléments cliquables ; champs
+  de texte et commandes désactivées gardent leurs curseurs appropriés.
+- Fond beige clair harmonisé pour les dialogues, Paramètres et boutons de navigation,
+  avec variante chaude sombre. Typographie agrandie légèrement, sans réduire un
+  agrandissement d’accessibilité existant. Favoris de la liste et de la fiche
+  dans la même couleur d’accent ; logo « Inde » gris, « X » conservé.
+- Aucun bandeau de chemin MP3 lorsque le dossier est prêt. Les avertissements
+  d’absence, d’inaccessibilité ou de scan incomplet restent visibles. Aucun rappel
+  du dossier sous le titre Paramètres ; le champ reste dans la section Dossiers.
+- Recherche dynamique après 250 ms sans saisie, à partir de trois caractères.
+  Avant ce seuil, la liste conserve les autres filtres, sans requête documentaire.
+  Chaque terme est recherché comme début de mot (par exemple « Yougo » trouve
+  « Yougoslavie »), avec tous les termes requis et respect des champs cochés.
+  Un bouton efface immédiatement le champ et annule toute recherche différée.
+- Rubriques trouvées (Titre, Résumé, Sources, Musiques) sous chaque résultat.
+  Dans la fiche, cadre distinct « Résultat de la recherche » avec les mots trouvés
+  en gras et en couleur, accents conservés. Ces repères proviennent de FTS5,
+  sans interprétation HTML du corpus.
+- Diagnostic de scan défilant dans une zone bornée avec barre visible et texte
+  sélectionnable. Export TXT UTF-8 dans `exports/` du dossier utilisateur,
+  sous `IndeX_diagnostic_scan_<horodatage_UTC>.txt`, sans espace. Le fichier
+  comprend messages, sources et rapport complet, sans modifier les MP3.

@@ -67,6 +67,50 @@ void main() {
     },
   );
 
+  test('Préfixes sûrs, champs exacts et surlignage FTS accentué', () {
+    load('La Yougoslavie', 'Un été en Yougoslavie.');
+    expect(search.search('Yougo'), isEmpty);
+    final hit = search
+        .search('Yougo', options: const SearchOptions(prefix: true))
+        .single;
+    expect(hit.matchedFields, {SearchField.title, SearchField.description});
+    expect(hit.markedExcerpt, contains('\u0001Yougoslavie\u0002'));
+    expect(hit.excerpt, isNot(contains('\u0001')));
+    final accent = search
+        .search(
+          'ete',
+          options: const SearchOptions(
+            prefix: true,
+            fields: {SearchField.description},
+          ),
+        )
+        .single;
+    expect(accent.markedExcerpt, contains('\u0001été\u0002'));
+    expect(accent.matchedFields, {SearchField.description});
+    expect(
+      search.search(
+        'Yougo OR inconnu',
+        options: const SearchOptions(prefix: true),
+      ),
+      isEmpty,
+    );
+    expect(
+      search.search('goslavie', options: const SearchOptions(prefix: true)),
+      isEmpty,
+    );
+    final source = search
+        .search(
+          'aute',
+          options: const SearchOptions(
+            prefix: true,
+            fields: {SearchField.sources},
+          ),
+        )
+        .single;
+    expect(source.matchedFields, {SearchField.sources});
+    search.checkIndex();
+  });
+
   test('Classement : titre prioritaire, ordre stable, pagination', () {
     store.importPlan(
       CatalogPlanner().plan([

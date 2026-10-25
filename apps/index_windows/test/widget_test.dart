@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
@@ -136,6 +138,132 @@ void main() {
       root.deleteSync(recursive: true);
     },
   );
+  testWidgets(
+    'Fiche ancrée, flèches, recherche partielle et diagnostic défilant',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-ui-regression-');
+      final portable = Directory('${root.path}/app')..createSync();
+      final data = Directory('${root.path}/data')..createSync();
+      final model = AppModel(portableDirectory: portable);
+      await tester.runAsync(
+        () => model.configure(
+          data.path,
+          Directory('../../MP3_Files').absolute.path,
+          false,
+        ),
+      );
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pumpAndSettle();
+      expect(find.text(model.folderLabel), findsNothing);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(
+        location: tester.getCenter(find.text('Paramètres')),
+      );
+      await tester.pump();
+      expect(
+        tester.binding.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.click,
+      );
+      await mouse.removePointer();
+      final list = find.byKey(const ValueKey('episode-list'));
+      await tester.tap(
+        find.descendant(
+          of: list,
+          matching: find.text(model.visible.first.title),
+        ),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(model.selected!.id, model.visible[1].id);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+      expect(model.selected!.id, model.visible.first.id);
+      expect(find.text('Aucun épisode en lecture'), findsOneWidget);
+      final noSource = model.catalog.firstWhere((e) => e.sources.isEmpty);
+      model.select(noSource);
+      await tester.pump();
+      final title = find.byWidgetPredicate(
+        (w) => w is SelectableText && w.data == noSource.title,
+      );
+      final top = tester.getTopLeft(title).dy;
+      await tester.tap(find.text('Sources').last);
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(title).dy, top);
+      final searchField = find
+          .descendant(
+            of: find.byType(LibraryPage),
+            matching: find.byType(TextField),
+          )
+          .first;
+      await tester.enterText(searchField, 'Yo');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(model.visible, hasLength(716));
+      await tester.enterText(searchField, 'Yougo');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(model.visible.length, inInclusiveRange(1, 715));
+      expect(find.textContaining('Trouvé dans :'), findsWidgets);
+      expect(find.text('Résultat de la recherche'), findsOneWidget);
+      await tester.tap(find.byTooltip('Effacer la recherche'));
+      await tester.pumpAndSettle();
+      expect(model.query, isEmpty);
+      expect(model.visible, hasLength(716));
+      model.report = {
+        'count': 100,
+        'issues': [
+          for (var i = 0; i < 100; i++)
+            {'message': 'Erreur $i', 'source': 'fichier_$i.mp3'},
+        ],
+        'decisions': <Object>[],
+      };
+      await tester.tap(find.text('Fichiers'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Diagnostics du scan'));
+      await tester.pumpAndSettle();
+      final diagnostics = find.byType(ScanDiagnostics);
+      expect(
+        find.descendant(of: diagnostics, matching: find.byType(SelectionArea)),
+        findsOneWidget,
+      );
+      final scrollable = find.descendant(
+        of: diagnostics,
+        matching: find.byType(Scrollable),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Erreur 99'),
+        250,
+        scrollable: scrollable,
+      );
+      expect(find.text('Erreur 99'), findsOneWidget);
+      File? exported;
+      await tester.runAsync(() async {
+        exported = await model.exportScanDiagnostic();
+      });
+      expect(
+        FileSystemEntity.identicalSync(
+          exported!.parent.path,
+          Directory('${model.dataPath}/exports').path,
+        ),
+        isTrue,
+      );
+      expect(exported!.uri.pathSegments.last, isNot(contains(' ')));
+      expect(exported!.readAsStringSync(), contains('Erreur 99'));
+      expect(exported!.readAsStringSync(), contains('fichier_0.mp3'));
+      tester.view.physicalSize = const Size(1024, 740);
+      model.setTheme(true);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    },
+  );
+
   testWidgets(
     'Échec de sauvegarde à la croix : la fenêtre reste ouverte puis réessai',
     (tester) async {

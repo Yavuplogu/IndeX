@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:index_core/index_core.dart';
 import 'package:index_core/index_desktop.dart';
 
@@ -214,7 +215,7 @@ final class AppModel extends ChangeNotifier {
     try {
       if (fields.isEmpty)
         throw ArgumentError('Sélectionnez au moins un champ de recherche.');
-      visible = query.trim().isEmpty
+      visible = query.trim().characters.length < 3
           ? List.of(catalog)
           : session!.episodes(query: query, fields: fields);
     } catch (e) {
@@ -273,6 +274,43 @@ final class AppModel extends ChangeNotifier {
     if (value.isEmpty) sort = CatalogSort.dateNew;
     query = value;
     reload();
+  }
+
+  void selectRelative(int delta) {
+    if (visible.isEmpty) return;
+    final index = visible.indexWhere((e) => e.id == selected?.id);
+    select(visible[(index + delta).clamp(0, visible.length - 1)]);
+  }
+
+  Future<File> exportScanDiagnostic() async {
+    if (report == null || session == null) {
+      throw StateError('Aucun diagnostic à exporter.');
+    }
+    final directory = Directory('$dataPath/exports');
+    await directory.create(recursive: true);
+    final stamp = DateTime.now().toUtc().toIso8601String().replaceAll(
+      RegExp(r'[-:.]'),
+      '',
+    );
+    final file = File('${directory.path}/IndeX_diagnostic_scan_$stamp.txt');
+    final buffer = StringBuffer(
+      'IndeX — diagnostic du scan\nDate UTC : $stamp\nDossier MP3 : $mp3Path\n\n',
+    );
+    buffer.writeln('MP3 analysés : ${report!['count'] ?? 0}');
+    final issues = (report!['issues'] as List?) ?? [];
+    buffer.writeln('Diagnostics : ${issues.length}\n');
+    for (final (index, raw) in issues.indexed) {
+      final issue = raw as Map;
+      buffer.writeln('${index + 1}. ${issue['message'] ?? ''}');
+      if (issue['source'] != null)
+        buffer.writeln('   Source : ${issue['source']}');
+      if (issue['code'] != null) buffer.writeln('   Code : ${issue['code']}');
+      buffer.writeln();
+    }
+    buffer.writeln('Rapport complet et preuves des associations :');
+    buffer.writeln(const JsonEncoder.withIndent('  ').convert(report));
+    await file.writeAsString(buffer.toString(), flush: true);
+    return file;
   }
 
   void select(DesktopEpisode e) {

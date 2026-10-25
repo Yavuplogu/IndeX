@@ -168,15 +168,20 @@ final class PortableSession {
       SearchField.music,
     },
   }) {
-    final hits = <String, String>{};
+    final hits = <String, SearchHit>{};
     if (query.trim().isNotEmpty) {
       for (var offset = 0; offset < 10000; offset += 100) {
         final page = SqliteSearchEngine(store.database).search(
           query,
-          options: SearchOptions(fields: fields, limit: 100, offset: offset),
+          options: SearchOptions(
+            fields: fields,
+            limit: 100,
+            offset: offset,
+            prefix: true,
+          ),
         );
         for (final hit in page) {
-          hits[hit.episodeId] = hit.excerpt;
+          hits[hit.episodeId] = hit;
         }
         if (page.length < 100) break;
       }
@@ -228,7 +233,9 @@ final class PortableSession {
                 (row['manual'] == 1 ||
                     (row['audio_ref'] as String).startsWith(scope)),
             positionMs: row['position_ms'] as int? ?? 0,
-            excerpt: hits[row['id']] ?? '',
+            excerpt: hits[row['id']]?.excerpt ?? '',
+            markedExcerpt: hits[row['id']]?.markedExcerpt ?? '',
+            matchedFields: hits[row['id']]?.matchedFields ?? const {},
           ),
     ];
     if (query.trim().isNotEmpty) {

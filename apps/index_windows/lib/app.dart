@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:index_core/index_core.dart';
 import 'package:index_core/index_desktop.dart';
@@ -19,6 +20,7 @@ final class EditorialColors {
   EditorialColors(bool dark)
     : background = dark ? const Color(0xff1b1918) : const Color(0xfff5f1e9),
       panel = dark ? const Color(0xff252220) : const Color(0xfffffcf6),
+      controls = dark ? const Color(0xff36302a) : const Color(0xffeee4d4),
       ink = dark ? const Color(0xfff0e8df) : const Color(0xff302b26),
       muted = dark ? const Color(0xffc2b7ac) : const Color(0xff6f6357),
       accent = dark ? const Color(0xffe5ad8e) : const Color(0xff99533d),
@@ -30,6 +32,7 @@ final class EditorialColors {
       heardInk = dark ? const Color(0xffd0c3ff) : const Color(0xff56509b);
   final Color background,
       panel,
+      controls,
       ink,
       muted,
       accent,
@@ -162,6 +165,22 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
           surface: c.panel,
         ),
         scaffoldBackgroundColor: c.panel,
+        dialogTheme: DialogThemeData(backgroundColor: c.controls),
+        textButtonTheme: const TextButtonThemeData(
+          style: ButtonStyle(mouseCursor: WidgetStateMouseCursor.clickable),
+        ),
+        outlinedButtonTheme: const OutlinedButtonThemeData(
+          style: ButtonStyle(mouseCursor: WidgetStateMouseCursor.clickable),
+        ),
+        filledButtonTheme: const FilledButtonThemeData(
+          style: ButtonStyle(mouseCursor: WidgetStateMouseCursor.clickable),
+        ),
+        iconButtonTheme: const IconButtonThemeData(
+          style: ButtonStyle(mouseCursor: WidgetStateMouseCursor.clickable),
+        ),
+        checkboxTheme: const CheckboxThemeData(
+          mouseCursor: WidgetStateMouseCursor.clickable,
+        ),
         dividerColor: c.line,
         inputDecorationTheme: InputDecorationTheme(
           isDense: true,
@@ -174,6 +193,15 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
         ).textTheme.apply(bodyColor: c.ink, displayColor: c.ink),
       );
       return MaterialApp(
+        builder: (context, child) {
+          final media = MediaQuery.of(context);
+          return MediaQuery(
+            data: media.copyWith(
+              textScaler: media.textScaler.clamp(minScaleFactor: 1.08),
+            ),
+            child: child!,
+          );
+        },
         navigatorKey: navigator,
         title: 'IndeX',
         debugShowCheckedModeBanner: false,
@@ -431,8 +459,16 @@ class Brand extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        'IndeX',
+      Text.rich(
+        TextSpan(
+          children: [
+            const TextSpan(
+              text: 'Inde',
+              style: TextStyle(color: Color(0xff858585)),
+            ),
+            const TextSpan(text: 'X'),
+          ],
+        ),
         style: TextStyle(
           fontSize: 29,
           fontWeight: FontWeight.w800,
@@ -463,11 +499,40 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   final search = TextEditingController();
   Timer? debounce;
+  final listFocus = FocusNode(debugLabel: 'Liste des épisodes');
+  final listScroll = ScrollController();
+  KeyEventResult navigateList(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
+    final delta = event.logicalKey == LogicalKeyboardKey.arrowDown
+        ? 1
+        : event.logicalKey == LogicalKeyboardKey.arrowUp
+        ? -1
+        : 0;
+    if (delta == 0) return KeyEventResult.ignored;
+    m.selectRelative(delta);
+    final index = m.visible.indexWhere((e) => e.id == m.selected?.id);
+    if (index >= 0 && listScroll.hasClients) {
+      final extent = m.query.trim().characters.length >= 3 ? 66.0 : 52.0;
+      final top = index * extent;
+      final position = listScroll.position;
+      final target = top < position.pixels
+          ? top
+          : top + extent > position.pixels + position.viewportDimension
+          ? top + extent - position.viewportDimension
+          : position.pixels;
+      listScroll.jumpTo(target.clamp(0.0, position.maxScrollExtent));
+    }
+    return KeyEventResult.handled;
+  }
+
   AppModel get m => widget.model;
   @override
   void dispose() {
     debounce?.cancel();
     search.dispose();
+    listFocus.dispose();
+    listScroll.dispose();
     super.dispose();
   }
 
@@ -487,20 +552,21 @@ class _LibraryPageState extends State<LibraryPage> {
     final c = EditorialColors(m.dark);
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-          color: c.background,
-          child: Text(
-            m.folderLabel,
-            style: TextStyle(
-              fontSize: 12,
-              color: m.audioState == AudioFolderState.ready
-                  ? c.muted
-                  : c.accent,
+        if (m.mp3Path.isEmpty || m.audioState != AudioFolderState.ready)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            color: c.background,
+            child: Text(
+              m.folderLabel,
+              style: TextStyle(
+                fontSize: 12,
+                color: m.audioState == AudioFolderState.ready
+                    ? c.muted
+                    : c.accent,
+              ),
             ),
           ),
-        ),
         Expanded(
           child: LayoutBuilder(
             builder: (context, size) {
@@ -620,9 +686,10 @@ class _LibraryPageState extends State<LibraryPage> {
         child: TextButton.icon(
           style: TextButton.styleFrom(
             alignment: Alignment.centerLeft,
-            backgroundColor: active
-                ? Theme.of(context).colorScheme.primaryContainer
-                : null,
+            backgroundColor: EditorialColors(m.dark).controls,
+            foregroundColor: active
+                ? EditorialColors(m.dark).accent
+                : EditorialColors(m.dark).ink,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           ),
           onPressed: action,
@@ -650,9 +717,18 @@ class _LibraryPageState extends State<LibraryPage> {
                   children: [
                     TextField(
                       controller: search,
-                      decoration: const InputDecoration(
-                        hintText: 'Rechercher un sujet…',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un sujet… (3 caractères minimum)',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: IconButton(
+                          tooltip: 'Effacer la recherche',
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            debounce?.cancel();
+                            search.clear();
+                            m.search('');
+                          },
+                        ),
                         isDense: true,
                       ),
                       onChanged: (value) {
@@ -669,6 +745,7 @@ class _LibraryPageState extends State<LibraryPage> {
                       children: [
                         for (final field in SearchField.values)
                           InkWell(
+                            mouseCursor: WidgetStateMouseCursor.clickable,
                             onTap: () {
                               if (m.fields.contains(field))
                                 m.fields.remove(field);
@@ -723,6 +800,8 @@ class _LibraryPageState extends State<LibraryPage> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 DropdownButton<CatalogSort>(
+                  mouseCursor: WidgetStateMouseCursor.clickable,
+                  dropdownMenuItemMouseCursor: WidgetStateMouseCursor.clickable,
                   value: m.sort,
                   isDense: true,
                   items: [
@@ -741,6 +820,8 @@ class _LibraryPageState extends State<LibraryPage> {
                   },
                 ),
                 DropdownButton<String>(
+                  mouseCursor: WidgetStateMouseCursor.clickable,
+                  dropdownMenuItemMouseCursor: WidgetStateMouseCursor.clickable,
                   value: m.status,
                   isDense: true,
                   items: [
@@ -781,151 +862,171 @@ class _LibraryPageState extends State<LibraryPage> {
         ),
       ),
       Expanded(
-        child: m.visible.isEmpty
-            ? const Center(child: Text('Aucun épisode pour ces critères.'))
-            : ListView.builder(
-                itemExtent: 46,
-                itemCount: m.visible.length,
-                itemBuilder: (context, index) {
-                  final e = m.visible[index];
-                  final missing = m.audioKnown && !e.audioAvailable,
-                      heard = e.status == 'ECOUTE';
-                  final color = missing
-                      ? c.missingInk
-                      : heard
-                      ? c.heardInk
-                      : c.ink;
-                  return Material(
-                    color: missing
-                        ? c.missing
+        child: Focus(
+          focusNode: listFocus,
+          onKeyEvent: navigateList,
+          child: m.visible.isEmpty
+              ? const Center(child: Text('Aucun épisode pour ces critères.'))
+              : ListView.builder(
+                  key: const ValueKey('episode-list'),
+                  controller: listScroll,
+                  itemExtent: m.query.trim().characters.length >= 3 ? 66 : 52,
+                  itemCount: m.visible.length,
+                  itemBuilder: (context, index) {
+                    final e = m.visible[index];
+                    final missing = m.audioKnown && !e.audioAvailable,
+                        heard = e.status == 'ECOUTE';
+                    final color = missing
+                        ? c.missingInk
                         : heard
-                        ? c.heard
-                        : c.panel,
-                    child: InkWell(
-                      onTap: () {
-                        m.select(e);
-                        if (compact)
-                          unawaited(
-                            showDialog<void>(
-                              context: context,
-                              builder: (context) => Dialog(
-                                child: SizedBox(
-                                  width: 650,
-                                  height: 650,
-                                  child: Column(
-                                    children: [
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('Fermer'),
+                        ? c.heardInk
+                        : c.ink;
+                    return Material(
+                      color: missing
+                          ? c.missing
+                          : heard
+                          ? c.heard
+                          : c.panel,
+                      child: InkWell(
+                        mouseCursor: SystemMouseCursors.click,
+                        onTap: () {
+                          listFocus.requestFocus();
+                          m.select(e);
+                          if (compact)
+                            unawaited(
+                              showDialog<void>(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  child: SizedBox(
+                                    width: 650,
+                                    height: 650,
+                                    child: Column(
+                                      children: [
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Fermer'),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: EpisodeDetail(
+                                            model: m,
+                                            onRelated: related,
+                                            pickDirectory: widget.pickDirectory,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: c.line),
+                              left: BorderSide(
+                                width: 4,
+                                color: m.selected?.id == e.id
+                                    ? c.accent
+                                    : Colors.transparent,
+                              ),
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 3,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      e.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Georgia',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: color,
+                                      ),
+                                    ),
+                                    Text(
+                                      dateLabel(e.date),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: color,
+                                      ),
+                                    ),
+                                    if (e.matchedFields.isNotEmpty)
+                                      Text(
+                                        'Trouvé dans : ${e.matchedFields.map((f) => fieldNames[f]!).join(', ')}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: c.accent,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      Expanded(
-                                        child: EpisodeDetail(
-                                          model: m,
-                                          onRelated: related,
-                                          pickDirectory: widget.pickDirectory,
+                                  ],
+                                ),
+                              ),
+                              if (e.favorite)
+                                Icon(Icons.star, size: 16, color: c.accent),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        statusIcon(e.status),
+                                        size: 11,
+                                        color: color,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        statusLabel(e.status),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: color,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
-                          );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: c.line),
-                            left: BorderSide(
-                              width: 4,
-                              color: m.selected?.id == e.id
-                                  ? c.accent
-                                  : Colors.transparent,
-                            ),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 3,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
                                   Text(
-                                    '${e.title}${e.favorite ? ' ★' : ''}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: 'Georgia',
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: color,
-                                    ),
-                                  ),
-                                  Text(
-                                    dateLabel(e.date),
+                                    m.availability(e),
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: color,
+                                      color: missing ? c.alert : c.muted,
+                                      fontWeight: missing
+                                          ? FontWeight.w600
+                                          : null,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      statusIcon(e.status),
-                                      size: 11,
-                                      color: color,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      statusLabel(e.status),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: color,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  m.availability(e),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: missing ? c.alert : c.muted,
-                                    fontWeight: missing
-                                        ? FontWeight.w600
-                                        : null,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+        ),
       ),
     ],
   );
   Widget _futurePlayer(EditorialColors c) {
-    final e = m.selected;
     return Container(
       decoration: BoxDecoration(
         color: c.background,
@@ -939,9 +1040,7 @@ class _LibraryPageState extends State<LibraryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  e == null
-                      ? 'Aucun épisode'
-                      : '${e.title} · ${dateLabel(e.date)}',
+                  'Aucun épisode en lecture',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1034,91 +1133,125 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
         tab = 0;
       }
       final c = EditorialColors(m.dark);
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SelectableText(
-              e.title,
-              style: const TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              dateLabel(e.date),
-              style: TextStyle(color: c.muted, fontSize: 13),
-            ),
-            const SizedBox(height: 18),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => unawaited(toggle(e)),
-                  icon: Icon(statusIcon(e.status), size: 18),
-                  label: Text('${statusLabel(e.status)} ↻'),
+      return Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          key: ValueKey('detail-${e.id}'),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SelectableText(
+                e.title,
+                style: const TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
                 ),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    try {
-                      m.favorite(e);
-                    } catch (error) {
-                      m.error = error.toString();
-                      m.changed();
-                    }
-                  },
-                  icon: Icon(
-                    e.favorite ? Icons.star : Icons.star_border,
-                    size: 18,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                dateLabel(e.date),
+                style: TextStyle(color: c.muted, fontSize: 13),
+              ),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => unawaited(toggle(e)),
+                    icon: Icon(statusIcon(e.status), size: 18),
+                    label: Text('${statusLabel(e.status)} ↻'),
                   ),
-                  label: const Text('Favori'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              m.availability(e),
-              style: TextStyle(
-                color: m.audioKnown && !e.audioAvailable ? c.alert : c.muted,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (m.query.isNotEmpty && e.excerpt.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                color: c.background,
-                child: Text(
-                  e.excerpt,
-                  style: TextStyle(fontSize: 13, color: c.muted),
-                ),
-              ),
-            Row(
-              children: [
-                for (var i = 0; i < 3; i++)
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: tab == i ? c.accent : c.muted,
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      try {
+                        m.favorite(e);
+                      } catch (error) {
+                        m.error = error.toString();
+                        m.changed();
+                      }
+                    },
+                    icon: Icon(
+                      e.favorite ? Icons.star : Icons.star_border,
+                      color: c.accent,
+                      size: 18,
                     ),
-                    onPressed: () => setState(() => tab = i),
-                    child: Text(
-                      ['Résumé', 'Sources', 'Musiques'][i],
-                      style: TextStyle(
-                        fontWeight: tab == i ? FontWeight.bold : null,
+                    label: const Text('Favori'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                m.availability(e),
+                style: TextStyle(
+                  color: m.audioKnown && !e.audioAvailable ? c.alert : c.muted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (m.query.isNotEmpty && e.excerpt.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: c.background,
+                    border: Border.all(color: c.accent),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Résultat de la recherche',
+                        style: TextStyle(
+                          color: c.accent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SelectableText.rich(
+                        TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: c.ink,
+                          ),
+                          children: searchExcerptSpans(
+                            e.markedExcerpt.isEmpty
+                                ? e.excerpt
+                                : e.markedExcerpt,
+                            c.accent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Row(
+                children: [
+                  for (var i = 0; i < 3; i++)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: tab == i ? c.accent : c.muted,
+                      ),
+                      onPressed: () => setState(() => tab = i),
+                      child: Text(
+                        ['Résumé', 'Sources', 'Musiques'][i],
+                        style: TextStyle(
+                          fontWeight: tab == i ? FontWeight.bold : null,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            Divider(color: c.line),
-            if (tab == 0) summary(e.description, c),
-            if (tab == 1) ...sources(e, c),
-            if (tab == 2) ...music(e, c),
-          ],
+                ],
+              ),
+              Divider(color: c.line),
+              if (tab == 0) summary(e.description, c),
+              if (tab == 1) ...sources(e, c),
+              if (tab == 2) ...music(e, c),
+            ],
+          ),
         ),
       );
     },
@@ -1126,25 +1259,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
   Widget summary(String text, EditorialColors c) {
     if (text.isEmpty || text == 'Aucune donnée')
       return const Text('Aucun résumé renseigné.');
-    final characters = text.characters;
-    final first = characters.first;
-    return SelectableText.rich(
-      TextSpan(
-        style: TextStyle(fontSize: 14, height: 1.85, color: c.ink),
-        children: [
-          TextSpan(
-            text: first,
-            style: TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 42,
-              height: 1,
-              color: c.accent,
-            ),
-          ),
-          TextSpan(text: characters.skip(1).toString()),
-        ],
-      ),
-    );
+    return DropCapSummary(text: text, colors: c);
   }
 
   Widget card(String title, List<Widget> content, EditorialColors c) =>
@@ -1411,14 +1526,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            m.folderLabel,
-                            style: TextStyle(fontSize: 12, color: c.muted),
-                          ),
                           if (m.error.isNotEmpty)
                             Text(m.error, style: TextStyle(color: c.alert)),
                           group('Apparence', [
                             DropdownButton<bool>(
+                              mouseCursor: WidgetStateMouseCursor.clickable,
+                              dropdownMenuItemMouseCursor:
+                                  WidgetStateMouseCursor.clickable,
                               value: m.dark,
                               items: const [
                                 DropdownMenuItem(
@@ -1640,16 +1754,35 @@ class ScanPage extends StatelessWidget {
                     ? 'Aucun scan réalisé.'
                     : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s). Les fichiers ne sont jamais modifiés.',
               ),
+              if (model.report != null)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.save_alt),
+                  label: const Text('Exporter le diagnostic TXT'),
+                  onPressed: () async {
+                    try {
+                      final file = await model.exportScanDiagnostic();
+                      if (context.mounted)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: SelectableText(
+                              'Diagnostic exporté : ${file.path}',
+                            ),
+                          ),
+                        );
+                    } catch (error) {
+                      model.error = 'Export du diagnostic impossible : $error';
+                      model.changed();
+                    }
+                  },
+                ),
               if (issues.isNotEmpty)
                 ExpansionTile(
                   title: const Text('Diagnostics du scan'),
                   children: [
-                    for (final issue in issues)
-                      ListTile(
-                        dense: true,
-                        title: Text((issue as Map)['message'].toString()),
-                        subtitle: Text(issue['source']?.toString() ?? ''),
-                      ),
+                    SizedBox(
+                      height: 180,
+                      child: ScanDiagnostics(issues: issues),
+                    ),
                   ],
                 ),
             ],
@@ -1764,4 +1897,136 @@ class _ManualEpisodePickerState extends State<ManualEpisodePicker> {
       ),
     );
   }
+}
+
+/// Les marqueurs proviennent de FTS5 ; aucun balisage fourni par le corpus n'est interprété.
+List<TextSpan> searchExcerptSpans(String marked, Color accent) {
+  final spans = <TextSpan>[];
+  var bold = false;
+  final buffer = StringBuffer();
+  void flush() {
+    if (buffer.isEmpty) return;
+    spans.add(
+      TextSpan(
+        text: buffer.toString(),
+        style: bold
+            ? TextStyle(fontWeight: FontWeight.bold, color: accent)
+            : null,
+      ),
+    );
+    buffer.clear();
+  }
+
+  for (final character in marked.characters) {
+    if (character == '\u0001' || character == '\u0002') {
+      flush();
+      bold = character == '\u0001';
+    } else {
+      buffer.write(character);
+    }
+  }
+  flush();
+  return spans;
+}
+
+class DropCapSummary extends StatelessWidget {
+  const DropCapSummary({super.key, required this.text, required this.colors});
+  final String text;
+  final EditorialColors colors;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final scaler = MediaQuery.textScalerOf(context);
+      final style = TextStyle(fontSize: 15, height: 1.7, color: colors.ink);
+      final first = text.characters.first;
+      final rest = text.characters.skip(1).toString();
+      final capWidth = scaler.scale(44);
+      final lineHeight = scaler.scale(15) * 1.7;
+      final painter = TextPainter(
+        text: TextSpan(text: rest, style: style),
+        textDirection: TextDirection.ltr,
+        textScaler: scaler,
+      )..layout(maxWidth: (box.maxWidth - capWidth).clamp(1, double.infinity));
+      final lines = painter.computeLineMetrics();
+      final split = lines.length <= 2
+          ? rest.length
+          : painter
+                .getLineBoundary(
+                  painter.getPositionForOffset(Offset(0, lines[1].baseline)),
+                )
+                .end;
+      painter.dispose();
+      return SelectionArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: capWidth,
+                  height: lineHeight * 2,
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      first,
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 48,
+                        height: 1,
+                        color: colors.accent,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(child: Text(rest.substring(0, split), style: style)),
+              ],
+            ),
+            if (split < rest.length)
+              Text(
+                rest.substring(split).replaceFirst(RegExp(r'^\n'), ''),
+                style: style,
+              ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class ScanDiagnostics extends StatefulWidget {
+  const ScanDiagnostics({super.key, required this.issues});
+  final List<dynamic> issues;
+  @override
+  State<ScanDiagnostics> createState() => _ScanDiagnosticsState();
+}
+
+class _ScanDiagnosticsState extends State<ScanDiagnostics> {
+  final controller = ScrollController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scrollbar(
+    controller: controller,
+    thumbVisibility: true,
+    child: SelectionArea(
+      child: ListView.builder(
+        controller: controller,
+        primary: false,
+        itemCount: widget.issues.length,
+        itemBuilder: (context, index) {
+          final issue = widget.issues[index] as Map;
+          return ListTile(
+            dense: true,
+            title: Text(issue['message'].toString()),
+            subtitle: Text(issue['source']?.toString() ?? ''),
+          );
+        },
+      ),
+    ),
+  );
 }

@@ -59,7 +59,9 @@ final class SqliteSearchEngine implements SearchEngine {
         .map((f) => columns[f]!)
         .join(' ');
     final match =
-        '{$selected} : (' + terms.map((t) => '"$t"').join(' AND ') + ')';
+        '{$selected} : (' +
+        terms.map((t) => '"$t"${options.prefix ? "*" : ""}').join(' AND ') +
+        ')';
     final conditions = <String>['episodes_fts MATCH ?'];
     final parameters = <Object?>[match];
     if (from != null) {
@@ -84,7 +86,9 @@ final class SqliteSearchEngine implements SearchEngine {
       for (final row in database.select('''
 SELECT e.id,e.title,e.broadcast_date,COALESCE(l.available,0) AS audio_available,
  bm25(episodes_fts,10.0,1.0,2.0,1.0) AS score,
- snippet(episodes_fts,-1,'','',' … ',32) AS excerpt
+ snippet(episodes_fts,-1,'','',' … ',32) AS excerpt,
+ snippet(episodes_fts,-1,char(1),char(2),' … ',32) AS marked_excerpt,
+ ${[for (var i = 0; i < 4; i++) "instr(highlight(episodes_fts,$i,char(1),char(2)),char(1)) AS hit_$i"].join(',')}
 FROM episodes_fts JOIN episodes e ON e.rowid=episodes_fts.rowid
 LEFT JOIN local_audio_links l ON l.episode_id=e.id
 WHERE ${conditions.join(' AND ')}
@@ -97,6 +101,11 @@ ORDER BY score,e.broadcast_date DESC,e.id LIMIT ? OFFSET ?
               ? null
               : DateTime.parse(row['broadcast_date'] as String),
           excerpt: row['excerpt'] as String,
+          markedExcerpt: row['marked_excerpt'] as String,
+          matchedFields: {
+            for (final (i, field) in SearchField.values.indexed)
+              if ((row['hit_$i'] as int) > 0) field,
+          },
           score: (row['score'] as num).toDouble(),
           audioAvailable: row['audio_available'] == 1,
         ),

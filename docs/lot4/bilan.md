@@ -110,7 +110,7 @@ Sur cet hôte Linux x64 :
 bash tools/lot4/check.sh
 ```
 
-Résultats : **174 tests Dart + 7 tests Flutter réussis**, formatage conforme et
+Résultats : **175 tests Dart + 8 tests Flutter réussis**, formatage conforme et
 analyses statiques sans problème. Les tests Flutter exécutent bien SQLite natif
 et chargent le seed via le bundle, au-delà d'un rendu de données fictives.
 
@@ -161,7 +161,7 @@ diagnostics séparément, y compris en cas d'échec du test du paquet.
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
-du livrable Windows ; elle n'est pas remplacée par les 181 tests Linux.
+du livrable Windows ; elle n'est pas remplacée par les 183 tests Linux.
 
 ## Première exécution Windows — diagnostic des logs
 
@@ -328,3 +328,32 @@ Vérifications exécutées sur Linux : `bash tools/lot4/check.sh` réussit avec
 PowerShell 7.5.4 valide la syntaxe de tous les scripts du Lot 4 et les cas du
 résolveur CRT. La disparition du crash natif doit encore être vérifiée par une
 nouvelle exécution Windows ; aucun résultat local ne la démontre.
+
+
+## Ajustements de l’interface après essais utilisateur
+
+L’interface Flutter applique les [spécifications complémentaires](specifications.md#ajustements-après-essais-de-linterface-windows) :
+fiche en haut, navigation réelle par flèches avec défilement de la sélection,
+lettrine sur deux lignes, couleurs et typographie harmonisées, curseurs main
+explicites pour Windows, suppression du chemin MP3 redondant, diagnostic
+sélectionnable/défilant et export TXT dans le dossier utilisateur.
+
+La recherche de l’application utilise désormais des préfixes FTS5 dès trois
+caractères, après 250 ms sans saisie. Aucun changement de schéma ou reconstruction
+du seed n’est nécessaire. L’option de préfixe est explicite dans `SearchOptions` ;
+le contrat de recherche exacte existant reste disponible pour les autres usages.
+Chaque terme reste extrait et cité par le code, les requêtes sont paramétrées et
+bornées. Les rubriques et extraits surlignés proviennent de `highlight`/`snippet`
+de SQLite, avec marqueurs internes interprétés comme styles de texte, jamais HTML.
+Le texte brut des extraits reste disponible séparément.
+
+Le lecteur du Lot 4 reste sans audio. Son libellé ne dépend plus de la fiche
+consultée ; la lecture réelle et son contrôleur indépendant restent au Lot 5.
+
+Vérifications locales : **175 tests Dart + 8 tests Flutter**, formatage et analyses
+statiques. Le nouveau test du cœur couvre préfixes, accents, rubriques exactes et
+syntaxe utilisateur neutralisée. Le test d’interface couvre haut/bas, stabilité
+du titre sans sources, seuil de recherche, effacement, indication des rubriques,
+curseur main, défilement de 100 diagnostics, export et affichage sombre à 1024 × 740.
+La recette visuelle et les interactions natives doivent encore être vérifiées sur
+le prochain paquet Windows ; ces tests Linux ne qualifient pas le binaire Windows.

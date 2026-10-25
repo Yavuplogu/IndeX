@@ -1,5 +1,7 @@
 import 'package:unorm_dart/unorm_dart.dart' as unicode;
 
+import '../search/search_engine.dart';
+
 /// Clé de présentation uniquement ; ne jamais l'utiliser pour une identité métier.
 String frenchTitleKey(String value) => unicode
     .nfd(value)
@@ -25,6 +27,8 @@ final class DesktopEpisode {
     required this.audioAvailable,
     required this.positionMs,
     this.excerpt = '',
+    this.markedExcerpt = '',
+    this.matchedFields = const {},
   });
   final String id,
       title,
@@ -36,6 +40,7 @@ final class DesktopEpisode {
   final String? date, audioRef;
   final bool favorite, audioAvailable;
   final int positionMs;
-  final String excerpt;
+  final String excerpt, markedExcerpt;
+  final Set<SearchField> matchedFields;
   final List<Map<String, Object?>> sources, music;
 }

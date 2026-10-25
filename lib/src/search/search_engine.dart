@@ -22,8 +22,10 @@ final class SearchOptions {
     this.toDate,
     this.audioAvailable,
     this.hasSources,
+    this.prefix = false,
   });
   final Set<SearchField> fields;
+  final bool prefix;
   final int limit, offset;
   final DateTime? fromDate, toDate;
   final bool? audioAvailable, hasSources;
@@ -37,12 +39,18 @@ final class SearchHit {
     required this.excerpt,
     required this.score,
     required this.audioAvailable,
+    this.markedExcerpt = '',
+    this.matchedFields = const {},
   });
   final String episodeId, title;
   final DateTime? broadcastDate;
 
   /// Texte brut (aucun HTML). Les extraits ne doivent pas être interprétés comme du balisage.
   final String excerpt;
+
+  /// Marqueurs FTS internes U+0001/U+0002, jamais du HTML.
+  final String markedExcerpt;
+  final Set<SearchField> matchedFields;
 
   /// BM25 SQLite : les valeurs les plus petites sont les plus pertinentes.
   final double score;
