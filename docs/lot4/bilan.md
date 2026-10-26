@@ -50,7 +50,7 @@ prévus au Lot 5, sans fausse simulation d'audio dans l'application.
 
 Schéma de travail **v4** : ajout transactionnel de `local_settings`, sans modifier
 les tables personnelles existantes. Le seed versionné est désormais en **v4**, actualisé le 26 octobre depuis les
-sources `e730f77`, avec 716 identités conservées et les noms corrigés. Les seeds v2/v3/v4
+sources `f126478`, avec 716 identités conservées et les noms corrigés. Les seeds v2/v3/v4
 sont reconnus en lecture seule, et un seed v4 avec réglages personnels est refusé.
 Les index FTS restent synchronisés par les triggers et les choix par champ sont
 ajoutés à `SearchOptions.fields`, avec noms de colonnes fixes et paramètres MATCH.
@@ -111,7 +111,7 @@ Sur cet hôte Linux x64 :
 bash tools/lot4/check.sh
 ```
 
-Résultats : **184 tests Dart + 11 tests Flutter réussis**, formatage conforme et
+Résultats : **184 tests Dart + 13 tests Flutter réussis**, formatage conforme et
 analyses statiques sans problème. Les tests Flutter exécutent bien SQLite natif
 et chargent le seed via le bundle, au-delà d'un rendu de données fictives.
 
@@ -163,7 +163,7 @@ en cas d'échec du test du paquet.
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
-du livrable Windows ; elle n'est pas remplacée par les 195 tests Linux.
+du livrable Windows ; elle n'est pas remplacée par les 197 tests Linux.
 
 ## Première exécution Windows — diagnostic des logs
 
@@ -499,3 +499,39 @@ ont disparu : **716 épisodes, 29 avertissements historiques, aucune erreur,
 quarantaine ou fiche à vérifier**. Les identités restent inchangées. Le test des
 noms corrigés couvre désormais les neuf fichiers, dont les Hmongs ; les constats
 précédents de 30 avertissements décrivent la révision avant cette correction.
+
+
+## 26 octobre — seed r3, compteurs et défilement de fiche indépendant
+
+Les sources `f126478` actualisent Le colonel B. (11/11/2000) et L'affaire L.
+(21/04/2001), avec les noms TXT et MP3 système à double point. Le seed
+**`corpus-2026-10-26-noms-journal-r3`** et le bundle Flutter sont régénérés.
+Comparaison avec le seed r2 : seules ces deux fiches changent, les 716 identités
+restent identiques. 716 épisodes, 29 avertissements historiques, aucune erreur,
+quarantaine ou fiche à vérifier. Le test des noms corrigés couvre les onze fichiers.
+
+Le compteur utilise le nombre visible à gauche et les MP3 associés disponibles
+dans tout le catalogue à droite, plus les absents après vérification complète.
+Le diagnostic décode les URI de fichiers pour affichage et export TXT uniquement,
+sans modifier les clés de liens. Les cartes sélectionnables ont le fond des
+Paramètres et placent les fichiers avec « Associer… » en premier.
+
+La hauteur fixe de `SliverPersistentHeader` réservait plus d'espace que ses boutons,
+d'où le vide sous les onglets. Elle est supprimée. Une zone d'en-tête à hauteur
+naturelle et une zone de données défilante ont désormais des contrôleurs distincts.
+Les mêmes rectangles de correspondances révèlent la cible dans le viewport des
+données ; titre et onglets restent fixes. Un plafond de 70 % pour l'en-tête permet
+son défilement manuel à fort zoom/petite fenêtre et garde de la place aux données.
+
+La palette des correspondances et des commandes reprend le fond des Paramètres
+et l'encre primaire du thème utilisée par le X. Chaque bouton a son propre fond,
+sans fond rectangulaire derrière leur rangée. Libellés et explication sont actualisés.
+Les épisodes connexes utilisent un survol rectangulaire ; leurs dates reprennent
+explicitement `bodyMedium` et la couleur d'état de la liste, à taille inchangée.
+
+Vérifications : **184 tests Dart et 13 tests Flutter**, analyses et formatage.
+Les régressions vérifient l'absence d'espace réservé sous les onglets, la stabilité
+du titre et des onglets pendant la navigation, les couleurs, les compteurs globaux
+malgré les filtres, les chemins avec espaces (sans altérer les URI), le listing
+sélectionnable/trié et l'accès au bouton d'association dans les deux apparences.
+La recette native du nouveau paquet Windows reste à exécuter sous Windows.

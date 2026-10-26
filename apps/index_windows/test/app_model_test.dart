@@ -18,6 +18,54 @@ void main() {
     root.deleteSync(recursive: true);
   });
   test(
+    'Compteurs MP3 globaux indépendants des filtres et chemins lisibles',
+    () async {
+      model = AppModel(portableDirectory: portable);
+      await model!.configure(
+        data.path,
+        Directory('../../MP3_Files').absolute.path,
+        false,
+      );
+      expect(model!.availableAudioCount, 6);
+      expect(model!.missingAudioCount, 710);
+      expect(model!.episodeCountLabel, '716 / 6 épisodes · 710 MP3 absents');
+      model!.search('Masque');
+      expect(model!.visible.length, lessThan(716));
+      expect(
+        model!.episodeCountLabel,
+        '${model!.visible.length} / 6 épisodes · 710 MP3 absents',
+      );
+      final file = File('${root.path}/dossier avec espaces/nom à copier.mp3');
+      final ref = file.absolute.uri.toString();
+      expect(ref, contains('%20'));
+      expect(displayDiagnosticPath(ref), file.absolute.path);
+      expect(displayDiagnosticPath('50% de progression'), '50% de progression');
+      final literalPercent = File('${root.path}/nom%20littéral.mp3');
+      expect(
+        displayDiagnosticPath(literalPercent.absolute.uri.toString()),
+        literalPercent.absolute.path,
+      );
+      model!.report = {
+        'count': 1,
+        'issues': [
+          {'source': ref, 'message': 'Erreur de test'},
+        ],
+        'decisions': [
+          {'audio_reference': ref, 'current_name': 'nom à copier.mp3'},
+        ],
+      };
+      final exported = await model!.exportScanDiagnostic();
+      final text = await exported.readAsString();
+      expect(text, contains(file.absolute.path));
+      expect(text, isNot(contains('%20')));
+      expect(
+        (model!.report!['decisions'] as List).single['audio_reference'],
+        ref,
+      );
+    },
+  );
+
+  test(
     'Démarrage sans MP3 reproposé après réouverture, favoris conservés',
     () async {
       model = AppModel(portableDirectory: portable);

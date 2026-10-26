@@ -94,8 +94,10 @@ void main() {
       '2014-06-14 Boko Haram au Nigeria.txt',
     );
   });
-  test('Les neuf noms corrigés figurent dans le seed intégré et le journal courant', () {
+  test('Les onze noms corrigés figurent dans le seed intégré et le journal courant', () {
     final expected = {
+      '2000_11_11': '2000-11-11 Le colonel B.',
+      '2001_04_21': "2001-04-21 L'affaire L.",
       '2003_10_25': '2003-10-25 Les Hmongs du Laos et la C.I.A.',
       '2000_11_25': '2000-11-25 La mort de Jean Chiappe (27 novembre 1940)',
       '2005_06_25': '2005-06-25 Einstein harcelé par le F.B.I.',

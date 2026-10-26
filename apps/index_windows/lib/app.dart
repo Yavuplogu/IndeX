@@ -24,8 +24,11 @@ final class EditorialColors {
       panel = dark ? const Color(0xff252220) : const Color(0xfffffcf6),
       controls = dark ? const Color(0xff36302a) : const Color(0xffeee4d4),
       titleBar = dark ? const Color(0xff302e2d) : const Color(0xffe9e8e5),
-      hitBackground = dark ? const Color(0xff502d2d) : const Color(0xfffbe4e2),
-      hitInk = dark ? const Color(0xffffb4ac) : const Color(0xff982e28),
+      hitBackground = dark ? const Color(0xff36302a) : const Color(0xffeee4d4),
+      hitInk = ColorScheme.fromSeed(
+        seedColor: dark ? const Color(0xffe5ad8e) : const Color(0xff99533d),
+        brightness: dark ? Brightness.dark : Brightness.light,
+      ).primary,
       ink = dark ? const Color(0xfff0e8df) : const Color(0xff302b26),
       muted = dark ? const Color(0xffc2b7ac) : const Color(0xff6f6357),
       accent = dark ? const Color(0xffe5ad8e) : const Color(0xff99533d),
@@ -868,9 +871,7 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              m.queryError.isNotEmpty
-                  ? m.queryError
-                  : '${m.visible.length} / ${m.catalog.length} épisodes',
+              m.queryError.isNotEmpty ? m.queryError : m.episodeCountLabel,
               style: TextStyle(
                 fontSize: 11,
                 color: m.queryError.isNotEmpty ? c.alert : c.muted,
@@ -1102,6 +1103,15 @@ class EpisodeDetail extends StatefulWidget {
 }
 
 class _EpisodeDetailState extends State<EpisodeDetail> {
+  final headerScroll = ScrollController(keepScrollOffset: false);
+  final dataScroll = ScrollController(keepScrollOffset: false);
+  @override
+  void dispose() {
+    headerScroll.dispose();
+    dataScroll.dispose();
+    super.dispose();
+  }
+
   int tab = 0;
   String? lastId;
   String lastSearch = '';
@@ -1201,197 +1211,234 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
       final c = EditorialColors(m.dark);
       final hasSearch =
           m.query.trim().characters.length >= 3 && e.matchedFields.isNotEmpty;
-      return CustomScrollView(
-        key: ValueKey('detail-${e.id}'),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  KeyedSubtree(
-                    key: const ValueKey('episode-detail-heading'),
-                    child: documentText(
-                      'title',
-                      const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      c,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    dateLabel(e.date),
-                    style: TextStyle(color: c.muted, fontSize: 13),
-                  ),
-                  const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => unawaited(toggle(e)),
-                        icon: Icon(statusIcon(e.status), size: 18),
-                        label: Text('${statusLabel(e.status)} ↻'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          try {
-                            m.favorite(e);
-                          } catch (error) {
-                            m.error = error.toString();
-                            m.changed();
-                          }
-                        },
-                        icon: Icon(
-                          e.favorite ? Icons.star : Icons.star_border,
-                          color: c.accent,
-                          size: 18,
-                        ),
-                        label: const Text('Favori'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    m.availability(e),
-                    style: TextStyle(
-                      color: m.audioKnown && !e.audioAvailable
-                          ? c.alert
-                          : c.muted,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-          if (hasSearch)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverToBoxAdapter(
-                child: Container(
-                  key: const ValueKey('search-match-guide'),
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: c.hitBackground,
-                    border: Border.all(color: c.hitInk),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Résultat de la recherche',
-                        style: TextStyle(
-                          color: c.hitInk,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Les correspondances sont encadrées sur fond rouge clair, en rouge et en gras dans la fiche et ses onglets. Utilisez les boutons pour les parcourir.',
-                      ),
-                      const SizedBox(height: 8),
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          document.matches.isEmpty
-                              ? 'Aucune correspondance dans les champs affichés.'
-                              : matchIndex < 0
-                              ? '${document.matches.length} correspondance(s)'
-                              : 'Correspondance ${matchIndex + 1} / ${document.matches.length}',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _DetailToolbar(
-              height:
-                  (hasSearch ? 102.0 : 48.0) *
-                  MediaQuery.textScalerOf(context).scale(1),
-              child: Material(
-                color: c.panel,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (hasSearch)
-                        Container(
-                          color: c.hitBackground,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: document.matches.isEmpty
-                                      ? null
-                                      : () => moveMatch(-1),
-                                  icon: const Icon(Icons.navigate_before),
-                                  label: const Text('Match précédent'),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: document.matches.isEmpty
-                                      ? null
-                                      : () => moveMatch(1),
-                                  icon: const Icon(Icons.navigate_next),
-                                  label: const Text('Match suivant'),
-                                ),
-                              ),
-                            ],
+      return LayoutBuilder(
+        builder: (context, bounds) => Column(
+          key: ValueKey('detail-${e.id}'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConstrainedBox(
+              // On small windows/high zoom only, the header can be scrolled
+              // manually without taking away the data viewport.
+              constraints: BoxConstraints(maxHeight: bounds.maxHeight * 0.7),
+              child: SingleChildScrollView(
+                key: ValueKey('detail-header-${e.id}'),
+                controller: headerScroll,
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        KeyedSubtree(
+                          key: const ValueKey('episode-detail-heading'),
+                          child: documentText(
+                            'title',
+                            const TextStyle(
+                              fontFamily: 'Georgia',
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            c,
                           ),
                         ),
-                      Row(
-                        children: [
-                          for (var i = 0; i < 3; i++)
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: tab == i ? c.accent : c.muted,
+                        const SizedBox(height: 10),
+                        Text(
+                          dateLabel(e.date),
+                          style: TextStyle(color: c.muted, fontSize: 13),
+                        ),
+                        const SizedBox(height: 18),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => unawaited(toggle(e)),
+                              icon: Icon(statusIcon(e.status), size: 18),
+                              label: Text('${statusLabel(e.status)} ↻'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                try {
+                                  m.favorite(e);
+                                } catch (error) {
+                                  m.error = error.toString();
+                                  m.changed();
+                                }
+                              },
+                              icon: Icon(
+                                e.favorite ? Icons.star : Icons.star_border,
+                                color: c.accent,
+                                size: 18,
                               ),
-                              onPressed: () => setState(() => tab = i),
-                              child: Text(
-                                ['Résumé', 'Sources', 'Musiques'][i],
-                                style: TextStyle(
-                                  fontWeight: tab == i ? FontWeight.bold : null,
-                                ),
+                              label: const Text('Favori'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          m.availability(e),
+                          style: TextStyle(
+                            color: m.audioKnown && !e.audioAvailable
+                                ? c.alert
+                                : c.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                    if (hasSearch)
+                      Container(
+                        key: const ValueKey('search-match-guide'),
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: c.hitBackground,
+                          border: Border.all(color: c.hitInk),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Résultat de la recherche',
+                              style: TextStyle(
+                                color: c.hitInk,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                        ],
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Correspondances encadrées en rouge, utilisez les boutons pour parcourir.',
+                            ),
+                            const SizedBox(height: 8),
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                document.matches.isEmpty
+                                    ? 'Aucune correspondance dans les champs affichés.'
+                                    : matchIndex < 0
+                                    ? '${document.matches.length} correspondance(s)'
+                                    : 'Correspondance ${matchIndex + 1} / ${document.matches.length}',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (hasSearch)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: c.hitInk,
+                                      backgroundColor: c.hitBackground,
+                                      side: BorderSide(color: c.hitInk),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 10,
+                                      ),
+                                      textStyle: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge!
+                                          .copyWith(fontSize: 13),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: document.matches.isEmpty
+                                        ? null
+                                        : () => moveMatch(-1),
+                                    icon: const Icon(Icons.navigate_before),
+                                    label: const Text('Résultat précédent'),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: c.hitInk,
+                                      backgroundColor: c.hitBackground,
+                                      side: BorderSide(color: c.hitInk),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 10,
+                                      ),
+                                      textStyle: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge!
+                                          .copyWith(fontSize: 13),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: document.matches.isEmpty
+                                        ? null
+                                        : () => moveMatch(1),
+                                    icon: const Icon(Icons.navigate_next),
+                                    label: const Text('Résultat suivant'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Row(
+                          key: const ValueKey('episode-detail-tabs'),
+                          children: [
+                            for (var i = 0; i < 3; i++)
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: tab == i
+                                      ? c.accent
+                                      : c.muted,
+                                ),
+                                onPressed: () => setState(() => tab = i),
+                                child: Text(
+                                  ['Résumé', 'Sources', 'Musiques'][i],
+                                  style: TextStyle(
+                                    fontWeight: tab == i
+                                        ? FontWeight.bold
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Divider(
+                      key: const ValueKey('episode-detail-divider'),
+                      height: 12,
+                      color: c.line,
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Divider(color: c.line),
-                  if (tab == 0) summary(e.description, c),
-                  if (tab == 1) ...sources(e, c),
-                  if (tab == 2) ...music(e, c),
-                ],
+            Expanded(
+              child: SingleChildScrollView(
+                key: ValueKey('detail-data-${e.id}-$tab'),
+                controller: dataScroll,
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  key: const ValueKey('episode-detail-content'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (tab == 0) summary(e.description, c),
+                    if (tab == 1) ...sources(e, c),
+                    if (tab == 2) ...music(e, c),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     },
   );
@@ -1499,6 +1546,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
             style: TextButton.styleFrom(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              shape: const RoundedRectangleBorder(),
             ),
             child: Row(
               children: [
@@ -1522,7 +1570,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                 const SizedBox(width: 12),
                 Text(
                   dateLabel(entry.date),
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontSize: 11,
                     color: m.audioKnown && !entry.audioAvailable
                         ? c.missingInk
@@ -1867,6 +1915,21 @@ class ScanPage extends StatelessWidget {
     final c = EditorialColors(model.dark);
     final decisions = (model.report?['decisions'] as List?) ?? [];
     final issues = (model.report?['issues'] as List?) ?? [];
+    final manualRefs = model.manualAudioReferences;
+    final entries = [
+      for (final (i, raw) in decisions.indexed)
+        (
+          decision: Map<String, dynamic>.from(raw as Map),
+          index: i,
+          manual: manualRefs.contains(raw['audio_reference']),
+        ),
+    ];
+    entries.sort((a, b) {
+      final rank =
+          (a.manual || a.decision['status'] == 'confirmed' ? 1 : 0) -
+          (b.manual || b.decision['status'] == 'confirmed' ? 1 : 0);
+      return rank != 0 ? rank : a.index.compareTo(b.index);
+    });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1951,31 +2014,35 @@ class ScanPage extends StatelessWidget {
                   child: Text('Sélectionnez un dossier pour analyser les MP3.'),
                 )
               : ListView.builder(
-                  itemCount: decisions.length,
+                  key: const ValueKey('scan-associations-list'),
+                  itemCount: entries.length,
                   itemBuilder: (context, index) {
-                    final decision = Map<String, dynamic>.from(
-                      decisions[index] as Map,
-                    );
-                    final manual = model.isManual(
-                      decision['audio_reference'] as String,
-                    );
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 5,
-                      ),
-                      child: ListTile(
-                        title: Text(decision['current_name'] as String),
-                        subtitle: Text(
-                          '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}',
+                    final decision = entries[index].decision;
+                    final manual = entries[index].manual;
+                    return SelectionArea(
+                      child: Card(
+                        color: c.controls,
+                        surfaceTintColor: Colors.transparent,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 5,
                         ),
-                        trailing: decision['status'] == 'confirmed' || manual
-                            ? Icon(Icons.check_circle_outline, color: c.accent)
-                            : OutlinedButton(
-                                onPressed: () =>
-                                    unawaited(associate(context, decision)),
-                                child: const Text('Associer…'),
-                              ),
+                        child: ListTile(
+                          title: Text(decision['current_name'] as String),
+                          subtitle: Text(
+                            '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}\n${displayDiagnosticPath(decision['audio_reference'] as String)}',
+                          ),
+                          trailing: decision['status'] == 'confirmed' || manual
+                              ? Icon(
+                                  Icons.check_circle_outline,
+                                  color: c.accent,
+                                )
+                              : OutlinedButton(
+                                  onPressed: () =>
+                                      unawaited(associate(context, decision)),
+                                  child: const Text('Associer…'),
+                                ),
+                        ),
                       ),
                     );
                   },
@@ -2107,28 +2174,12 @@ class _ScanDiagnosticsState extends State<ScanDiagnostics> {
           return ListTile(
             dense: true,
             title: Text(issue['message'].toString()),
-            subtitle: Text(issue['source']?.toString() ?? ''),
+            subtitle: Text(
+              displayDiagnosticPath(issue['source']?.toString() ?? ''),
+            ),
           );
         },
       ),
     ),
   );
-}
-
-class _DetailToolbar extends SliverPersistentHeaderDelegate {
-  _DetailToolbar({required this.height, required this.child});
-  final double height;
-  final Widget child;
-  @override
-  double get minExtent => height;
-  @override
-  double get maxExtent => height;
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) => child;
-  @override
-  bool shouldRebuild(_DetailToolbar old) => true;
 }

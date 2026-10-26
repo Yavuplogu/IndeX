@@ -268,3 +268,34 @@ les dernières sources avant empaquetage. Les huit corrections de noms sont int�
 au seed v4 sans modifier les identités, favoris ou suivi. Le diagnostic doit expliquer
 les noms inconnus et ambiguïtés, distinguer les choix manuels et ne jamais présenter
 une association par nom comme une validation ID3 ou du contenu audio.
+
+
+## Compteurs, diagnostic et fiche fixe — révision du 26 octobre 2026
+
+Cette révision remplace les couleurs rouge clair et la barre défilante décrites
+plus haut. Les sources `f126478` (TXT Le colonel B. et L'affaire L. avec doubles
+points, journal correspondant) sont intégrées au seed r3 avant empaquetage.
+
+- Compteur : gauche inchangée (épisodes visibles avec filtres), droite égale au
+  nombre global d'épisodes avec MP3 associé disponible ; rappel « Y MP3 absents »
+  avec la même typo et couleur après scan complet. Si non vérifié, ne pas qualifier
+  les fichiers d'absents.
+- Chemins de diagnostic affichés avec espaces, sans encodage URI visible, y compris
+  dans le TXT exporté. Les URI techniques dans SQLite restent inchangées.
+- Cartes du listing d'associations : textes sélectionnables, fond des Paramètres,
+  fichiers dotés d'un bouton « Associer… » en tête, ordre stable dans chaque groupe.
+- Cadre Résultat de la recherche, correspondances et boutons : fond des Paramètres,
+  encre identique au X du logo ; cadres des occurrences et texte gras conservés.
+  Texte exact : « Correspondances encadrées en rouge, utilisez les boutons pour
+  parcourir. » Le compteur reste dessous. Boutons « Résultat précédent » et
+  « Résultat suivant », chacun portant son propre fond limité à sa forme, sans
+  rectangle coloré autour ni entre les boutons.
+- En-tête fixe (titre, date, états, cadre explicatif, commandes et onglets), données
+  défilantes indépendantes : la navigation révèle le résultat dans cette zone sans
+  déplacer le haut de la fiche. Aucune hauteur de barre fixe ne doit créer un vide
+  sous les onglets, avec ou sans recherche. En petite fenêtre ou à fort zoom,
+  l'en-tête peut défiler manuellement dans une zone bornée pour conserver une zone
+  de lecture utilisable ; son défilement est indépendant de celui des données.
+- Épisodes connexes : survol rectangulaire à la taille de la cellule. Date de même
+  police, graisse et couleur d'état que la liste générale ; taille actuelle conservée.
+- Appliquer les mêmes règles dans le thème sombre.

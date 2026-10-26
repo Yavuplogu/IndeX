@@ -70,9 +70,9 @@ champs autorisés peut retrouver la fiche au scan suivant, sans perdre son suivi
 
 ## Catalogue mis à jour
 
-Les sources de `main` au commit `e730f77` sont intégrées dans
-`corpus-2026-10-26-noms-journal-r2` (seed SQLite v4, FTS5). Les huit noms signalés,
-puis le TXT des Hmongs du Laos corrigé avec deux points, sont présents ; les
+Les sources de `main` au commit `f126478` sont intégrées dans
+`corpus-2026-10-26-noms-journal-r3` (seed SQLite v4, FTS5). Les onze noms corrigés,
+dont les Hmongs du Laos, Le colonel B. et L’affaire L., sont présents ; les
 716 identités sont inchangées. Le catalogue contient toujours 716 épisodes,
 603 résumés, 1896 références et 614 musiques, sans audio ni données personnelles.
 

@@ -25,6 +25,27 @@ Future<SeedData> bundledSeed() async {
   );
 }
 
+/// Decode a file URI for presentation only; retain the original URI as identity.
+String displayDiagnosticPath(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri?.scheme == 'file') {
+    try {
+      return File.fromUri(uri!).path;
+    } on ArgumentError {
+      return value;
+    }
+  }
+  return value;
+}
+
+Object? diagnosticForDisplay(Object? value) {
+  if (value is String) return displayDiagnosticPath(value);
+  if (value is List) return value.map(diagnosticForDisplay).toList();
+  if (value is Map)
+    return value.map((key, item) => MapEntry(key, diagnosticForDisplay(item)));
+  return value;
+}
+
 enum CatalogSort {
   relevance,
   dateNew,
@@ -66,6 +87,18 @@ final class AppModel extends ChangeNotifier {
   void changed() {
     if (!_disposed) notifyListeners();
   }
+
+  int get availableAudioCount => catalog.where((e) => e.audioAvailable).length;
+  int get missingAudioCount => catalog.length - availableAudioCount;
+  String get episodeCountLabel =>
+      '${visible.length} / $availableAudioCount épisodes · '
+      '${audioKnown ? '$missingAudioCount MP3 absents' : 'Disponibilité non vérifiée'}';
+  Set<String> get manualAudioReferences => {
+    for (final row in session!.store.database.select(
+      'SELECT audio_ref FROM local_audio_links WHERE manual=1',
+    ))
+      row['audio_ref'] as String,
+  };
 
   String get folderLabel => switch (audioState) {
     AudioFolderState.unconfigured => 'Aucun dossier MP3 paramétré',
@@ -303,12 +336,16 @@ final class AppModel extends ChangeNotifier {
       final issue = raw as Map;
       buffer.writeln('${index + 1}. ${issue['message'] ?? ''}');
       if (issue['source'] != null)
-        buffer.writeln('   Source : ${issue['source']}');
+        buffer.writeln(
+          '   Source : ${displayDiagnosticPath(issue['source'].toString())}',
+        );
       if (issue['code'] != null) buffer.writeln('   Code : ${issue['code']}');
       buffer.writeln();
     }
     buffer.writeln('Rapport complet et preuves des associations :');
-    buffer.writeln(const JsonEncoder.withIndent('  ').convert(report));
+    buffer.writeln(
+      const JsonEncoder.withIndent('  ').convert(diagnosticForDisplay(report)),
+    );
     await file.writeAsString(buffer.toString(), flush: true);
     return file;
   }

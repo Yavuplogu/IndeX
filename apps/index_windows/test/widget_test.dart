@@ -112,6 +112,31 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Fiche précédente'), findsNothing);
+      final relatedButton = tester.widget<TextButton>(
+        find
+            .descendant(
+              of: find.byType(EpisodeDetail),
+              matching: find.byWidgetPredicate(
+                (w) => w is TextButton && w.child is Row,
+              ),
+            )
+            .first,
+      );
+      expect(
+        (relatedButton.style!.shape!.resolve(
+          {},
+        ) as RoundedRectangleBorder).borderRadius,
+        BorderRadius.zero,
+      );
+      final relatedDate = (relatedButton.child as Row).children.last as Text;
+      final bodyStyle = Theme.of(tester.element(find.byType(EpisodeDetail)))
+          .textTheme
+          .bodyMedium!;
+      expect(relatedDate.style!.fontWeight, bodyStyle.fontWeight);
+      expect(relatedDate.style!.fontFamily, bodyStyle.fontFamily);
+      expect(relatedDate.style!.fontSize, 11);
+      expect(relatedDate.style!.color, EditorialColors(false).ink);
+
       await tester.tap(find.widgetWithText(OutlinedButton, 'Favori'));
       await tester.pump();
       expect(model.selected!.favorite, isTrue);
@@ -209,6 +234,20 @@ void main() {
         (w) => w is SelectableText && w.data == noSource.title,
       );
       final titleTop = tester.getTopLeft(title).dy;
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('episode-detail-content')))
+            .dy,
+        closeTo(
+          tester
+              .getBottomLeft(
+                find.byKey(const ValueKey('episode-detail-divider')),
+              )
+              .dy,
+          0.1,
+        ),
+      );
+
       await tester.tap(find.text('Sources').last);
       await tester.pumpAndSettle();
       expect(tester.getTopLeft(title).dy, titleTop);
@@ -307,9 +346,47 @@ void main() {
       final document = EpisodeSearch(candidate, model.catalog);
       await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
       await tester.pumpAndSettle();
-      final next = find.widgetWithText(OutlinedButton, 'Match suivant');
-      final previous = find.widgetWithText(OutlinedButton, 'Match précédent');
+      final next = find.widgetWithText(OutlinedButton, 'Résultat suivant');
+      final previous = find.widgetWithText(
+        OutlinedButton,
+        'Résultat précédent',
+      );
       await tester.ensureVisible(next);
+      final headingTop = tester.getTopLeft(
+        find.byKey(const ValueKey('episode-detail-heading')),
+      );
+      final tabsTop = tester.getTopLeft(
+        find.byKey(const ValueKey('episode-detail-tabs')),
+      );
+      final dividerBottom = tester
+          .getBottomLeft(find.byKey(const ValueKey('episode-detail-divider')))
+          .dy;
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('episode-detail-content')))
+            .dy,
+        closeTo(dividerBottom, 0.1),
+      );
+      final colors = EditorialColors(false);
+      final theme = Theme.of(tester.element(find.byType(EpisodeDetail)));
+      expect(colors.hitInk, theme.colorScheme.primary);
+      expect(colors.hitBackground, colors.controls);
+      final guide = tester.widget<Container>(
+        find.byKey(const ValueKey('search-match-guide')),
+      );
+      expect((guide.decoration as BoxDecoration).color, colors.controls);
+      final button = tester.widget<OutlinedButton>(next);
+      expect(button.style!.backgroundColor!.resolve({}), colors.controls);
+      expect(
+        button.style!.foregroundColor!.resolve({}),
+        theme.colorScheme.primary,
+      );
+      expect(
+        find.text(
+          'Correspondances encadrées en rouge, utilisez les boutons pour parcourir.',
+        ),
+        findsOneWidget,
+      );
       for (
         var i = 0;
         i <= document.matches.indexWhere((m) => m.tab == 1);
@@ -328,6 +405,17 @@ void main() {
           isTrue,
         );
         expect(next.hitTestable(), findsOneWidget);
+        expect(
+          tester.getTopLeft(
+            find.byKey(const ValueKey('episode-detail-heading')),
+          ),
+          headingTop,
+        );
+        expect(
+          tester.getTopLeft(find.byKey(const ValueKey('episode-detail-tabs'))),
+          tabsTop,
+        );
+
         final activeText = find.byWidgetPredicate(
           (w) =>
               w is DocumentText &&
@@ -380,6 +468,80 @@ void main() {
         isTrue,
       );
       expect(next.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    },
+  );
+
+  testWidgets(
+    'Rapport : fichiers à associer en premier, texte copiable et chemins lisibles',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-scan-cards-');
+      final portable = Directory('${root.path}/app')..createSync();
+      final data = Directory('${root.path}/data')..createSync();
+      final model = AppModel(portableDirectory: portable);
+      await tester.runAsync(() => model.configure(data.path, '', true));
+      final path = File('${root.path}/dossier avec espaces/inconnu.mp3')
+          .absolute;
+      model.report = {
+        'count': 2,
+        'issues': [
+          {'source': path.uri.toString(), 'message': 'Nom inconnu'},
+        ],
+        'decisions': [
+          {
+            'audio_reference': 'file:///valide.mp3',
+            'current_name': 'valide.mp3',
+            'status': 'confirmed',
+            'reason': 'Nom exact',
+          },
+          {
+            'audio_reference': path.uri.toString(),
+            'current_name': 'inconnu.mp3',
+            'status': 'unknown',
+            'reason': 'Nom inconnu',
+          },
+        ],
+      };
+      model.filesView = true;
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pumpAndSettle();
+      final cards = find.byType(Card);
+      expect(
+        find.descendant(of: cards.first, matching: find.text('inconnu.mp3')),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(of: cards.first, matching: find.byType(SelectionArea)),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Card>(cards.first).color,
+        EditorialColors(false).controls,
+      );
+      expect(find.textContaining(path.path), findsOneWidget);
+      expect(find.textContaining('%20'), findsNothing);
+      await tester.tap(find.text('Diagnostics du scan'));
+      await tester.pumpAndSettle();
+      expect(find.text(path.path), findsOneWidget);
+      await tester.tap(find.text('Associer…'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ManualEpisodePicker), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      model.setTheme(true);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Card>(cards.first).color,
+        EditorialColors(true).controls,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.runAsync(model.release);

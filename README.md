@@ -68,11 +68,11 @@ Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites na
 ## Régénérer le catalogue documentaire
 
 ```sh
-dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-26-noms-journal-r2 --generated-at 2026-10-26T00:00:00Z --report docs/lot3/catalogue-report.json --replace
+dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-26-noms-journal-r3 --generated-at 2026-10-26T00:00:00Z --report docs/lot3/catalogue-report.json --replace
 ```
 
 Le catalogue préindexé actuel (schéma v4) contient **716 épisodes**, dont 603 avec
-résumé, 1896 références et 614 musiques. Les neuf noms corrigés sur `main` sont
+résumé, 1896 références et 614 musiques. Les onze noms corrigés sur `main` sont
 intégrés, sans changement d'identité. Le rapport conserve les 29 avertissements historiques, sans
 erreur, quarantaine, divergence de nom TXT ni fiche à vérifier.
 Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace uniquement

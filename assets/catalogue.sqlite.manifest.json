@@ -1,9 +1,9 @@
 {
-  "catalog_version": "corpus-2026-10-26-noms-journal-r2",
+  "catalog_version": "corpus-2026-10-26-noms-journal-r3",
   "schema_version": 4,
   "generated_at": "2026-10-26T00:00:00.000Z",
   "sqlite_version": "3.54.0",
-  "sqlite_sha256": "84fbe77b095aa396982da54b6907e2aab9134671d52b02df5350036e26b60628",
+  "sqlite_sha256": "d559490cea33a490348bbe4ed1efce8291f2e863a35f853e52c45d18bce5305a",
   "sqlite_bytes": 12951552,
   "summary": {
     "txt_count": 716,
@@ -14,7 +14,7 @@
     "quarantined_txt": 0,
     "errors": 0,
     "warnings": 29,
-    "source_digest": "50aab1573513e66f099b3953966a97d6a2aae0041c235b0b6f6e29b5ee07a75b",
+    "source_digest": "1f7a02f21198e38a4363291002f0f8975516bf64ec8faf26b32782e75e304c66",
     "can_apply": true,
     "run_id": 1,
     "inserted": 716,

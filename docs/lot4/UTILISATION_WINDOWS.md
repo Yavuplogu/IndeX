@@ -30,9 +30,10 @@ Choisir les champs Titre, Résumé, Sources et/ou Musiques. Au moins un champ es
 nécessaire. La recherche se déclenche dès trois caractères et accepte les débuts
 de mots (« Yougo » trouve « Yougoslavie »). Elle ignore casse et accents et exige
 l'ensemble des termes ; le titre a un poids plus élevé. Les correspondances sont
-encadrées sur fond rouge clair, en rouge et en gras dans les onglets. Le cadre
-« Résultat de la recherche » explique ces repères ; les boutons Match précédent /
-Match suivant changent d'onglet et font défiler la fiche jusqu'au texte trouvé.
+encadrées sur fond beige, dans la couleur du X et en gras dans les onglets. Le cadre
+« Résultat de la recherche » explique ces repères ; les boutons Résultat précédent /
+Résultat suivant changent d'onglet et font défiler uniquement les données jusqu'au texte trouvé ; le titre, les commandes
+et les onglets restent en place.
 Ces boutons restent accessibles pendant le défilement. Les tris incluent les dates, les
 noms et les MP3 présents/absents. L'onglet Sources ouvre aussi les épisodes connexes.
 
@@ -109,3 +110,17 @@ Après mise à jour du programme, le catalogue est actualisé à l'ouverture et 
 MP3 configuré est rescanné. Les anciens liens automatiques fondés sur COMM sont alors
 réévalués ; le suivi et les favoris restent attachés aux mêmes épisodes. Sans dossier
 accessible, les données existantes sont conservées jusqu'à un scan complet.
+
+
+## Compteurs et diagnostic
+
+Sous les filtres, le nombre de gauche reste le nombre d'épisodes affichés. Celui
+de droite compte les épisodes du catalogue ayant un MP3 associé et disponible,
+indépendamment des filtres. Le rappel « Y MP3 absents » compte les autres épisodes
+après un scan complet ; sans vérification complète, « Disponibilité non vérifiée »
+évite de déclarer des fichiers absents sans preuve.
+
+Dans Fichiers et associations, les fichiers proposant « Associer… » apparaissent
+en premier. Le texte des cartes et du diagnostic est sélectionnable. Les chemins
+s'affichent avec leurs espaces, également dans l'export TXT, sans altérer les
+références internes des associations.

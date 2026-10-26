@@ -34,11 +34,11 @@
   automatique sur scan incomplet. Les anciens alias système ne sont pas une autorité.
 - Commande de vérification des Lots 1–4 après activation du SDK : `bash tools/lot4/check.sh`.
   Respecter le lockfile ; ne pas modifier les fixtures pour faire passer un test.
-- Corpus `e730f77` : 716 TXT/CSV, 716 épisodes, aucune erreur, quarantaine ou fiche
+- Corpus `f126478` : 716 TXT/CSV, 716 épisodes, aucune erreur, quarantaine ou fiche
   à vérifier ; les 29 avertissements historiques sont conservés. Le nom TXT des Hmongs
   du Laos est corrigé avec deux points. Voir `docs/lot3/catalogue-report.json`.
   Ne pas modifier les sources silencieusement. Seed v4
-  `corpus-2026-10-26-noms-journal-r2`, sans audio, suivi ou réglages ; 716 identités
+  `corpus-2026-10-26-noms-journal-r3`, sans audio, suivi ou réglages ; 716 identités
   conservées. Régénérer et versionner son manifeste.
 - SQLite v4 : FTS5 externe maintenu par triggers dans la transaction ; ne pas
   modifier les tables FTS à la main. Utiliser `SqliteSearchEngine.rebuildIndex/checkIndex`.
@@ -82,3 +82,11 @@
   mesure/rendu identiques de la lettrine, deux lignes exactes, ponctuation initiale
   avec première lettre/chiffre ; correspondances encadrées dans les onglets et
   navigation persistante. Voir la fin de `docs/lot4/specifications.md`.
+
+- Révision UI du 26 octobre : en-tête de fiche séparé des données défilantes,
+  sans hauteur fixe réservée sous les onglets. Navigation Résultat précédent/suivant
+  dans les seules données ; fond beige des Paramètres et encre identique au X.
+  Compteur gauche inchangé, droite MP3 disponibles globaux, rappel des absents
+  uniquement après scan complet. Décoder les URI uniquement pour affichage/export
+  du diagnostic, jamais pour modifier les références stockées. Cartes de scan
+  sélectionnables, fichiers avec bouton Associer en tête, même fond que Paramètres.
