@@ -293,7 +293,9 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
                 Expanded(
                   child: AbsorbPointer(
                     absorbing: m.busy || closing,
-                    child: m.needsSetup
+                    child: m.busy && m.session == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : m.needsSetup
                         ? StartupPage(
                             model: m,
                             pickDirectory: widget.pickDirectory,
@@ -1382,6 +1384,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                                         ? null
                                         : () => moveMatch(1),
                                     icon: const Icon(Icons.navigate_next),
+                                    iconAlignment: IconAlignment.end,
                                     label: const Text('Résultat suivant'),
                                   ),
                                 ),
@@ -1613,22 +1616,7 @@ class SettingsDialog extends StatefulWidget {
 }
 
 class _SettingsDialogState extends State<SettingsDialog> {
-  late final TextEditingController mp3;
-  late bool recursive;
   AppModel get m => widget.model;
-  @override
-  void initState() {
-    super.initState();
-    mp3 = TextEditingController(text: m.mp3Path);
-    recursive = m.session!.setting('recursive') == 'true';
-  }
-
-  @override
-  void dispose() {
-    mp3.dispose();
-    super.dispose();
-  }
-
   Future<void> move() async {
     final value = await widget.pickDirectory();
     if (value == null || !mounted) return;
@@ -1658,27 +1646,33 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Widget group(String title, List<Widget> content, EditorialColors c) =>
-      Container(
-        margin: const EdgeInsets.symmetric(vertical: 7),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: c.line),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: c.accent,
-              ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Material(
+          color: c.controls,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: c.line),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: c.accent,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...content,
+              ],
             ),
-            const SizedBox(height: 12),
-            ...content,
-          ],
+          ),
         ),
       );
   void future(String title, String text) => unawaited(
@@ -1702,6 +1696,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
     builder: (context, _) {
       final c = EditorialColors(m.dark);
       return Dialog(
+        backgroundColor: c.panel,
+        surfaceTintColor: Colors.transparent,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 650, maxHeight: 780),
           child: Padding(
@@ -1734,11 +1730,29 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           if (m.error.isNotEmpty)
                             Text(m.error, style: TextStyle(color: c.alert)),
                           group('Apparence', [
-                            DropdownButton<bool>(
-                              mouseCursor: WidgetStateMouseCursor.clickable,
-                              dropdownMenuItemMouseCursor:
-                                  WidgetStateMouseCursor.clickable,
-                              value: m.dark,
+                            DropdownButtonFormField<bool>(
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: c.panel,
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: c.line),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                              ),
+                              dropdownColor: c.controls,
+                              borderRadius: BorderRadius.circular(8),
+                              style: Theme.of(context).textTheme.bodyMedium!
+                                  .copyWith(color: c.ink),
+                              iconEnabledColor: c.accent,
+                              initialValue: m.dark,
+                              key: ValueKey(m.dark),
                               items: const [
                                 DropdownMenuItem(
                                   value: false,
@@ -1759,11 +1773,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               },
                             ),
                           ], c),
-                          group('Dossiers', [
-                            const Text(
-                              'Données utilisateur',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                          group('Données utilisateur', [
                             SelectableText(
                               m.dataPath,
                               style: const TextStyle(fontSize: 12),
@@ -1775,35 +1785,25 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 'Changer le dossier des données…',
                               ),
                             ),
-                            const SizedBox(height: 18),
-                            FolderField(
-                              label: 'Dossier contenant les MP3',
-                              controller: mp3,
-                              picker: widget.pickDirectory,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Laisser ce champ vide pour retirer le dossier MP3. Le choix sera reproposé au prochain démarrage.',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                          ], c),
+                          group('Analyse au démarrage', [
                             CheckboxListTile(
                               contentPadding: EdgeInsets.zero,
+                              controlAffinity: ListTileControlAffinity.leading,
                               title: const Text(
-                                'Analyser aussi les sous-dossiers',
-                                style: TextStyle(fontSize: 13),
+                                'Ne plus scanner le dossier MP3 à chaque ouverture',
                               ),
-                              value: recursive,
-                              onChanged: (v) => setState(() => recursive = v!),
-                            ),
-                            FilledButton(
-                              onPressed: () =>
-                                  unawaited(m.folders(mp3.text, recursive)),
-                              child: const Text('Enregistrer et analyser'),
+                              subtitle: const Text(
+                                'Les derniers résultats sont conservés. Relancez une analyse dans Fichiers et associations pour actualiser les disponibilités.',
+                              ),
+                              value: m.skipStartupScan,
+                              onChanged: (value) =>
+                                  m.setSkipStartupScan(value!),
                             ),
                           ], c),
                           group('Transfert du suivi', [
                             const Text(
-                              'Transfert manuel des favoris, statuts et progressions entre Windows et Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Le JSON sera créé dans exports/ du dossier utilisateur, avec un nom explicite sans espaces.',
+                              'Transfert manuel des favoris, statuts et progressions entre Windows et Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé sera créé dans le dossier "exports" du dossier des données utilisateur.',
                               style: TextStyle(fontSize: 13, height: 1.6),
                             ),
                             const SizedBox(height: 10),
@@ -1814,7 +1814,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 OutlinedButton(
                                   onPressed: () => future(
                                     'Export du suivi — Lot 5 ter',
-                                    'Cette fonction sera disponible au Lot 5 ter. Elle créera un fichier tel que IndeX_suivi_20261025T143000Z_a1b2c3d4.json dans le dossier des données utilisateur, sans modifier le suivi local.',
+                                    'Cette fonction sera disponible au Lot 5 ter. Elle créera un fichier tel que IndeX_suivi_20261025T143000Z_a1b2c3d4.json dans le dossier exports des données utilisateur, sans modifier le suivi local.',
                                   ),
                                   child: const Text('Exporter le suivi JSON'),
                                 ),
@@ -1966,13 +1966,26 @@ class ScanPage extends StatelessWidget {
                         : () => unawaited(model.scan(model.mp3Path)),
                     child: const Text('Relancer le scan'),
                   ),
+                  if (model.mp3Path.isNotEmpty)
+                    TextButton(
+                      onPressed: () =>
+                          unawaited(model.folders('', model.recursive)),
+                      child: const Text('Retirer le dossier MP3'),
+                    ),
                 ],
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text('Analyser aussi les sous-dossiers'),
+                value: model.recursive,
+                onChanged: (value) => model.setRecursive(value!),
               ),
               const SizedBox(height: 10),
               Text(
                 model.report == null
                     ? 'Aucun scan réalisé.'
-                    : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s). Les fichiers ne sont jamais modifiés.',
+                    : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
               ),
               if (model.report != null)
                 OutlinedButton.icon(

@@ -73,6 +73,8 @@ void main() {
       expect(find.text('Bienvenue dans IndeX'), findsOneWidget);
       expect(find.textContaining('Test HTML'), findsNothing);
       expect(find.text('Préciser le dossier MP3 plus tard'), findsOneWidget);
+      expect(model.dataPath, endsWith('user'));
+      await tester.enterText(find.byType(TextFormField).last, '');
       await tester.tap(find.text('Ouvrir la bibliothèque'));
       await tester.pump();
       expect(find.text('Ce dossier est obligatoire.'), findsOneWidget);
@@ -153,7 +155,17 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Paramètres'));
       await tester.pumpAndSettle();
-      expect(find.text('Dossiers'), findsOneWidget);
+      expect(find.text('Données utilisateur'), findsOneWidget);
+      expect(find.text('Dossier contenant les MP3'), findsNothing);
+      expect(find.text('Analyser aussi les sous-dossiers'), findsNothing);
+      final skip = find.widgetWithText(
+        CheckboxListTile,
+        'Ne plus scanner le dossier MP3 à chaque ouverture',
+      );
+      expect(tester.widget<CheckboxListTile>(skip).value, isFalse);
+      await tester.tap(skip);
+      await tester.pump();
+      expect(model.skipStartupScan, isTrue);
       expect(find.text('Transfert du suivi'), findsOneWidget);
       expect(find.text('Préciser le dossier MP3 plus tard'), findsNothing);
       expect(find.text('Fermer'), findsNWidgets(2));

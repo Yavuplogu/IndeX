@@ -208,3 +208,12 @@ Ces options conservent tous les épisodes, les regroupent par disponibilité et
 classent chaque groupe par date décroissante, puis identité stable. Sans dossier
 configuré ni mode de test, la disponibilité reste inconnue et le tri revient à
 la date décroissante, sans annoncer de fausses absences.
+
+### Parcours natif actualisé le 26 octobre 2026
+
+Les [spécifications courantes](../lot4/specifications.md) priment sur les anciens
+parcours simulés de ce HTML : dossier `IndeX/user` proposé et modifiable au premier
+lancement, chargement sans formulaire aux ouvertures suivantes, gestion des MP3
+et sous-dossiers dans Fichiers et associations. Le panneau Paramètres conserve
+les données utilisateur et l’option de désactivation du scan au lancement,
+décochée par défaut. Le HTML historique n’est pas modifié par cette révision native.

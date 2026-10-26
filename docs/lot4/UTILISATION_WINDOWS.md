@@ -11,7 +11,7 @@ restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
    fichier `IndeX.exe`. Aucun installateur, compte, téléchargement ou droit administrateur.
    Conserver les sous-dossiers `application/` et `documentation/` avec ce lanceur.
    Le dossier extrait doit être accessible en écriture.
-2. Choisir un dossier dédié aux données utilisateur. La base de travail, les favoris,
+2. Conserver le dossier `IndeX/user` présélectionné, ou choisir un autre dossier dédié aux données utilisateur. La base de travail, les favoris,
    les liens et les sauvegardes y seront enregistrés. Ce dossier est obligatoire.
 3. Choisir le dossier des MP3, ou cocher « Préciser le dossier MP3 plus tard ».
    Sans MP3, les 716 fiches restent immédiatement consultables et recherchables.
@@ -21,8 +21,11 @@ restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
 Le fichier `application/index-portable.json` mémorise le chemin du dossier
 utilisateur. La racine reste limitée au lanceur et aux sous-dossiers. Aucun dossier utilisateur ne sera recréé silencieusement s'il manque.
 Déplacer uniquement l'application ne déplace pas vos données ni vos MP3. Le dossier
-MP3 non configuré est demandé à chaque démarrage, avec la même possibilité de report.
-Les emplacements et le choix de thème se retrouvent dans Paramètres.
+MP3 non configuré ne bloque pas les ouvertures suivantes : chargement animé puis bibliothèque.
+Les données et le thème se retrouvent dans Paramètres ; les MP3 et l’analyse des
+sous-dossiers dans Fichiers et associations. Dans Paramètres, la case
+« Ne plus scanner le dossier MP3 à chaque ouverture » est décochée par défaut.
+La cocher conserve les derniers résultats ; relancer un scan manuel pour les actualiser.
 
 ## Consulter et rechercher
 
@@ -75,6 +78,7 @@ IndeX/
 │   ├── IndeX.exe
 │   ├── data/
 │   └── index-portable.json   ← créé après choix du dossier utilisateur
+├── user/                     ← créé au premier lancement, emplacement modifiable
 └── documentation/
     ├── LISEZ-MOI.md
     ├── manifest-fichiers.json
@@ -107,7 +111,7 @@ Les choix manuels sont conservés. Un scan incomplet ne valide aucun nouveau lie
 automatique. Une association par nom ne garantit pas que l'enregistrement soit le bon.
 
 Après mise à jour du programme, le catalogue est actualisé à l'ouverture et le dossier
-MP3 configuré est rescanné. Les anciens liens automatiques fondés sur COMM sont alors
+MP3 configuré est rescanné, sauf désactivation du scan au lancement dans Paramètres. Les anciens liens automatiques fondés sur COMM sont alors
 réévalués ; le suivi et les favoris restent attachés aux mêmes épisodes. Sans dossier
 accessible, les données existantes sont conservées jusqu'à un scan complet.
 

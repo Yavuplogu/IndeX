@@ -59,7 +59,15 @@ enum CatalogSort {
 enum AudioFolderState { unconfigured, ready, unavailable, incomplete }
 
 final class AppModel extends ChangeNotifier {
-  AppModel({required this.portableDirectory, this.seedLoader = bundledSeed});
+  AppModel({
+    required this.portableDirectory,
+    this.seedLoader = bundledSeed,
+    Directory? defaultDataDirectory,
+  }) : defaultDataDirectory =
+           defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
+    dataPath = this.defaultDataDirectory.absolute.path;
+  }
+  final Directory defaultDataDirectory;
   final Directory portableDirectory;
   final Future<SeedData> Function() seedLoader;
   PortableSession? session;
@@ -137,13 +145,29 @@ final class AppModel extends ChangeNotifier {
     requireExisting = File('${portableDirectory.path}/index-portable.json')
         .existsSync();
     final known = PortableSession.configuredDirectory(portableDirectory);
-    if (known == null) return;
+    if (known == null) {
+      // Créer seulement la proposition initiale ; aucun profil avant validation.
+      await defaultDataDirectory.create(recursive: true);
+      return;
+    }
     requireExisting = true;
     dataPath = known.path;
     await _open(known, true);
-    if (mp3Path.isNotEmpty) await _scan(mp3Path);
-    needsSetup = mp3Path.isEmpty;
+    if (mp3Path.isNotEmpty && !skipStartupScan) await _scan(mp3Path);
+    needsSetup = false;
   });
+  bool get skipStartupScan => session?.setting('skip_startup_scan') == 'true';
+  bool get recursive => session?.setting('recursive') == 'true';
+  void setSkipStartupScan(bool value) {
+    session!.setSetting('skip_startup_scan', value.toString());
+    changed();
+  }
+
+  void setRecursive(bool value) {
+    session!.setSetting('recursive', value.toString());
+    changed();
+  }
+
   Future<void> _open(Directory directory, bool existing) async {
     final seed = await seedLoader();
     session = await PortableSession.open(
@@ -163,6 +187,12 @@ final class AppModel extends ChangeNotifier {
           ? AudioFolderState.ready
           : AudioFolderState.unavailable;
     _lastReport();
+    if (mp3Path.isNotEmpty && audioState == AudioFolderState.ready) {
+      // Sans rescan, le dernier scan incomplet ne devient pas complet.
+      audioState = report?['complete'] == true
+          ? AudioFolderState.ready
+          : AudioFolderState.incomplete;
+    }
     reload();
   }
 
@@ -174,7 +204,14 @@ final class AppModel extends ChangeNotifier {
           throw ArgumentError(
             'Choisissez le dossier MP3 ou cochez « Préciser le dossier MP3 plus tard ».',
           );
-        if (session == null) await _open(Directory(data), requireExisting);
+        if (session == null) {
+          final target = Directory(data);
+          if (!requireExisting &&
+              target.absolute.path == defaultDataDirectory.absolute.path) {
+            await target.create(recursive: true);
+          }
+          await _open(target, requireExisting);
+        }
         needsSetup = false;
         if (later) {
           session!.setSetting('mp3_directory', '');

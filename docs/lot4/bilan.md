@@ -17,11 +17,14 @@ onglets et références/musiques dans des cadres. Les titres sont les en-têtes 
 cadres ; les épisodes connexes sont cliquables avec leur date, sans nom historique
 exposé. Résumé avec initiale agrandie et police de titre reprise par la zone lecteur.
 
-Le premier démarrage exige le dossier des données et demande les MP3 ou la case
-« Préciser le dossier MP3 plus tard ». Cette case est absente de Paramètres et
-aucun contournement HTML n'existe dans l'application. Sans dossier MP3 configuré,
-le choix revient au lancement et l'avertissement reste visible. Un dossier connu
-est rescanné à l'ouverture ; dossier inaccessible et scan incomplet sont distingués.
+Le premier démarrage présélectionne le dossier vide `IndeX/user`, modifiable, et demande
+les MP3 ou la case « Préciser le dossier MP3 plus tard ». Aux ouvertures suivantes,
+un chargement animé mène directement à la bibliothèque, même sans MP3 configurés.
+L’avertissement d’absence reste visible. Le scan est actif au lancement par défaut,
+avec une option persistée pour le désactiver et conserver les derniers résultats.
+Les données utilisateur restent dans leur cadre Paramètres ; dossier MP3 et analyse
+récursive sont gérés dans Fichiers et associations. Fonds et menu Apparence sont
+harmonisés dans les deux thèmes. Aucun contournement HTML dans l’application.
 
 Le catalogue intégré est chargé depuis le SQLite seul, avec empreinte vérifiée,
 import dans la base de travail et recherche FTS5. Aucun TXT/CSV/MP3 externe requis.
@@ -560,3 +563,14 @@ Vérifications locales : analyse Flutter sans problème, formatage conforme et
 **13 tests Flutter réussis** sous Linux. Cette correction des attentes doit encore
 être exécutée sous Windows ; le workflow précédent s'est arrêté avant la recette
 native et la construction de l'archive du commit concerné.
+
+## Contrôle du parcours de démarrage et des paramètres — 26 octobre 2026
+
+`bash tools/lot4/check.sh` passe sur Linux : **184 tests Dart et 15 tests Flutter**,
+analyse statique sans diagnostic, formatage et préparation vérifiée du seed.
+Les tests couvrent le dossier `user` vide proposé sans créer de profil avant
+validation, le choix d’un autre dossier, la réouverture sans MP3 avec favoris
+conservés, la persistance des options de scan et de récursivité, l’absence de scan
+automatique quand désactivé, le scan manuel et le rétablissement du scan au lancement.
+Les tests de widgets vérifient aussi le retrait du choix MP3 des Paramètres et la
+case décochée par défaut. La validation native Windows du paquet reste à effectuer.

@@ -18,8 +18,10 @@
   affiché « Aucune donnée ». Lettrine du résumé et titre du lecteur dans la police de
   la fiche. Renommage/export/import dans Paramètres restent des aperçus des Lots 5 bis/5 ter.
 - Les compléments utilisateur du 25 octobre 2026 sont dans `docs/lot4/specifications.md` :
-  Windows portable sans installateur, dossier utilisateur choisi, MP3 facultatifs par case
-  explicite et demande renouvelée au démarrage si non configurés. Sauvegarder avant de fermer
+  Windows portable sans installateur, dossier `IndeX/user` présélectionné et modifiable,
+  MP3 facultatifs par case au premier démarrage seulement. Aux ouvertures suivantes,
+  chargement puis bibliothèque même sans MP3 ; scan au lancement désactivable
+  par une case décochée par défaut. Choix MP3/récursivité dans Fichiers, données dans Paramètres. Sauvegarder avant de fermer
   sans dépendre uniquement de la fermeture. Recherche multichamp configurable. Renommage
   exclusivement historique → TITRE SYSTEME. Export JSON dans le dossier utilisateur,
   sous `exports/`, avec nom explicite sans espaces. Ces parcours sont simulés dans le HTML.

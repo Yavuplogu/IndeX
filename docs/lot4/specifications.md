@@ -12,7 +12,7 @@ extrait le dossier et lance IndeX.exe. Les DLL, ressources Flutter et le catalog
 SQLite de référence accompagnent l'exécutable ; « portable » ne promet pas un
 exécutable unique. Aucun MP3 n'est embarqué, aucun service n'est installé.
 
-Au premier démarrage, choisir un **dossier dédié aux données utilisateur**, obligatoire.
+Au premier démarrage, un dossier vide **`IndeX/user`** est créé et présélectionné pour les données utilisateur. L’utilisateur peut choisir un autre dossier ; la validation reste obligatoire.
 Il héberge la base de travail (suivi, favoris, liens, réglages), ses sauvegardes
 cohérentes et les exports JSON. Sous-dossiers proposés : `sauvegardes/` et `exports/`.
 Le catalogue de référence livré reste distinct de la base de travail.
@@ -39,7 +39,7 @@ Le premier écran demande :
 1. Le dossier contenant les MP3.
 2. La case **« Préciser le dossier MP3 plus tard »**, décochée initialement.
    Cocher cette case rend le dossier MP3 facultatif ; sinon il est requis.
-3. Le dossier des données utilisateur, obligatoire.
+3. Le dossier des données utilisateur, prérempli avec `IndeX/user`, modifiable et obligatoire.
 
 L'utilisateur peut quitter avant de terminer. Le catalogue reste entièrement
 consultable sans MP3 une fois le dossier utilisateur validé.
@@ -50,11 +50,13 @@ journal uniquement, sans lire COMM, conflits signalés, aucune
 modification de nom ou de tag. Montrer progression/résultat, erreurs et accès refusés.
 Une indisponibilité ou un scan incomplet ne supprime pas les liens ni le suivi.
 
-À **chaque ouverture ultérieure**, tant que le dossier MP3 n'est pas configuré,
-représenter la sélection avec la même case de report. Conserver le dossier utilisateur
-connu ; ne pas redemander de créer des données. La case ne dispense que pour
-l'ouverture en cours. Si le dossier est configuré mais inaccessible, signaler
-l'indisponibilité ; ne pas le traiter comme un dossier jamais configuré.
+Aux ouvertures ultérieures, afficher un chargement dynamique puis la vue principale,
+même sans dossier MP3 : ne plus présenter le formulaire initial. Si le dossier est
+configuré mais inaccessible, signaler l’indisponibilité sans supprimer les données.
+Le scan au lancement reste actif par défaut. Dans Paramètres, la case décochée
+« Ne plus scanner le dossier MP3 à chaque ouverture » permet de le désactiver.
+Conserver alors le dernier rapport et ses liens ; les disponibilités peuvent dater.
+Un scan manuel reste possible, y compris dans les sous-dossiers selon l’option persistée.
 
 Afficher durablement **« Aucun dossier MP3 paramétré »** dans la bibliothèque,
 les fiches, le lecteur et les autres fenêtres concernées. Distinguer :
@@ -63,8 +65,9 @@ les fiches, le lecteur et les autres fenêtres concernées. Distinguer :
 - Dossier configuré, MP3 non trouvé : « MP3 absent », rouge et ligne grisée.
 - Dossier configuré mais inaccessible : avertissement d'accès, pas de faux scan vide.
 
-Ces chemins et la possibilité de scanner/changer le dossier sont accessibles
-également dans **Paramètres**. Un dossier MP3 peut être retiré sans effacer le suivi.
+Le dossier des données est accessible dans **Paramètres**, dans son cadre dédié.
+Le dossier MP3, son retrait, son changement et l’option sous-dossiers sont accessibles
+uniquement dans **Fichiers et associations**. Un dossier MP3 peut être retiré sans effacer le suivi.
 
 ## Fermeture et sauvegarde durable
 
@@ -299,3 +302,17 @@ points, journal correspondant) sont intégrées au seed r3 avant empaquetage.
 - Épisodes connexes : survol rectangulaire à la taille de la cellule. Date de même
   police, graisse et couleur d'état que la liste générale ; taille actuelle conservée.
 - Appliquer les mêmes règles dans le thème sombre.
+
+## Démarrage et paramètres — complément du 26 octobre 2026
+
+Le dossier `user` est créé vide au premier lancement seulement en l’absence de
+pointeur portable. La base y est créée après validation ; un autre chemin reste
+possible. Un pointeur existant invalide ou un dossier connu manquant ne déclenche
+jamais la création automatique d’un profil vide. Le pointeur reste dans `application/`.
+
+Les cadres Paramètres gardent leur beige actuel ; le fond du panneau reprend celui
+de la barre latérale (`panel`), dans les deux thèmes. Le menu Apparence utilise des
+bordures arrondies, des fonds et des textes de la palette Éditorial. Le cadre données
+est séparé, sans cadre de choix MP3. Le texte Transfert précise la création future
+d’un fichier `.json` dans `exports` du dossier utilisateur (Lot 5 ter inchangé).
+Le chevron de « Résultat suivant » est placé après le libellé.

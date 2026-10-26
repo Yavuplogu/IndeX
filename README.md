@@ -18,7 +18,11 @@ La construction des chemins de test est corrigée ; la vérification Windows doi
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans
 les onglets et des alignements/couleurs harmonisés. Le dossier utilisateur et les
-MP3 restent aux emplacements choisis.
+MP3 restent aux emplacements choisis. Au premier démarrage, `IndeX/user` est
+présélectionné pour les données (modifiable). Les ouvertures suivantes vont
+directement à la bibliothèque après chargement ; le scan automatique des MP3
+peut être désactivé dans Paramètres. Leur dossier et la récursivité se règlent
+dans Fichiers et associations.
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)

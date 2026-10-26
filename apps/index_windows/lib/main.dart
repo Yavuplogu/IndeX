@@ -23,7 +23,11 @@ Future<void> main() async {
   await windowManager.setPreventClose(true);
   final model = AppModel(
     portableDirectory: File(Platform.resolvedExecutable).parent,
+    defaultDataDirectory: Directory(
+      '${File(Platform.resolvedExecutable).parent.parent.path}/user',
+    ),
   );
+  final boot = model.boot();
   runApp(
     IndeXApp(model: model, window: NativeWindowPort(), nativeWindow: true),
   );
@@ -42,5 +46,5 @@ Future<void> main() async {
   await WidgetsBinding.instance.endOfFrame;
   await windowManager.show();
   await windowManager.focus();
-  await model.boot();
+  await boot;
 }

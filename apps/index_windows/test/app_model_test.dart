@@ -18,6 +18,75 @@ void main() {
     root.deleteSync(recursive: true);
   });
   test(
+    'Premier démarrage : dossier user proposé vide, autre emplacement conservé',
+    () async {
+      final defaultData = Directory('${root.path}/IndeX/user');
+      model = AppModel(
+        portableDirectory: portable,
+        defaultDataDirectory: defaultData,
+      );
+      await model!.boot();
+      expect(model!.needsSetup, isTrue);
+      expect(model!.dataPath, defaultData.absolute.path);
+      expect(defaultData.listSync(), isEmpty);
+      expect(
+        File('${portable.path}/index-portable.json').existsSync(),
+        isFalse,
+      );
+      await model!.configure(data.path, '', true);
+      expect(model!.error, isEmpty);
+      expect(
+        FileSystemEntity.identicalSync(model!.dataPath, data.path),
+        isTrue,
+      );
+      expect(defaultData.listSync(), isEmpty);
+    },
+  );
+
+  test('Scan au lancement optionnel, réglages persistants et scan manuel disponible', () async {
+    final mp3 = Directory('${root.path}/mp3')..createSync();
+    model = AppModel(portableDirectory: portable);
+    await model!.configure(data.path, mp3.path, false);
+    expect(model!.skipStartupScan, isFalse);
+    final count = model!.session!.store.database
+        .select('SELECT count(*) AS n FROM audio_scan_runs')
+        .single['n'];
+    model!.setSkipStartupScan(true);
+    model!.setRecursive(true);
+    await model!.closeSafely();
+    model!.dispose();
+    model = AppModel(portableDirectory: portable);
+    await model!.boot();
+    expect(model!.error, isEmpty);
+    expect(model!.skipStartupScan, isTrue);
+    expect(model!.recursive, isTrue);
+    expect(
+      model!.session!.store.database
+          .select('SELECT count(*) AS n FROM audio_scan_runs')
+          .single['n'],
+      count,
+    );
+    final sub = Directory('${mp3.path}/sous dossier')..createSync();
+    File('${sub.path}/inconnu.mp3').writeAsBytesSync([]);
+    await model!.scan(mp3.path);
+    expect(model!.report!['count'], 1);
+    model!.setSkipStartupScan(false);
+    await model!.closeSafely();
+    model!.dispose();
+    model = AppModel(portableDirectory: portable);
+    await model!.boot();
+    expect(model!.error, isEmpty);
+    expect(model!.skipStartupScan, isFalse);
+    expect(model!.report!['count'], 1);
+    expect(
+      model!.session!.store.database
+          .select('SELECT count(*) AS n FROM audio_scan_runs')
+          .single['n'],
+      (count as int) + 2,
+    );
+  });
+
+  test(
     'Compteurs MP3 globaux indépendants des filtres et chemins lisibles',
     () async {
       model = AppModel(portableDirectory: portable);
@@ -73,46 +142,40 @@ void main() {
     },
   );
 
-  test(
-    'Démarrage sans MP3 reproposé après réouverture, favoris conservés',
-    () async {
-      model = AppModel(portableDirectory: portable);
-      await model!.configure(data.path, '', true);
-      expect(model!.error, isEmpty);
-      expect(model!.needsSetup, isFalse);
-      final id = model!.catalog.first.id;
-      model!.favorite(model!.catalog.first);
-      await model!.closeSafely();
-      model!.dispose();
-      model = AppModel(portableDirectory: portable);
-      await model!.boot();
-      expect(model!.error, isEmpty);
-      expect(model!.needsSetup, isTrue);
-      expect(model!.catalog.firstWhere((e) => e.id == id).favorite, isTrue);
-      expect(
-        FileSystemEntity.identicalSync(model!.dataPath, data.path),
-        isTrue,
-      );
-      model!.sort = CatalogSort.titleAZ;
-      model!.reload();
-      final first = model!.visible.indexWhere((e) => e.title == "L'échange");
-      final second = model!.visible.indexWhere(
-        (e) => e.title == "L'espionnage chinois au Etats-Unis",
-      );
-      expect(first, greaterThanOrEqualTo(0));
-      expect(second, greaterThan(first));
-      model!.sort = CatalogSort.titleZA;
-      model!.reload();
-      expect(
-        model!.visible.indexWhere((e) => e.title == "L'échange"),
-        greaterThan(
-          model!.visible.indexWhere(
-            (e) => e.title == "L'espionnage chinois au Etats-Unis",
-          ),
+  test('Réouverture sans MP3 sans formulaire, favoris conservés', () async {
+    model = AppModel(portableDirectory: portable);
+    await model!.configure(data.path, '', true);
+    expect(model!.error, isEmpty);
+    expect(model!.needsSetup, isFalse);
+    final id = model!.catalog.first.id;
+    model!.favorite(model!.catalog.first);
+    await model!.closeSafely();
+    model!.dispose();
+    model = AppModel(portableDirectory: portable);
+    await model!.boot();
+    expect(model!.error, isEmpty);
+    expect(model!.needsSetup, isFalse);
+    expect(model!.catalog.firstWhere((e) => e.id == id).favorite, isTrue);
+    expect(FileSystemEntity.identicalSync(model!.dataPath, data.path), isTrue);
+    model!.sort = CatalogSort.titleAZ;
+    model!.reload();
+    final first = model!.visible.indexWhere((e) => e.title == "L'échange");
+    final second = model!.visible.indexWhere(
+      (e) => e.title == "L'espionnage chinois au Etats-Unis",
+    );
+    expect(first, greaterThanOrEqualTo(0));
+    expect(second, greaterThan(first));
+    model!.sort = CatalogSort.titleZA;
+    model!.reload();
+    expect(
+      model!.visible.indexWhere((e) => e.title == "L'échange"),
+      greaterThan(
+        model!.visible.indexWhere(
+          (e) => e.title == "L'espionnage chinois au Etats-Unis",
         ),
-      );
-    },
-  );
+      ),
+    );
+  });
   test('Configuration invalide ne permet pas de créer un suivi vide', () async {
     File('${portable.path}/index-portable.json')
         .writeAsStringSync('{"version":99}');
