@@ -488,8 +488,13 @@ void main() {
       final data = Directory('${root.path}/data')..createSync();
       final model = AppModel(portableDirectory: portable);
       await tester.runAsync(() => model.configure(data.path, '', true));
-      final path = File('${root.path}/dossier avec espaces/inconnu.mp3')
-          .absolute;
+      final path = File(
+        [
+          root.path,
+          'dossier avec espaces',
+          'inconnu.mp3',
+        ].join(Platform.pathSeparator),
+      ).absolute;
       model.report = {
         'count': 2,
         'issues': [

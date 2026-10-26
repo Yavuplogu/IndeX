@@ -35,12 +35,20 @@ void main() {
         model!.episodeCountLabel,
         '${model!.visible.length} / 6 épisodes · 710 MP3 absents',
       );
-      final file = File('${root.path}/dossier avec espaces/nom à copier.mp3');
+      final file = File(
+        [
+          root.path,
+          'dossier avec espaces',
+          'nom à copier.mp3',
+        ].join(Platform.pathSeparator),
+      );
       final ref = file.absolute.uri.toString();
       expect(ref, contains('%20'));
       expect(displayDiagnosticPath(ref), file.absolute.path);
       expect(displayDiagnosticPath('50% de progression'), '50% de progression');
-      final literalPercent = File('${root.path}/nom%20littéral.mp3');
+      final literalPercent = File(
+        [root.path, 'nom%20littéral.mp3'].join(Platform.pathSeparator),
+      );
       expect(
         displayDiagnosticPath(literalPercent.absolute.uri.toString()),
         literalPercent.absolute.path,

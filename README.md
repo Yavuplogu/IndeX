@@ -9,11 +9,11 @@ la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le
 contrôles Linux passent ; le workflow de construction et de recette Windows est
 préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
 
-Les derniers logs Windows valident les tests, la recette native, la compilation
-du lanceur et la création du nouveau ZIP. Le test final s'arrête sur un code de
-sortie vide, faute de handle conservé pour le processus enfant. La surveillance
-et ses tests PowerShell sont corrigés ; une nouvelle recette Windows reste
-nécessaire pour qualifier le paquet (voir le bilan).
+Les derniers logs Windows (`logs_109499819369.zip`) s'arrêtent sur deux tests
+Flutter de chemins : leurs valeurs attendues mélangent les séparateurs `/` et
+`\`, alors que l'application affiche des chemins Windows natifs avec espaces.
+La construction des chemins de test est corrigée ; la vérification Windows doit
+être relancée avant qualification du paquet (voir le bilan).
 
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans

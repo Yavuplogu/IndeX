@@ -1,11 +1,10 @@
 # Lot 4 — GUI Windows portable
 
 Date : **26 octobre 2026**. Code implémenté et contrôlé sur Linux. Les derniers
-logs Windows (`logs_109036839586.zip`) valident les tests, la recette native,
-les compilations du lanceur et du programme, puis la création du ZIP. Le test de
-fermeture s'arrête sur un code de sortie vide : le processus enfant récupéré par
-identifiant n'avait pas de handle conservé. La surveillance corrigée reste à
-valider sous Windows avant qualification du paquet.
+logs Windows (`logs_109499819369.zip`) valident les tests du cœur, mais deux tests
+Flutter attendent des chemins à séparateurs mélangés. Les chemins affichés sont
+bien décodés avec espaces et séparateurs natifs. Les attentes sont corrigées ;
+une nouvelle exécution Windows est nécessaire avant qualification du paquet.
 Le lecteur audio réel et Android restent au Lot 5 ; renommage et JSON aux Lots 5 bis/5 ter.
 
 ## Livrable et comportement
@@ -151,13 +150,12 @@ dans les tests du cœur ; voir le diagnostic à la fin de ce bilan :
 5. Conservation de l'archive et de son SHA-256 comme artefact CI après succès.
 
 Les logs successifs ci-dessous documentent la progression réelle du workflow.
-Les derniers logs valident les tests, la recette native, le binaire Release,
-le lanceur et le ZIP avec runtime Microsoft.
+Les derniers logs valident les 183 tests du cœur exécutables sous Windows (1 ignoré),
+puis échouent sur deux comparaisons de chemins dans les tests Flutter.
 **Aucun paquet Windows qualifié ni validation Android ne sont encore revendiqués.**
-Le test de fermeture échoue actuellement parce que son objet `Process` ne fournit
-pas de code de sortie. Le handle est désormais conservé et le contrôle doit être
-rejoué sous Windows. Le workflow conserve les diagnostics séparément, y compris
-en cas d'échec du test du paquet.
+Les chemins de test sont désormais construits avec les séparateurs de la plateforme ;
+les tests Flutter, la recette native et l'empaquetage restent à rejouer sous Windows.
+Le workflow conserve les diagnostics disponibles en cas d'échec.
 
 À compléter sur le paquet Windows précis : sélecteurs natifs avec annulation/permissions,
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
@@ -535,3 +533,30 @@ du titre et des onglets pendant la navigation, les couleurs, les compteurs globa
 malgré les filtres, les chemins avec espaces (sans altérer les URI), le listing
 sélectionnable/trié et l'accès au bouton d'association dans les deux apparences.
 La recette native du nouveau paquet Windows reste à exécuter sous Windows.
+
+
+## Exécution `logs_109499819369.zip` — séparateurs dans les chemins attendus
+
+Les logs du commit `ea1cb26` confirment **183 tests Dart réussis et 1 test POSIX
+ignoré** sous Windows. Deux tests Flutter échouent, les 11 autres réussissent :
+
+- `Compteurs MP3 globaux indépendants des filtres et chemins lisibles` ;
+- `Rapport : fichiers à associer en premier, texte copiable et chemins lisibles`.
+
+Les tests construisaient un objet `File` à partir de `${root.path}/dossier avec
+espaces/...` : sous Windows, la racine temporaire contient des antislashs et le
+suffixe ajouté des slashs. `File.absolute.path` garde cette forme mélangée.
+L'affichage reconstruit depuis l'URI fournit au contraire les séparateurs Windows
+natifs, tout en décodant correctement les espaces. La comparaison textuelle et la
+recherche de widget échouaient donc sur les séparateurs, pas sur le décodage.
+Le test du nom contenant littéralement `%20` avait la même construction à corriger.
+
+Les trois chemins attendus sont désormais assemblés avec `Platform.pathSeparator`.
+Les assertions restent strictes : chemin complet, espaces présents, pourcentage
+littéral conservé, export lisible et URI technique inchangée. Aucun fichier source,
+seed, module applicatif ou comportement d'association n'est modifié.
+
+Vérifications locales : analyse Flutter sans problème, formatage conforme et
+**13 tests Flutter réussis** sous Linux. Cette correction des attentes doit encore
+être exécutée sous Windows ; le workflow précédent s'est arrêté avant la recette
+native et la construction de l'archive du commit concerné.
