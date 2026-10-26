@@ -404,91 +404,260 @@ void main() {
       hasLength(1),
     );
   });
-  test('Paire locale confirmée écrit les preuves sans changer le statut du journal', () {
-    final p = CatalogPlanner().plan([
-      input(),
-    ], journalBytes: csv([journalRow(status: 'NON_VERIFIEE')]));
-    store.importPlan(p);
-    store.applyAudioScan(
-      scan([
-        audio(
-          'file:///root/renommé.mp3',
-          comments: [firstOriginal, firstOriginal, secondOriginal],
-        ),
-      ]),
-    );
-    final link = store.database
-        .select('SELECT * FROM local_audio_links')
-        .single;
-    expect(link['method'], 'id3_comment');
-    expect(link['local_verification_status'], 'CONFIRMEE');
-    expect(
-      (jsonDecode(link['evidence_json'] as String)
-          as Map<String, dynamic>)['evidence_rule'],
-      'comm_pair_v1',
-    );
-    expect(
-      store.database
-          .select('SELECT journal_status FROM episodes')
-          .single['journal_status'],
-      'NON_VERIFIEE',
-    );
-  });
-  test('Association provisoire ne devient pas un lien confirmé', () {
+  test(
+    'Association par nom sans validation ID3 ni modification du statut journal',
+    () {
+      final p = CatalogPlanner().plan([
+        input(),
+      ], journalBytes: csv([journalRow(status: 'NON_VERIFIEE')]));
+      store.importPlan(p);
+      store.applyAudioScan(scan([audio('file:///root/$firstOriginal')]));
+      final link = store.database
+          .select('SELECT * FROM local_audio_links')
+          .single;
+      expect(link['method'], 'original_filename');
+      expect(link['local_verification_status'], 'NON_VERIFIEE');
+      expect(
+        (jsonDecode(link['evidence_json'] as String) as Map)['evidence_rule'],
+        'journal_filename_v1',
+      );
+      expect(
+        store.database
+            .select('SELECT journal_status FROM episodes')
+            .single['journal_status'],
+        'NON_VERIFIEE',
+      );
+    },
+  );
+  test('Titre seul rejeté et diagnostic d’association enregistré', () {
     store.importPlan(plan());
-    store.applyAudioScan(
+    final issues = store.applyAudioScan(
       scan([audio('file:///root/un-titre.mp3', name: 'Un-titre.mp3')]),
     );
     expect(store.database.select('SELECT * FROM local_audio_links'), isEmpty);
+    expect(issues.single.code, 'audio_unknown_filename');
     final item = store.database
         .select('SELECT decision_json FROM audio_scan_items')
         .single;
     expect(
-      (jsonDecode(item['decision_json'] as String)
-          as Map<String, dynamic>)['status'],
-      'provisional',
+      (jsonDecode(item['decision_json'] as String) as Map)['status'],
+      'unknown',
     );
   });
-  test('Déplacement audio détecté, données personnelles conservées', () {
-    store.importPlan(plan());
-    store.applyAudioScan(
-      scan([
-        audio('file:///root/avant.mp3', comments: [firstOriginal]),
+  test('Une fiche sans journal ne devient pas une autorité de noms', () {
+    store.importPlan(plan(withJournal: false));
+    expect(store.matchEpisodes(), isEmpty);
+    store.applyAudioScan(scan([audio('file:///root/$firstOriginal')]));
+    expect(store.database.select('SELECT * FROM local_audio_links'), isEmpty);
+  });
+  test('Ancien nom système reste en audit mais ne sert plus à associer', () {
+    store.importPlan(plan(), catalogVersion: 'avant');
+    final corrected = CatalogPlanner().plan(
+      [input()],
+      journalBytes: csv([
+        journalRow(systemName: '2013-04-27 Un titre corrigé..mp3'),
       ]),
     );
+    store.importPlan(corrected, catalogVersion: 'apres');
+    expect(store.matchEpisodes().single.systemNames, [
+      '2013-04-27 Un titre corrigé..mp3',
+    ]);
+    expect(
+      store.database.select(
+        "SELECT * FROM episode_aliases WHERE kind='catalog_filename'",
+      ),
+      hasLength(2),
+    );
+    final issues = store.applyAudioScan(
+      scan([audio('file:///root/ancien.mp3', name: '2013-04-27 Un titre.mp3')]),
+    );
+    expect(issues.single.code, 'audio_unknown_filename');
+    expect(store.database.select('SELECT * FROM local_audio_links'), isEmpty);
+  });
+  void legacyAutomatic(String id, String ref, String name) {
+    store.recordManualLink(id, ref, name);
     store.database.execute(
-      'INSERT INTO user_episode_state(episode_id,is_favorite) VALUES(?,1)',
-      [firstId],
+      "UPDATE local_audio_links SET manual=0,method='id3_comment',local_verification_status='CONFIRMEE',evidence_json=? WHERE episode_id=?",
+      ['{"evidence_rule":"comm_pair_v1"}', id],
+    );
+  }
+
+  CatalogPlan twoJournalEpisodes() => CatalogPlanner().plan(
+    [input(), input(original: secondOriginal)],
+    journalBytes: csv([
+      journalRow(),
+      journalRow(original: secondOriginal, systemName: 'second.mp3'),
+    ]),
+  );
+
+  test('Ancien lien COMM inconnu : désactivé au scan complet, suivi et preuve conservés', () {
+    store.importPlan(plan());
+    legacyAutomatic(firstId, 'file:///root/ancien.mp3', 'ancien.mp3');
+    store.database.execute(
+      'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,12345,?,1)',
+      [firstId, 'EN_COURS'],
     );
     store.applyAudioScan(
-      scan([
-        audio('file:///root/apres.mp3', comments: [firstOriginal]),
-      ]),
+      scan([audio('file:///root/ancien.mp3', name: 'ancien.mp3')]),
     );
-    expect(
-      store.database
-          .select('SELECT audio_ref FROM local_audio_links')
-          .single['audio_ref'],
-      'file:///root/apres.mp3',
+    final link = store.database
+        .select('SELECT * FROM local_audio_links')
+        .single;
+    expect(link['available'], 0);
+    expect(link['matching_status'], 'unknown');
+    expect(link['local_verification_status'], 'NON_VERIFIEE');
+    expect(link['evidence_json'], contains('comm_pair_v1'));
+    final state = store.database
+        .select('SELECT * FROM user_episode_state')
+        .single;
+    expect(state['position_ms'], 12345);
+    expect(state['is_favorite'], 1);
+    expect(state['listening_status'], 'EN_COURS');
+  });
+  test('Ancienne attribution COMM corrigée par nom : aucun suivi déplacé entre épisodes', () {
+    store.importPlan(twoJournalEpisodes());
+    const ref = 'file:///root/second.mp3';
+    legacyAutomatic(firstId, ref, 'second.mp3');
+    store.database.execute(
+      'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,12345,?,1)',
+      [firstId, 'EN_COURS'],
     );
+    final issues = store.applyAudioScan(scan([audio(ref, name: 'second.mp3')]));
+    final link = store.database
+        .select('SELECT * FROM local_audio_links')
+        .single;
+    expect(link['episode_id'], 'mrx:$secondOriginal');
+    expect(link['method'], 'catalog_filename');
+    expect(issues.map((i) => i.code), contains('audio_link_reassigned'));
+    final state = store.database
+        .select('SELECT * FROM user_episode_state')
+        .single;
+    expect(state['episode_id'], firstId);
+    expect(state['position_ms'], 12345);
+    expect(state['is_favorite'], 1);
+  });
+  test('Scan incomplet : aucune réaffectation automatique, décision bloquée enregistrée', () {
+    store.importPlan(twoJournalEpisodes());
+    const ref = 'file:///root/second.mp3';
+    legacyAutomatic(firstId, ref, 'second.mp3');
+    store.applyAudioScan(
+      scan([audio(ref, name: 'second.mp3')], complete: false),
+    );
+    final link = store.database
+        .select('SELECT * FROM local_audio_links')
+        .single;
+    expect(link['episode_id'], firstId);
+    expect(link['available'], 1);
+    final item = store.database
+        .select('SELECT decision_json FROM audio_scan_items')
+        .single;
     expect(
-      store.database
-          .select('SELECT is_favorite FROM user_episode_state')
-          .single['is_favorite'],
-      1,
+      (jsonDecode(item['decision_json'] as String) as Map)['status'],
+      'blocked',
     );
   });
+  test('Choix manuel prioritaire, exclu des doublons automatiques et explicite au diagnostic', () {
+    store.importPlan(twoJournalEpisodes());
+    store.recordManualLink(firstId, 'file:///root/manuel.mp3', 'second.mp3');
+    store.applyAudioScan(
+      scan([
+        audio('file:///root/manuel.mp3', name: 'second.mp3'),
+        audio('file:///root/second.mp3', name: 'second.mp3'),
+      ]),
+    );
+    final links = store.database.select(
+      'SELECT * FROM local_audio_links ORDER BY episode_id',
+    );
+    expect(links, hasLength(2));
+    expect(links.singleWhere((l) => l['episode_id'] == firstId)['manual'], 1);
+    final decisions = store.database
+        .select('SELECT decision_json FROM audio_scan_items')
+        .map((r) => jsonDecode(r['decision_json'] as String) as Map)
+        .toList();
+    expect(
+      decisions.singleWhere(
+        (d) => d['audio_reference'] == 'file:///root/manuel.mp3',
+      )['matching_method'],
+      'manual',
+    );
+    expect(decisions.every((d) => d['status'] == 'confirmed'), isTrue);
+  });
+  test(
+    'Révision du nom système préserve favori, progression et choix manuel',
+    () {
+      store.importPlan(plan(), catalogVersion: 'avant');
+      store.recordManualLink(firstId, 'file:///root/manuel.mp3', 'manuel.mp3');
+      store.database.execute(
+        'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,12345,?,1)',
+        [firstId, 'EN_COURS'],
+      );
+      final corrected = CatalogPlanner().plan(
+        [input()],
+        journalBytes: csv([journalRow(systemName: '2013-04-27 Un titre..mp3')]),
+      );
+      store.importPlan(corrected, catalogVersion: 'apres');
+      final link = store.database
+          .select('SELECT * FROM local_audio_links')
+          .single;
+      expect(link['manual'], 1);
+      expect(link['audio_ref'], 'file:///root/manuel.mp3');
+      final state = store.database
+          .select('SELECT * FROM user_episode_state')
+          .single;
+      expect(state['position_ms'], 12345);
+      expect(state['is_favorite'], 1);
+      expect(state['listening_status'], 'EN_COURS');
+      expect(store.matchEpisodes().single.systemNames, [
+        '2013-04-27 Un titre..mp3',
+      ]);
+    },
+  );
+  test(
+    'Renommage origine vers système détecté, données personnelles conservées',
+    () {
+      store.importPlan(plan());
+      store.applyAudioScan(scan([audio('file:///root/$firstOriginal')]));
+      store.database.execute(
+        'INSERT INTO user_episode_state(episode_id,is_favorite) VALUES(?,1)',
+        [firstId],
+      );
+      store.applyAudioScan(
+        scan([
+          audio(
+            'file:///root/2013-04-27%20Un%20titre.mp3',
+            name: '2013-04-27 Un titre.mp3',
+          ),
+        ]),
+      );
+      expect(
+        store.database
+            .select('SELECT audio_ref FROM local_audio_links')
+            .single['audio_ref'],
+        'file:///root/2013-04-27%20Un%20titre.mp3',
+      );
+      expect(
+        store.database
+            .select('SELECT is_favorite FROM user_episode_state')
+            .single['is_favorite'],
+        1,
+      );
+    },
+  );
   test(
     'Scan préserve un choix manuel et refuse la réutilisation du même fichier',
     () {
       store.importPlan(
-        CatalogPlanner().plan([input(), input(original: secondOriginal)]),
+        CatalogPlanner().plan(
+          [input(), input(original: secondOriginal)],
+          journalBytes: csv([
+            journalRow(),
+            journalRow(original: secondOriginal, systemName: 'second.mp3'),
+          ]),
+        ),
       );
       store.recordManualLink(firstId, 'file:///root/manual.mp3', 'manual.mp3');
       final issues = store.applyAudioScan(
-        scan([
-          audio('file:///root/autre.mp3', comments: [firstOriginal]),
-        ]),
+        scan([audio('file:///root/autre.mp3')]),
       );
       expect(issues.map((i) => i.code), contains('manual_link_preserved'));
       expect(

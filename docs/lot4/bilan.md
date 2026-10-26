@@ -1,6 +1,6 @@
 # Lot 4 — GUI Windows portable
 
-Date : **25 octobre 2026**. Code implémenté et contrôlé sur Linux. Les derniers
+Date : **26 octobre 2026**. Code implémenté et contrôlé sur Linux. Les derniers
 logs Windows (`logs_109036839586.zip`) valident les tests, la recette native,
 les compilations du lanceur et du programme, puis la création du ZIP. Le test de
 fermeture s'arrête sur un code de sortie vide : le processus enfant récupéré par
@@ -26,8 +26,8 @@ est rescanné à l'ouverture ; dossier inaccessible et scan incomplet sont disti
 
 Le catalogue intégré est chargé depuis le SQLite seul, avec empreinte vérifiée,
 import dans la base de travail et recherche FTS5. Aucun TXT/CSV/MP3 externe requis.
-Les fichiers audio sont scannés en lecture seule ; matching et diagnostics des
-Lots 1–2 sont utilisés. Le menu Fichiers présente le résultat, les conflits et
+Les fichiers audio sont associés par noms du journal courant, sans lire COMM,
+selon la [règle du 26 octobre](../regle-association-noms-journal.md). Le menu Fichiers présente le résultat, les conflits et
 permet une association manuelle après choix et confirmation, sans fabriquer une
 preuve ID3. Les choix manuels restent protégés au réimport.
 
@@ -49,8 +49,8 @@ prévus au Lot 5, sans fausse simulation d'audio dans l'application.
   agrandissement et interception des demandes de fermeture.
 
 Schéma de travail **v4** : ajout transactionnel de `local_settings`, sans modifier
-les tables personnelles existantes. Le seed versionné reste en **v3**, avec le
-même contenu de 716 épisodes ; il est importable dans la cible v4. Les seeds v2/v3/v4
+les tables personnelles existantes. Le seed versionné est désormais en **v4**, actualisé le 26 octobre depuis les
+sources `e730f77`, avec 716 identités conservées et les noms corrigés. Les seeds v2/v3/v4
 sont reconnus en lecture seule, et un seed v4 avec réglages personnels est refusé.
 Les index FTS restent synchronisés par les triggers et les choix par champ sont
 ajoutés à `SearchOptions.fields`, avec noms de colonnes fixes et paramètres MATCH.
@@ -111,7 +111,7 @@ Sur cet hôte Linux x64 :
 bash tools/lot4/check.sh
 ```
 
-Résultats : **175 tests Dart + 11 tests Flutter réussis**, formatage conforme et
+Résultats : **184 tests Dart + 11 tests Flutter réussis**, formatage conforme et
 analyses statiques sans problème. Les tests Flutter exécutent bien SQLite natif
 et chargent le seed via le bundle, au-delà d'un rendu de données fictives.
 
@@ -163,7 +163,7 @@ en cas d'échec du test du paquet.
 stockage amovible, arrêt forcé Windows pendant import, fermeture avec disque plein,
 contrastes/zoom/DPI, fonctionnement hors ligne sur machine sans toolchain et
 reprise d'une copie de données en erreur. Cette recette conditionne la qualification
-du livrable Windows ; elle n'est pas remplacée par les 186 tests Linux.
+du livrable Windows ; elle n'est pas remplacée par les 195 tests Linux.
 
 ## Première exécution Windows — diagnostic des logs
 
@@ -445,3 +445,57 @@ Vérifications exécutées sous **PowerShell 7.5.4 sur Linux** : tests des proce
 de tous les scripts du Lot 4. Aucun code applicatif, fichier source documentaire ou
 seed n'a changé. Le cas natif négatif et la fermeture du paquet complet restent
 à vérifier lors de la prochaine exécution Windows.
+
+
+## 26 octobre — catalogue actualisé et suppression de COMM dans l'association
+
+Avant la modification du moteur, les sources de `main` au commit `af6c1a8` ont été
+vérifiées et le seed régénéré sous `corpus-2026-10-26-noms-journal` (schéma v4).
+Les huit corrections demandées sont présentes, dont les doubles points avant
+extension. Intégrité SQLite et FTS contrôlées ; les 716 identités n'ont pas changé.
+Le rapport compte 30 avertissements et une fiche à vérifier, sans erreur ni
+quarantaine : une divergence supplémentaire du nom TXT des Hmongs du Laos est
+conservée sans modifier les sources. Voir la [règle actuelle](../regle-association-noms-journal.md).
+
+Un essai réel d'import de l'ancien seed v3 vers la base de travail v4, puis du
+nouveau seed, a donné **0 insertion, 9 mises à jour et 707 fiches inchangées**,
+avec identité des 716 épisodes, choix manuel, favori, statut et position conservés.
+L'index FTS est resté cohérent. Le bundle Flutter a été préparé depuis le nouveau
+seed et son empreinte actualisée.
+
+Le scan ne lit plus les tags ; seuls les noms complets du journal courant sont
+utilisés, d'abord FICHIER MP3 D'ORIGINE puis TITRE SYSTEME. NFC/casse seulement,
+aucune recherche approximative par titre. Les conflits au premier niveau ne sont
+pas contournés ; les doublons locaux sont refusés. Les anciens alias système sont
+conservés pour audit mais ne participent plus aux concordances. Les parseurs ID3
+et l'oracle Mutagen restent des outils d'audit indépendants.
+
+Les choix manuels sont retirés de la recherche automatique et préservés, avec
+rapports reflétant les décisions réellement stockées. Au scan complet, les anciens
+liens automatiques sans concordance sont désactivés ; une réattribution certaine
+est auditée sans déplacer ni effacer de suivi. Le scan incomplet préserve les liens
+et ne valide aucune nouvelle association automatique. Tous les liens par nom sont
+marqués NON_VERIFIEE pour le contenu audio, indépendamment du statut ID3 historique.
+
+Vérification locale : **184 tests Dart et 11 tests Flutter réussis**, formatage et
+analyses sans problème. Couverture : vrais fichiers temporaires avec langue COMM
+invalide, paire contradictoire ou ID3 tronqué ; nom inconnu malgré une paire COMM
+valide ; égalité NFC/casse, ponctuation/espaces stricts ; doublons et ambiguïtés ;
+liens manuels, anciens liens COMM réévalués, réaffectation sans transfert du suivi,
+scan incomplet ; huit noms dans le seed et six MP3 réels associés par nom système.
+La compilation/recette du nouveau paquet Windows reste à exécuter sous Windows.
+
+
+## 26 octobre — correction du TXT des Hmongs du Laos intégrée
+
+Le commit utilisateur `e730f77` renomme le TXT en
+`2003-10-25 Les Hmongs du Laos et la C.I.A..txt`. Le titre, la date, l'identifiant
+historique et les noms attendus dans le journal concordent. Les octets du fichier
+corrigé sont intégrés sans retouche dans le seed **`corpus-2026-10-26-noms-journal-r2`**,
+avec manifeste, rapport et copie Flutter actualisés.
+
+L'avertissement `journal_txt_name_mismatch` et le marquage de fiche à vérifier
+ont disparu : **716 épisodes, 29 avertissements historiques, aucune erreur,
+quarantaine ou fiche à vérifier**. Les identités restent inchangées. Le test des
+noms corrigés couvre désormais les neuf fichiers, dont les Hmongs ; les constats
+précédents de 30 avertissements décrivent la révision avant cette correction.

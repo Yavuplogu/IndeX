@@ -1,5 +1,10 @@
 # Association MP3–TXT par deux commentaires COMM concordants
 
+> **Règle historique remplacée le 26 octobre 2026.** L'application associe désormais
+> exclusivement par les noms du journal, sans lire COMM : voir la
+> [règle actuelle](regle-association-noms-journal.md). Le texte ci-dessous décrit
+> les audits et décisions antérieurs, sans gouverner le scan actuel.
+
 **Décision utilisateur adoptée — 23 octobre 2026.**
 
 Cette règle complète le [cahier des charges V1.4](Cahier_des_charges_IndeX_Codex_V1.4.md).

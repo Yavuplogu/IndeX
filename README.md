@@ -38,16 +38,17 @@ parcours de renommage et de transfert JSON dans Paramètres. Le lecteur HTML res
 - [Lot 1 : API, validation, dépendances et limites](docs/lot1/bilan.md)
 - [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
 - [Journal des décisions](docs/lot0/decisions.md)
-- [Règle adoptée : deux commentaires COMM concordants et association MP3–TXT](docs/regle-association-COMM.md)
+- [Règle actuelle : association par noms du journal, sans COMM](docs/regle-association-noms-journal.md)
 - [Résultats observés sur Linux](docs/lot0/audit-resultats.json)
 - [Versions et licences des packages inspectés](docs/lot0/dependances-observees.json)
 - [Cahier des charges V1.4 fourni](docs/Cahier_des_charges_IndeX_Codex_V1.4.md)
 
-La règle COMM adoptée ci-dessus prévaut sur le rejet systématique des commentaires
-contradictoires décrit dans la V1.4 archivée : une seule paire d'identifiant concordante
-suffit à écarter les autres commentaires isolés. Les ambiguïtés entre plusieurs paires
-ou plusieurs fichiers restent bloquantes. La résolution COMM et l'association globale
-aux fiches sont implémentées, sans transformer un statut CSV en vérification ID3 locale.
+Depuis la décision du 26 octobre 2026, l'association utilise exclusivement le nom
+MP3 d'origine puis le nom système du journal intégré au SQLite. Comparaison exacte
+avec NFC et casse ignorée, ambiguïtés/doublons refusés, aucun repli par titre ni
+lecture COMM. Les choix manuels et le suivi sont préservés ; un nom conforme ne
+certifie pas le contenu audio. L'[ancienne règle COMM](docs/regle-association-COMM.md)
+reste archivée pour les audits antérieurs.
 
 ## Vérifier les Lots 1 à 4
 
@@ -67,14 +68,16 @@ Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites na
 ## Régénérer le catalogue documentaire
 
 ```sh
-dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-24-lot3 --generated-at 2026-10-24T00:00:00Z --report docs/lot3/catalogue-report.json --replace
+dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-26-noms-journal-r2 --generated-at 2026-10-26T00:00:00Z --report docs/lot3/catalogue-report.json --replace
 ```
 
-Le catalogue préindexé du Lot 3 contient **716 épisodes**, dont 603 avec résumé
-textuel. Après intégration des corrections sources, il ne reste aucune erreur, fiche
-à vérifier ou identité en quarantaine ; les 29 avertissements sont détaillés dans le bilan. Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace
-explicitement l'artefact généré, jamais les sources. Le Lot 4 intègre ce catalogue
-dans les assets Flutter ; la qualification du paquet Windows reste à exécuter.
+Le catalogue préindexé actuel (schéma v4) contient **716 épisodes**, dont 603 avec
+résumé, 1896 références et 614 musiques. Les neuf noms corrigés sur `main` sont
+intégrés, sans changement d'identité. Le rapport conserve les 29 avertissements historiques, sans
+erreur, quarantaine, divergence de nom TXT ni fiche à vérifier.
+Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace uniquement
+l'artefact généré. Le Lot 4 l'intègre aux assets Flutter ; le CSV n'est pas nécessaire
+chez l'utilisateur.
 
 ## Rechercher depuis Dart
 

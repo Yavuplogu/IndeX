@@ -205,7 +205,7 @@ void main() {
     );
   });
 
-  test('Scan ID3 natif, association manuelle et changement de dossier sans suppression', () async {
+  test('Scan par noms du journal, association manuelle et changement de dossier sans suppression', () async {
     final s = await start();
     final report = await s.scan(Directory('MP3_Files').absolute.path);
     expect(report['complete'], isTrue);

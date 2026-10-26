@@ -1,5 +1,12 @@
 # Lot 1 — Parseur TXT, lecteur ID3 et résolution COMM
 
+> **Actualisation du 26 octobre 2026 :** le bilan historique ci-dessous conserve
+> ses résultats et règles de l'époque. Le catalogue actuel est en v4 et le scan
+> utilise uniquement les noms du journal, sans COMM. Voir la
+> [règle actuelle](../regle-association-noms-journal.md) et le
+> [rapport actuel](../lot3/catalogue-report.json) : 716 épisodes, 29 avertissements,
+> aucune erreur ni fiche à vérifier après correction du nom TXT des Hmongs.
+
 Ce bilan décrit l'état à la fin du Lot 1. Le [Lot 2](../lot2/bilan.md) a depuis ajouté
 le corpus complet, le matching et SQLite ; les limites marquées « lots ultérieurs »
 ci-dessous constituent le relevé historique de cette étape.

@@ -77,6 +77,13 @@ const sortNames = {
   CatalogSort.audioFirst: 'MP3 · Disponibles d’abord',
   CatalogSort.audioLast: 'MP3 · Absents d’abord',
 };
+const associationNames = {
+  'confirmed': 'Associé par nom',
+  'conflict': 'Conflit',
+  'unknown': 'Nom inconnu',
+  'blocked': 'Scan incomplet',
+  'provisional': 'À vérifier',
+};
 const fieldNames = {
   SearchField.title: 'Titre',
   SearchField.description: 'Résumé',
@@ -1960,7 +1967,7 @@ class ScanPage extends StatelessWidget {
                       child: ListTile(
                         title: Text(decision['current_name'] as String),
                         subtitle: Text(
-                          '${manual ? 'Association manuelle' : decision['status']} · ${decision['reason']}',
+                          '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}',
                         ),
                         trailing: decision['status'] == 'confirmed' || manual
                             ? Icon(Icons.check_circle_outline, color: c.accent)

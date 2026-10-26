@@ -1,5 +1,12 @@
 # Lot 2 — Catalogue complet, associations et persistance
 
+> **Actualisation du 26 octobre 2026 :** le bilan historique ci-dessous conserve
+> ses résultats et règles de l'époque. Le catalogue actuel est en v4 et le scan
+> utilise uniquement les noms du journal, sans COMM. Voir la
+> [règle actuelle](../regle-association-noms-journal.md) et le
+> [rapport actuel](../lot3/catalogue-report.json) : 716 épisodes, 29 avertissements,
+> aucune erreur ni fiche à vérifier après correction du nom TXT des Hmongs.
+
 Ce bilan est le relevé historique du Lot 2. Le [Lot 3](../lot3/bilan.md) ajoute
 depuis FTS5 et le schéma v3. Le rapport ci-dessous conserve les résultats v2 ;
 l'asset courant et son manifeste sont désormais décrits dans le bilan du Lot 3.

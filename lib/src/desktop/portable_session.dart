@@ -8,7 +8,6 @@ import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../io/catalog_sources.dart';
-import '../matching/matching_engine.dart';
 import '../search/search_engine.dart';
 import '../search/sqlite_search_engine.dart';
 import '../storage/catalog_store.dart';
@@ -417,16 +416,21 @@ Future<Map<String, Object?>> _startScanWorker(
   final scan = await scanAudioDirectory(Directory(path), recursive: recursive);
   final target = CatalogStore.open(dbPath);
   try {
-    final decisions = const MatchingEngine().match(
-      target.matchEpisodes(),
-      scan.audios,
-    );
     final issues = target.applyAudioScan(scan);
+    final run = target.database
+        .select('SELECT id FROM audio_scan_runs ORDER BY id DESC LIMIT 1')
+        .single['id'];
+    final decisions = target.database
+        .select('SELECT decision_json FROM audio_scan_items WHERE run_id=?', [
+          run,
+        ])
+        .map((r) => jsonDecode(r['decision_json'] as String))
+        .toList();
     return <String, Object?>{
       'complete': scan.complete,
       'count': scan.audios.length,
       'issues': issues.map((i) => i.toJson()).toList(),
-      'decisions': decisions.map((d) => d.toJson()).toList(),
+      'decisions': decisions,
     };
   } finally {
     target.close();

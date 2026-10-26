@@ -1,5 +1,12 @@
 # Lot 3 — Recherche documentaire FTS5
 
+> **Actualisation du 26 octobre 2026 :** le bilan historique ci-dessous conserve
+> ses résultats et règles de l'époque. Le catalogue actuel est en v4 et le scan
+> utilise uniquement les noms du journal, sans COMM. Voir la
+> [règle actuelle](../regle-association-noms-journal.md) et le
+> [rapport actuel](../lot3/catalogue-report.json) : 716 épisodes, 29 avertissements,
+> aucune erreur ni fiche à vérifier après correction du nom TXT des Hmongs.
+
 Ce bilan conserve les résultats historiques du Lot 3. Le [Lot 4](../lot4/bilan.md)
 ajoute la GUI Windows, les champs de recherche et le schéma de travail v4.
 

@@ -23,27 +23,30 @@
   sans dépendre uniquement de la fermeture. Recherche multichamp configurable. Renommage
   exclusivement historique → TITRE SYSTEME. Export JSON dans le dossier utilisateur,
   sous `exports/`, avec nom explicite sans espaces. Ces parcours sont simulés dans le HTML.
-- Appliquer l'addendum `docs/regle-association-COMM.md` avant la règle COMM de la V1.4 :
-  un seul identifiant soutenu par au moins deux trames distinctes prime sur les autres
-  commentaires isolés. Conserver les commentaires écartés dans le diagnostic ; plusieurs
-  identifiants avec une paire ou plusieurs fichiers candidats restent ambigus. La preuve
-  retenue doit alimenter le matching MP3–TXT par l'identifiant historique, pas par le titre.
-- Le commentaire ID3v1 que Mutagen synthétise en `COMM:ID3v1 Comment` ne constitue
-  pas une trame COMM physique supplémentaire. L'oracle de test utilise `load_v1=False`.
+- Décision utilisateur du 26 octobre 2026 : appliquer `docs/regle-association-noms-journal.md`.
+  Association uniquement par nom complet FICHIER MP3 D'ORIGINE, puis TITRE SYSTEME
+  du journal courant intégré. NFC et casse seulement ; pas de suppression d'accents,
+  de ponctuation ou d'espaces. Conflits/doublons terminaux, aucun repli par titre.
+  Ne plus lire ni utiliser COMM/ID3 pendant le scan. L'ancienne règle COMM et ses
+  tests restent historiques/audit indépendant ; un nom ne certifie pas l'audio.
+  Préserver les choix manuels. Réévaluer les anciens liens automatiques au scan
+  complet avec diagnostic, sans effacer/transférer le suivi ; aucun nouveau lien
+  automatique sur scan incomplet. Les anciens alias système ne sont pas une autorité.
 - Commande de vérification des Lots 1–4 après activation du SDK : `bash tools/lot4/check.sh`.
   Respecter le lockfile ; ne pas modifier les fixtures pour faire passer un test.
-- Le corpus complet contient 716 TXT et 716 lignes CSV. Lire `docs/lot3/catalogue-report.json` :
-  716 épisodes structurés, aucune erreur, quarantaine ou fiche à vérifier après les
-  corrections sources de `a332d3f` ; 29 avertissements historiques ou U+0085 préservés. Ne pas corriger
-  silencieusement les données sources. Le seed `assets/catalogue.sqlite` ne contient
-  aucun audio ni suivi personnel ; ne jamais l'ouvrir en écriture comme base utilisateur.
-- Schéma de travail SQLite v4 (`local_settings`), seed de référence v3 conservé : FTS5 externe sur les colonnes documentaires de `episodes`,
-  maintenance par triggers dans la transaction. Ne pas modifier les tables FTS à la main.
-  Utiliser `SqliteSearchEngine.rebuildIndex/checkIndex` pour reconstruction/contrôle.
-  Requêtes littérales bornées, jamais une expression FTS fournie directement par l'utilisateur.
+- Corpus `e730f77` : 716 TXT/CSV, 716 épisodes, aucune erreur, quarantaine ou fiche
+  à vérifier ; les 29 avertissements historiques sont conservés. Le nom TXT des Hmongs
+  du Laos est corrigé avec deux points. Voir `docs/lot3/catalogue-report.json`.
+  Ne pas modifier les sources silencieusement. Seed v4
+  `corpus-2026-10-26-noms-journal-r2`, sans audio, suivi ou réglages ; 716 identités
+  conservées. Régénérer et versionner son manifeste.
+- SQLite v4 : FTS5 externe maintenu par triggers dans la transaction ; ne pas
+  modifier les tables FTS à la main. Utiliser `SqliteSearchEngine.rebuildIndex/checkIndex`.
+  Seeds v2/v3/v4 acceptés en lecture seule ; le seed ne devient jamais base utilisateur.
+  Requêtes littérales bornées, jamais une expression FTS fournie par l'utilisateur.
 - Flutter 3.47.7 / Dart 3.13.5 épinglés. Préparer l'asset par
-  `python3 tools/lot4/prepare_assets.py` ; ne pas versionner la copie générée dans l'app.
-  Windows doit être construit/testé sur Windows via `tools/lot4/check.ps1` et le workflow CI.
+  `python3 tools/lot4/prepare_assets.py` ; ne pas versionner la copie dans l'app.
+  Windows doit être construit/testé sur Windows via `tools/lot4/check.ps1` et la CI.
   Ne pas déclarer Windows qualifié sur la seule base des contrôles Linux.
 - Les imports de référence doivent préserver les choix manuels, liens, suivi et ajouts
   utilisateur. Un dossier temporairement inaccessible ne justifie aucune suppression.

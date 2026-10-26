@@ -90,3 +90,22 @@ extraire le nouveau ZIP dans un nouveau dossier et copier l'ancien
 dossier utilisateur. Conserver l'ancien dossier jusqu'à vérification du suivi.
 Sans ce pointeur, indiquer le dossier de données existant au premier lancement ;
 ne pas choisir un dossier vide pour retrouver un suivi existant.
+
+
+## Association des MP3 par leur nom
+
+Le journal déjà intégré à l'application fait autorité : d'abord le nom MP3 d'origine,
+puis le nom système. Une correspondance exacte et unique est nécessaire. Casse et
+représentation Unicode équivalente sont ignorées ; accents, espaces et ponctuation
+restent significatifs. Aucun CSV supplémentaire à fournir, aucun tag COMM à corriger.
+Un fichier nommé `C.I.A..mp3` ne correspond pas au nom `C.I.A.mp3`.
+
+Un nom inconnu ou plusieurs candidats apparaissent dans le diagnostic de scan,
+exportable en TXT. Choisir une association manuelle après vérification si nécessaire.
+Les choix manuels sont conservés. Un scan incomplet ne valide aucun nouveau lien
+automatique. Une association par nom ne garantit pas que l'enregistrement soit le bon.
+
+Après mise à jour du programme, le catalogue est actualisé à l'ouverture et le dossier
+MP3 configuré est rescanné. Les anciens liens automatiques fondés sur COMM sont alors
+réévalués ; le suivi et les favoris restent attachés aux mêmes épisodes. Sans dossier
+accessible, les données existantes sont conservées jusqu'à un scan complet.

@@ -1,4 +1,4 @@
-/// Parseurs hors ligne et résolution des preuves COMM, sans interface ni stockage.
+/// Parseurs hors ligne, association par noms et audit ID3 indépendant, sans interface ni stockage.
 library;
 
 export 'src/diagnostic.dart';

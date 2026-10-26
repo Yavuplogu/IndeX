@@ -45,7 +45,8 @@ L'utilisateur peut quitter avant de terminer. Le catalogue reste entièrement
 consultable sans MP3 une fois le dossier utilisateur validé.
 
 Si un dossier MP3 est fourni, lancer le scan et les concordances avec les règles
-des Lots 1–2 : preuve COMM puis replis autorisés, conflits signalés, aucune
+de la [règle du 26 octobre 2026](../regle-association-noms-journal.md) : noms du
+journal uniquement, sans lire COMM, conflits signalés, aucune
 modification de nom ou de tag. Montrer progression/résultat, erreurs et accès refusés.
 Une indisponibilité ou un scan incomplet ne supprime pas les liens ni le suivi.
 
@@ -166,7 +167,7 @@ Si le dossier n'est pas inscriptible, afficher un échec sans annonce d'export r
 
 Ces critères sont des exigences à vérifier sur les livrables réels. Les contrôles
 de la maquette HTML ne constituent ni une recette Windows ni une preuve de
-sauvegarde sur disque, de scan ID3 réel ou de fusion JSON implémentée.
+sauvegarde sur disque, de scan MP3 réel ou de fusion JSON implémentée.
 
 ### Exception de présentation pour le HTML uniquement
 
@@ -257,3 +258,13 @@ Les demandes suivantes complètent les ajustements précédents :
   la vue sur l'occurrence active. Le parcours boucle après la dernière ou avant
   la première occurrence. Les boutons restent accessibles pendant le défilement ;
   un contour plus marqué distingue l'occurrence active.
+
+
+## Association par noms du journal — 26 octobre 2026
+
+La [règle dédiée](../regle-association-noms-journal.md) remplace toute priorité COMM
+ou repli par titre décrit dans les documents antérieurs. Le catalogue doit intégrer
+les dernières sources avant empaquetage. Les huit corrections de noms sont intégrées
+au seed v4 sans modifier les identités, favoris ou suivi. Le diagnostic doit expliquer
+les noms inconnus et ambiguïtés, distinguer les choix manuels et ne jamais présenter
+une association par nom comme une validation ID3 ou du contenu audio.

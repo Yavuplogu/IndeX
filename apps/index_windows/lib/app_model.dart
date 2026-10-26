@@ -173,7 +173,7 @@ final class AppModel extends ChangeNotifier {
   }
 
   Future<void> _scan(String path) async {
-    message = 'Analyse des MP3 et concordances ID3…';
+    message = 'Association par noms d’origine et système du journal…';
     changed();
     mp3Path = Directory(path).absolute.path;
     report = await session!.scan(

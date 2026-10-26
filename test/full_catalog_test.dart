@@ -8,6 +8,8 @@ import 'package:index_core/index_storage.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
+import 'support/id3_bytes.dart' as id3;
+
 void main() {
   test('Le builder refuse de remplacer un fichier source ou de sortir dans le dossier TXT', () async {
     final dir = await Directory.systemTemp.createTemp(
@@ -46,55 +48,141 @@ void main() {
       journalBytes: await File('Journal_Files/journal.csv').readAsBytes(),
     );
   });
-  test(
-    'Corpus corrigé : 716 identités, aucune erreur ni divergence CSV/TXT',
-    () {
-      expect(full.txtCount, 716);
-      expect(full.journalRows, 716);
-      expect(full.canApply, isTrue);
-      expect(full.episodes, hasLength(716));
-      expect(full.summary()['quarantined_txt'], 0);
-      expect(full.summary()['errors'], 0);
-      expect(full.episodes.where((e) => e.needsReview), isEmpty);
-      expect(
-        full.episodes
-            .singleWhere((e) => e.originalName == 'mr_x_2013_04_27.mp3')
-            .sourcePath,
-        "2013-04-27 'Le Masque de fer' israélien.txt",
+  test('Corpus actualisé : 716 identités, aucun nom TXT divergent', () {
+    expect(full.txtCount, 716);
+    expect(full.journalRows, 716);
+    expect(full.canApply, isTrue);
+    expect(full.episodes, hasLength(716));
+    expect(full.summary()['quarantined_txt'], 0);
+    expect(full.summary()['errors'], 0);
+    expect(full.episodes.where((e) => e.needsReview), isEmpty);
+    expect(
+      full.episodes
+          .singleWhere((e) => e.originalName == 'mr_x_2013_04_27.mp3')
+          .sourcePath,
+      "2013-04-27 'Le Masque de fer' israélien.txt",
+    );
+    expect(full.issues.map((i) => i.code).toSet(), {
+      'journal_source_error',
+      'txt_nel_preserved',
+    });
+    expect(
+      full.issues.where((i) => i.code == 'journal_source_error'),
+      hasLength(23),
+    );
+    expect(
+      full.issues.where((i) => i.code == 'txt_nel_preserved'),
+      hasLength(6),
+    );
+    for (final date in [
+      DateTime.utc(1998, 4, 25),
+      DateTime.utc(2014, 2, 22),
+      DateTime.utc(2014, 4, 12),
+      DateTime.utc(2014, 5, 31),
+      DateTime.utc(2014, 6, 14),
+    ]) {
+      final iso = date.toIso8601String().substring(0, 10);
+      final episode = full.episodes.singleWhere(
+        (e) => e.originalName == 'mr_x_${iso.replaceAll('-', '_')}.mp3',
       );
-      expect(full.issues.map((i) => i.code).toSet(), {
-        'journal_source_error',
-        'txt_nel_preserved',
-      });
-      expect(
-        full.issues.where((i) => i.code == 'journal_source_error'),
-        hasLength(23),
-      );
-      expect(
-        full.issues.where((i) => i.code == 'txt_nel_preserved'),
-        hasLength(6),
-      );
-      for (final date in [
-        DateTime.utc(1998, 4, 25),
-        DateTime.utc(2014, 2, 22),
-        DateTime.utc(2014, 4, 12),
-        DateTime.utc(2014, 5, 31),
-        DateTime.utc(2014, 6, 14),
-      ]) {
-        final iso = date.toIso8601String().substring(0, 10);
-        final episode = full.episodes.singleWhere(
-          (e) => e.originalName == 'mr_x_${iso.replaceAll('-', '_')}.mp3',
-        );
-        expect(episode.document.broadcastDate, date, reason: iso);
+      expect(episode.document.broadcastDate, date, reason: iso);
+    }
+    expect(
+      full.episodes
+          .singleWhere((e) => e.originalName == 'mr_x_2014_06_14.mp3')
+          .sourcePath,
+      '2014-06-14 Boko Haram au Nigeria.txt',
+    );
+  });
+  test('Les neuf noms corrigés figurent dans le seed intégré et le journal courant', () {
+    final expected = {
+      '2003_10_25': '2003-10-25 Les Hmongs du Laos et la C.I.A.',
+      '2000_11_25': '2000-11-25 La mort de Jean Chiappe (27 novembre 1940)',
+      '2005_06_25': '2005-06-25 Einstein harcelé par le F.B.I.',
+      '2003_02_08': "2003-02-08 L'accord F.L.N.-O.A.S.",
+      '2002_03_23': '2002-03-23 Le G.A.L.',
+      '2007_10_13': '2007-10-13 Le L.S.D. et la C.I.A.',
+      '2001_04_14': "2001-04-14 Le putsh d'Alger et La C.I.A.",
+      '2003_02_15': '2003-02-15 Le Tibet et la C.I.A.',
+      '2002_06_22': "2002-06-22 Les assassinats de l'O.A.S.",
+    };
+    final seed = CatalogStore.inMemory();
+    addTearDown(seed.close);
+    seed.importReference('assets/catalogue.sqlite');
+    for (final entry in expected.entries) {
+      final id = 'mrx:mr_x_${entry.key}.mp3';
+      final row = seed.database.select(
+        'SELECT source_path,system_name FROM episodes WHERE id=?',
+        [id],
+      ).single;
+      expect(row['source_path'], '${entry.value}.txt');
+      expect(row['system_name'], '${entry.value}.mp3');
+      final episode = full.episodes.singleWhere((e) => e.id == id);
+      expect(episode.sourcePath, row['source_path']);
+      final d = const MatchingEngine().match(seed.matchEpisodes(), [
+        AudioCandidate(
+          reference: 'local',
+          currentName: row['system_name'] as String,
+        ),
+      ]).single;
+      expect(d.episodeId, id);
+      expect(d.status, MatchStatus.confirmed);
+    }
+  });
+  test('Le scan ignore COMM invalides/contradictoires et ID3 tronqués sans modifier les fichiers', () async {
+    final dir = await Directory.systemTemp.createTemp('index-ignore-tags-');
+    addTearDown(() => dir.delete(recursive: true));
+    final episode = full.episodes.first;
+    final path = File('${dir.path}/${episode.originalName}');
+    for (final bytes in [
+      id3.tag([
+        id3.frame('COMM', id3.comment('mr_x_1999_01_01.mp3', language: '???')),
+      ]),
+      id3.tag([
+        id3.frame('COMM', id3.comment('mr_x_1999_01_01.mp3')),
+        id3.frame('COMM', id3.comment('mr_x_1999_01_01.mp3')),
+      ]),
+      <int>[73, 68, 51],
+    ]) {
+      await path.writeAsBytes(bytes);
+      final before = await path.readAsBytes();
+      final scan = await scanAudioDirectory(dir);
+      expect(scan.complete, isTrue);
+      expect(scan.issues, isEmpty);
+      final store = CatalogStore.inMemory();
+      try {
+        store.importPlan(full);
+        store.applyAudioScan(scan);
+        final link = store.database
+            .select('SELECT * FROM local_audio_links')
+            .single;
+        expect(link['episode_id'], episode.id);
+        expect(link['method'], 'original_filename');
+        expect(link['local_verification_status'], 'NON_VERIFIEE');
+      } finally {
+        store.close();
       }
-      expect(
-        full.episodes
-            .singleWhere((e) => e.originalName == 'mr_x_2014_06_14.mp3')
-            .sourcePath,
-        '2014-06-14 Boko Haram au Nigeria.txt',
-      );
-    },
-  );
+      expect(await path.readAsBytes(), before);
+    }
+    await path.delete();
+    final unknown = File('${dir.path}/nom-inconnu.mp3');
+    await unknown.writeAsBytes(
+      id3.tag([
+        id3.frame('COMM', id3.comment(episode.originalName)),
+        id3.frame('COMM', id3.comment(episode.originalName)),
+      ]),
+    );
+    final scan = await scanAudioDirectory(dir);
+    final store = CatalogStore.inMemory();
+    try {
+      store.importPlan(full);
+      final issues = store.applyAudioScan(scan);
+      expect(store.database.select('SELECT * FROM local_audio_links'), isEmpty);
+      expect(issues.single.code, 'audio_unknown_filename');
+    } finally {
+      store.close();
+    }
+  });
   test('Import du corpus puis scan réel des six MP3 ; réimport sans perte de liens', () async {
     final store = CatalogStore.inMemory();
     addTearDown(store.close);
@@ -109,7 +197,8 @@ void main() {
     );
     expect(
       decisions.every(
-        (d) => d.status == MatchStatus.confirmed && d.method == 'id3_comment',
+        (d) =>
+            d.status == MatchStatus.confirmed && d.method == 'catalog_filename',
       ),
       isTrue,
     );

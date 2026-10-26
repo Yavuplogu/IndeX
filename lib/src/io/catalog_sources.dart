@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import '../catalog/models.dart';
-import '../id3/id3_reader.dart';
 import '../matching/matching_engine.dart';
 import 'file_tag_source.dart';
 
@@ -70,25 +69,13 @@ Future<AudioScan> scanAudioDirectory(
     )) {
       if (entity is! File || !entity.path.toLowerCase().endsWith('.mp3'))
         continue;
-      final tag = await Id3Reader().read(FileTagSource(entity));
       final ref = entity.absolute.uri;
       audios.add(
         AudioCandidate(
           reference: ref.toString(),
           currentName: ref.pathSegments.last,
-          tag: tag,
         ),
       );
-      for (final d in tag.issues) {
-        issues.add(
-          CatalogIssue(
-            d.code,
-            d.message,
-            source: ref.toString(),
-            severity: d.severity,
-          ),
-        );
-      }
     }
   } on FileSystemException catch (e) {
     complete = false;

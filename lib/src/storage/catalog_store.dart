@@ -408,86 +408,157 @@ final class CatalogStore {
 
   List<MatchEpisode> matchEpisodes() => [
     for (final row in database.select(
-      'SELECT id,original_name,title,journal_status FROM episodes ORDER BY id',
+      'SELECT id,title,journal_status,journal_json FROM episodes WHERE journal_json IS NOT NULL ORDER BY id',
     ))
-      MatchEpisode(
-        id: row['id'] as String,
-        originalName: row['original_name'] as String,
-        title: row['title'] as String,
-        journalStatus: row['journal_status'] as String?,
-        systemNames: database
-            .select(
-              "SELECT value FROM episode_aliases WHERE episode_id=? AND kind='catalog_filename' ORDER BY value",
-              [row['id']],
-            )
-            .map((r) => r['value'] as String)
-            .toList(),
-      ),
+      // The current journal is authoritative; historical aliases are audit only.
+      for (final fields in [
+        jsonDecode(row['journal_json'] as String) as Map<String, dynamic>,
+      ])
+        MatchEpisode(
+          id: row['id'] as String,
+          originalName: fields["FICHIER MP3 D'ORIGINE"] as String,
+          title: row['title'] as String,
+          journalStatus: row['journal_status'] as String?,
+          systemNames: [
+            if ((fields['TITRE SYSTEME'] as String?)?.isNotEmpty == true)
+              fields['TITRE SYSTEME'] as String,
+          ],
+        ),
   ];
 
-  /// Le scan ne remplace jamais un choix manuel et ne supprime aucun lien.
+  /// Réévalue les liens automatiques ; préserve choix manuels et suivi.
+  /// Une réaffectation automatique est auditée, sans supprimer l'état d'écoute.
   List<CatalogIssue> applyAudioScan(AudioScan scan, {DateTime? now}) {
-    final decisions = const MatchingEngine().match(
+    final links = database.select('SELECT * FROM local_audio_links');
+    final manualByRef = {
+      for (final row in links)
+        if (row['manual'] == 1) row['audio_ref'] as String: row,
+    };
+    final manualByEpisode = {
+      for (final row in links)
+        if (row['manual'] == 1) row['episode_id'] as String: row,
+    };
+    final automatic = const MatchingEngine().match(
       matchEpisodes(),
-      scan.audios,
+      scan.audios.where((a) => !manualByRef.containsKey(a.reference)).toList(),
     );
-    final stamp = (now ?? DateTime.now()).toUtc().toIso8601String();
+    final byRef = {for (final d in automatic) d.audio.reference: d};
     final issues = [...scan.issues];
+    final decisions = <MatchDecision>[
+      for (final audio in scan.audios)
+        if (manualByRef.containsKey(audio.reference))
+          MatchDecision(
+            audio: audio,
+            status: MatchStatus.confirmed,
+            episodeId: manualByRef[audio.reference]!['episode_id'] as String,
+            method: 'manual',
+            reason: 'Association manuelle confirmée par l’utilisateur, conservée. Contenu audio non vérifié.',
+          )
+        else if (byRef[audio.reference]!.status == MatchStatus.confirmed &&
+            manualByEpisode.containsKey(byRef[audio.reference]!.episodeId))
+          MatchDecision(
+            audio: audio,
+            status: MatchStatus.conflict,
+            episodeId: byRef[audio.reference]!.episodeId,
+            method: byRef[audio.reference]!.method,
+            reason: 'Cet épisode possède déjà un choix manuel ; aucun remplacement automatique.',
+          )
+        else if (!scan.complete &&
+            byRef[audio.reference]!.status == MatchStatus.confirmed)
+          MatchDecision(
+            audio: audio,
+            status: MatchStatus.blocked,
+            episodeId: byRef[audio.reference]!.episodeId,
+            method: byRef[audio.reference]!.method,
+            reason: 'Scan incomplet : concordance par nom trouvée, association automatique non validée.',
+          )
+        else
+          byRef[audio.reference]!,
+    ];
+    final stamp = (now ?? DateTime.now()).toUtc().toIso8601String();
     database.execute('BEGIN IMMEDIATE');
     try {
       if (scan.complete) {
         final seen = scan.audios.map((a) => a.reference).toSet();
         for (final row in database.select(
-          'SELECT episode_id,audio_ref FROM local_audio_links',
+          'SELECT episode_id,audio_ref,manual FROM local_audio_links',
         )) {
           final ref = row['audio_ref'] as String;
           final inScope =
               ref.startsWith(scan.scope) &&
               (scan.recursive ||
                   !ref.substring(scan.scope.length).contains('/'));
-          if (inScope)
-            database.execute(
-              'UPDATE local_audio_links SET available=? WHERE episode_id=?',
-              [seen.contains(ref) ? 1 : 0, row['episode_id']],
-            );
+          if (inScope) {
+            if (row['manual'] == 1) {
+              database.execute(
+                'UPDATE local_audio_links SET available=? WHERE episode_id=?',
+                [seen.contains(ref) ? 1 : 0, row['episode_id']],
+              );
+            } else {
+              // Presence alone no longer validates an association made by COMM.
+              database.execute(
+                "UPDATE local_audio_links SET available=0,matching_status='unknown',local_verification_status='NON_VERIFIEE' WHERE episode_id=?",
+                [row['episode_id']],
+              );
+            }
+          }
         }
       }
       for (final d in decisions) {
-        if (d.status != MatchStatus.confirmed) continue;
-        final previous = database.select(
-          'SELECT manual FROM local_audio_links WHERE episode_id=?',
-          [d.episodeId],
-        );
-        final owner = database.select(
-          'SELECT episode_id FROM local_audio_links WHERE audio_ref=?',
-          [d.audio.reference],
-        );
-        if (previous.isNotEmpty && previous.single['manual'] == 1) {
+        if (d.status != MatchStatus.confirmed) {
+          if (scan.complete)
+            database.execute(
+              'UPDATE local_audio_links SET available=0,matching_status=?,local_verification_status=? WHERE audio_ref=? AND manual=0',
+              [d.status.name, 'NON_VERIFIEE', d.audio.reference],
+            );
           issues.add(
             CatalogIssue(
-              'manual_link_preserved',
-              'Choix manuel conservé.',
+              d.status == MatchStatus.blocked
+                  ? 'audio_scan_incomplete'
+                  : d.status == MatchStatus.unknown
+                  ? 'audio_unknown_filename'
+                  : 'audio_association_conflict',
+              d.reason,
               source: d.audio.reference,
             ),
           );
+          if (d.episodeId != null && manualByEpisode.containsKey(d.episodeId)) {
+            issues.add(
+              CatalogIssue(
+                'manual_link_preserved',
+                'Choix manuel conservé.',
+                source: d.audio.reference,
+              ),
+            );
+          }
           continue;
         }
+        if (d.method == 'manual') continue;
+        final owner = database.select(
+          'SELECT episode_id,manual FROM local_audio_links WHERE audio_ref=?',
+          [d.audio.reference],
+        );
         if (owner.isNotEmpty && owner.single['episode_id'] != d.episodeId) {
+          // A complete scan may correct an old automatic owner. Manual owners
+          // have already been removed from automatic matching and stay protected.
+          database.execute(
+            'DELETE FROM local_audio_links WHERE episode_id=? AND manual=0',
+            [owner.single['episode_id']],
+          );
           issues.add(
             CatalogIssue(
-              'audio_link_conflict',
-              'Le fichier est déjà lié à un autre épisode.',
+              'audio_link_reassigned',
+              'Ancienne association automatique réévaluée selon le nom du journal ; suivi de l’ancien épisode conservé.',
               source: d.audio.reference,
             ),
           );
-          continue;
         }
         _link(
           d.episodeId!,
           d.audio.reference,
           d.audio.currentName,
           d.method!,
-          d.id3Verified ? 'CONFIRMEE' : 'ABSENTE',
+          'NON_VERIFIEE',
           jsonEncode(d.toJson()),
           false,
           stamp,
