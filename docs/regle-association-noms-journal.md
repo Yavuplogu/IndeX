@@ -84,3 +84,14 @@ nom MP3 `2003-10-25 Les Hmongs du Laos et la C.I.A..mp3`.
 Le catalogue intégré est importé à l'ouverture avec préservation du suivi et des
 choix manuels. Les anciens seeds v2/v3 restent acceptés en lecture seule ; la base
 utilisateur v4 ne change pas de schéma pour cette règle.
+
+## Retrait explicite d’un lien local — 27 octobre 2026
+
+Après confirmation, Enlever l’association supprime le lien local du fichier sans
+modifier ses octets, son nom ni l’état d’écoute de l’épisode. La référence figure
+alors dans une exclusion locale persistante (`audio_unlinked_refs_v1`) : les scans,
+complets ou incomplets, ne la réassocient pas automatiquement. Le rapport indique
+`unknown`, `matching_method=manual_unlinked`, `evidence_rule=manual_unlinked`.
+Un choix Associer… explicite lève cette exclusion et enregistre un lien manuel.
+Ce réglage porte sur une référence locale, pas sur l’identité documentaire ni sur
+un transfert JSON entre appareils. Les autres règles de concordance ne changent pas.

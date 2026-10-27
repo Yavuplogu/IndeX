@@ -24,7 +24,9 @@ directement à la bibliothèque après chargement ; le scan automatique des MP3
 peut être désactivé dans Paramètres. Leur dossier et la récursivité se règlent
 dans Fichiers et associations, avec statistiques détaillées et ouverture du
 dossier MP3 dans l’Explorateur. Le compteur sous filtres affiche visibles / total
-du catalogue, sans rappel.
+du catalogue, sans rappel. Le diagnostic s’ouvre dans un panneau flottant ;
+les associations peuvent être retirées après confirmation, sans toucher aux MP3
+ni au suivi. L’ouverture du dossier utilise l’API Windows avec le chemin cible.
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)

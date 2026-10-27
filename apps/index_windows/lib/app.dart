@@ -199,6 +199,12 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
         checkboxTheme: const CheckboxThemeData(
           mouseCursor: WidgetStateMouseCursor.clickable,
         ),
+        menuTheme: MenuThemeData(
+          style: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(c.controls),
+            surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          ),
+        ),
         dividerColor: c.line,
         inputDecorationTheme: InputDecorationTheme(
           isDense: true,
@@ -294,7 +300,16 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
                   child: AbsorbPointer(
                     absorbing: m.busy || closing,
                     child: m.opening || (m.busy && m.session == null)
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 18),
+                                Text('N’allons pas trop vite...'),
+                              ],
+                            ),
+                          )
                         : m.needsSetup
                         ? StartupPage(
                             model: m,
@@ -373,7 +388,7 @@ class _StartupPageState extends State<StartupPage> {
                 Text(
                   m.requireExisting && m.session == null
                       ? 'Retrouvez le dossier de vos données existantes. Aucune base vide ne remplacera votre suivi.'
-                      : 'Le catalogue est consultable sans MP3. Choisissez le dossier dédié à vos données.',
+                      : 'IndeX permet de rechercher et consulter les épisodes de Rendez-Vous avec X, puis d’écouter vos MP3 personnels. Pour commencer, choisissez leur dossier ou précisez-le plus tard, puis vérifiez le dossier proposé pour vos favoris, votre suivi et vos sauvegardes. Le catalogue reste consultable sans MP3.',
                 ),
                 const SizedBox(height: 22),
                 FolderField(
@@ -513,7 +528,9 @@ class FilterMenu<T> extends StatelessWidget {
     required this.value,
     required this.labels,
     required this.onChanged,
+    this.framed = false,
   });
+  final bool framed;
   final String menuKey;
   final T value;
   final Map<T, String> labels;
@@ -537,8 +554,14 @@ class FilterMenu<T> extends StatelessWidget {
       key: ValueKey(menuKey),
       style: TextButton.styleFrom(
         foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        textStyle: const TextStyle(fontSize: 12),
+        backgroundColor: framed ? Theme.of(context).colorScheme.surface : null,
+        side: framed ? BorderSide(color: Theme.of(context).dividerColor) : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: EdgeInsets.symmetric(
+          horizontal: framed ? 12 : 4,
+          vertical: framed ? 12 : 0,
+        ),
+        textStyle: TextStyle(fontSize: framed ? 14 : 12),
       ),
       onPressed: () =>
           controller.isOpen ? controller.close() : controller.open(),
@@ -1759,42 +1782,17 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           if (m.error.isNotEmpty)
                             Text(m.error, style: TextStyle(color: c.alert)),
                           group('Apparence', [
-                            DropdownButtonFormField<bool>(
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: c.panel,
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: c.line),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                              ),
-                              dropdownColor: c.controls,
-                              borderRadius: BorderRadius.circular(8),
-                              style: Theme.of(context).textTheme.bodyMedium!
-                                  .copyWith(color: c.ink),
-                              iconEnabledColor: c.accent,
-                              initialValue: m.dark,
-                              key: ValueKey(m.dark),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: false,
-                                  child: Text('Mode clair'),
-                                ),
-                                DropdownMenuItem(
-                                  value: true,
-                                  child: Text('Mode sombre'),
-                                ),
-                              ],
-                              onChanged: (v) {
+                            FilterMenu<bool>(
+                              menuKey: 'appearance-filter',
+                              framed: true,
+                              value: m.dark,
+                              labels: const {
+                                false: 'Mode clair',
+                                true: 'Mode sombre',
+                              },
+                              onChanged: (value) {
                                 try {
-                                  m.setTheme(v!);
+                                  m.setTheme(value);
                                 } catch (e) {
                                   m.error = e.toString();
                                   m.changed();
@@ -1939,6 +1937,74 @@ class ScanPage extends StatelessWidget {
       );
   }
 
+  Future<void> removeAssociation(BuildContext context, String reference) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enlever cette association ?'),
+        content: const Text(
+          'Le fichier MP3, les favoris et le suivi sont conservés. Le fichier restera sans association lors des prochains scans ; utilisez Associer… pour le rétablir.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enlever'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) await model.unlink(reference);
+  }
+
+  Future<void> diagnostics(BuildContext context, List<dynamic> issues) =>
+      showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: EditorialColors(model.dark).panel,
+          child: SizedBox(
+            width: 700,
+            height: 580,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Diagnostic du scan',
+                          style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Fermer'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: issues.isEmpty
+                        ? const Center(
+                            child: Text('Aucun diagnostic à signaler.'),
+                          )
+                        : ScanDiagnostics(issues: issues),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fermer'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final c = EditorialColors(model.dark);
@@ -2044,38 +2110,41 @@ class ScanPage extends StatelessWidget {
                         ? 'Aucun scan réalisé.'
                         : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
                   ),
-                  if (model.report != null)
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.save_alt),
-                      label: const Text('Exporter le diagnostic TXT'),
-                      onPressed: () async {
-                        try {
-                          final file = await model.exportScanDiagnostic();
-                          if (context.mounted)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: SelectableText(
-                                  'Diagnostic exporté : ${file.path}',
-                                ),
-                              ),
-                            );
-                        } catch (error) {
-                          model.error =
-                              'Export du diagnostic impossible : $error';
-                          model.changed();
-                        }
-                      },
-                    ),
-                  if (issues.isNotEmpty)
-                    ExpansionTile(
-                      title: const Text('Diagnostics du scan'),
-                      children: [
-                        SizedBox(
-                          height: 180,
-                          child: ScanDiagnostics(issues: issues),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.fact_check_outlined),
+                        label: const Text('Diagnostic du scan'),
+                        onPressed: () =>
+                            unawaited(diagnostics(context, issues)),
+                      ),
+                      if (model.report != null)
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.save_alt),
+                          label: const Text('Exporter le diagnostic TXT'),
+                          onPressed: () async {
+                            try {
+                              final file = await model.exportScanDiagnostic();
+                              if (context.mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: SelectableText(
+                                      'Diagnostic exporté : ${file.path}',
+                                    ),
+                                  ),
+                                );
+                            } catch (error) {
+                              model.error =
+                                  'Export du diagnostic impossible : $error';
+                              model.changed();
+                            }
+                          },
                         ),
-                      ],
-                    ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -2093,9 +2162,11 @@ class ScanPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final decision = entries[index].decision;
                       final manual = entries[index].manual;
+                      final linked =
+                          decision['status'] == 'confirmed' || manual;
                       return SelectionArea(
                         child: Card(
-                          color: c.controls,
+                          color: linked ? c.controls : c.missing,
                           surfaceTintColor: Colors.transparent,
                           margin: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -2103,16 +2174,37 @@ class ScanPage extends StatelessWidget {
                           ),
                           child: ListTile(
                             title: Text(decision['current_name'] as String),
-                            subtitle: Text(
-                              '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}\n${displayDiagnosticPath(decision['audio_reference'] as String)}',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}',
+                                  style: TextStyle(
+                                    color: linked ? c.muted : c.hitInk,
+                                  ),
+                                ),
+                                Text(
+                                  displayDiagnosticPath(
+                                    decision['audio_reference'] as String,
+                                  ),
+                                ),
+                              ],
                             ),
-                            trailing:
-                                decision['status'] == 'confirmed' || manual
-                                ? Icon(
-                                    Icons.check_circle_outline,
-                                    color: c.accent,
+                            trailing: linked
+                                ? IconButton(
+                                    tooltip: 'Enlever l’association',
+                                    icon: const Icon(Icons.link_off),
+                                    onPressed: () => unawaited(
+                                      removeAssociation(
+                                        context,
+                                        decision['audio_reference'] as String,
+                                      ),
+                                    ),
                                   )
                                 : OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: c.controls,
+                                    ),
                                     onPressed: () =>
                                         unawaited(associate(context, decision)),
                                     child: const Text('Associer…'),

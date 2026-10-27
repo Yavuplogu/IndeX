@@ -93,4 +93,8 @@
   (détectés, associés, manquants), ouverture du dossier par Explorateur Windows.
   Récursivité activée par défaut sauf choix explicite conservé. Décoder les URI uniquement pour affichage/export
   du diagnostic, jamais pour modifier les références stockées. Cartes de scan
-  sélectionnables, fichiers avec bouton Associer en tête, même fond que Paramètres.
+  sélectionnables, fichiers avec bouton Associer en tête ; cartes non associées
+  grises, message rouge du X et bouton beige. Diagnostic dans un panneau flottant.
+  Retrait confirmé : exclusion locale persistante par référence, levée par
+  association manuelle ; aucun changement de fichier ni de suivi. Ouverture du
+  dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.

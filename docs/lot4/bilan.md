@@ -595,3 +595,31 @@ et formatage vérifiés. Les régressions couvrent l’animation avec session d�
 ouverte, les transitions tri/état en un clic dans les deux sens, les statistiques,
 la récursivité par défaut et la transmission du chemin à l’ouvreur de dossier.
 L’ouverture réelle de l’Explorateur et le paquet restent à valider sur Windows.
+
+## Révision dossiers et panneaux — 27 octobre 2026
+
+Le bouton d’ouverture du dossier remplace le lancement `explorer.exe` par un canal
+natif vers `ShellExecuteW`. Le chemin Windows est transmis comme dossier cible,
+séparément de tout paramètre de commande. Le runner valide son existence et renvoie
+les erreurs au modèle. Le canal est détruit avant le moteur Flutter.
+
+Menus dans le beige des boutons latéraux ; Apparence utilise MenuAnchor sous le
+bouton dans les deux thèmes. Texte de chargement et accueil explicatif ajoutés.
+Le diagnostic passe dans un panneau flottant sélectionnable et défilant. Les
+cartes non associées deviennent grises avec message rouge et bouton beige.
+
+Le retrait confirmé d’un lien est transactionnel. Une liste de références exclues
+reste dans `local_settings` (`audio_unlinked_refs_v1`), sans migration ni changement
+du seed. Le scan rapporte ces fichiers comme non associés ; un choix manuel lève
+l’exclusion. Le suivi et les fichiers restent intacts. Les rapports historiques
+persistés ne sont pas réécrits ; leur présentation reflète les choix locaux actuels.
+
+Vérification finale : `bash tools/lot4/check.sh` réussit sur Linux : **185 tests Dart
+et 19 tests Flutter**, formatage conforme et analyses sans diagnostic. Couverture :
+retrait sans perte de suivi, scans complets/incomplets, réouverture sans scan,
+réassociation manuelle et cohérence du rapport, couleurs des cartes/boutons,
+panneau diagnostic copiable/défilant, menu Apparence sous le bouton dans les deux
+thèmes et transmission native de chemins Windows/UNC avec espaces et Unicode.
+Le test d’intégration Windows vérifie aussi la présence du canal et le rejet d’un
+dossier inexistant ; il reste à exécuter sur Windows, avec compilation du runner
+et contrôle manuel de l’ouverture du dossier cible dans l’Explorateur.

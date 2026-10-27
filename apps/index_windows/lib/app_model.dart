@@ -60,9 +60,8 @@ enum AudioFolderState { unconfigured, ready, unavailable, incomplete }
 
 /// Ouvre un dossier local sans interprétation de commande ni nouvelle dépendance.
 Future<void> openNativeFolder(String path) async {
-  if (!Platform.isWindows)
-    throw UnsupportedError('Ouverture disponible sur Windows.');
-  await Process.start('explorer.exe', [path], mode: ProcessStartMode.detached);
+  await const MethodChannel('index/local_folders')
+      .invokeMethod<void>('openDirectory', path.replaceAll('/', r'\'));
 }
 
 final class AppModel extends ChangeNotifier {
@@ -214,6 +213,7 @@ final class AppModel extends ChangeNotifier {
           ? AudioFolderState.ready
           : AudioFolderState.unavailable;
     _lastReport();
+    _refreshAssociationReport();
     if (mp3Path.isNotEmpty && audioState == AudioFolderState.ready) {
       // Sans rescan, le dernier scan incomplet ne devient pas complet.
       audioState = report?['complete'] == true
@@ -268,6 +268,53 @@ final class AppModel extends ChangeNotifier {
           .toList(),
     };
   }
+
+  void _refreshAssociationReport() {
+    if (report == null) return;
+    final links = {
+      for (final r in session!.store.database.select(
+        'SELECT audio_ref,episode_id,manual FROM local_audio_links WHERE available=1 AND matching_status=?',
+        ['confirmed'],
+      ))
+        r['audio_ref']: r,
+    };
+    final excluded = session!.store.unlinkedAudioReferences;
+    report = {
+      ...report!,
+      'decisions': [
+        for (final raw in (report!['decisions'] as List? ?? []))
+          if (excluded.contains((raw as Map)['audio_reference']))
+            {
+              ...raw,
+              'status': 'unknown',
+              'episode_id': null,
+              'matching_method': 'manual_unlinked',
+              'evidence_rule': 'manual_unlinked',
+              'reason': 'Association retirée par l’utilisateur ; choisissez Associer… pour la rétablir.',
+            }
+          else if (links.containsKey(raw['audio_reference']))
+            {
+              ...raw,
+              'status': 'confirmed',
+              'episode_id': links[raw['audio_reference']]!['episode_id'],
+              if (links[raw['audio_reference']]!['manual'] == 1) ...{
+                'matching_method': 'manual',
+                'evidence_rule': 'manual',
+                'reason': 'Association manuelle conservée.',
+              },
+            }
+          else
+            raw,
+      ],
+    };
+  }
+
+  Future<void> unlink(String reference) =>
+      runWork('Retrait de l’association…', () async {
+        session!.store.unlinkAudio(reference);
+        _refreshAssociationReport();
+        reload();
+      });
 
   Future<void> _scan(String path) async {
     message = 'Association par noms d’origine et système du journal…';
@@ -438,6 +485,7 @@ final class AppModel extends ChangeNotifier {
         if (uri.scheme != 'file' || !await File.fromUri(uri).exists())
           throw StateError('Le MP3 sélectionné est introuvable.');
         session!.store.recordManualLink(id, reference, name);
+        _refreshAssociationReport();
         reload();
       });
   bool isManual(String reference) => session!.store.database.select(

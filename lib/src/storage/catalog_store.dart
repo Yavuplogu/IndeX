@@ -429,6 +429,7 @@ final class CatalogStore {
   /// Réévalue les liens automatiques ; préserve choix manuels et suivi.
   /// Une réaffectation automatique est auditée, sans supprimer l'état d'écoute.
   List<CatalogIssue> applyAudioScan(AudioScan scan, {DateTime? now}) {
+    final excluded = unlinkedAudioReferences;
     final links = database.select('SELECT * FROM local_audio_links');
     final manualByRef = {
       for (final row in links)
@@ -440,7 +441,13 @@ final class CatalogStore {
     };
     final automatic = const MatchingEngine().match(
       matchEpisodes(),
-      scan.audios.where((a) => !manualByRef.containsKey(a.reference)).toList(),
+      scan.audios
+          .where(
+            (a) =>
+                !manualByRef.containsKey(a.reference) &&
+                !excluded.contains(a.reference),
+          )
+          .toList(),
     );
     final byRef = {for (final d in automatic) d.audio.reference: d};
     final issues = [...scan.issues];
@@ -453,6 +460,14 @@ final class CatalogStore {
             episodeId: manualByRef[audio.reference]!['episode_id'] as String,
             method: 'manual',
             reason: 'Association manuelle confirmée par l’utilisateur, conservée. Contenu audio non vérifié.',
+          )
+        else if (excluded.contains(audio.reference))
+          MatchDecision(
+            audio: audio,
+            status: MatchStatus.unknown,
+            episodeId: null,
+            method: 'manual_unlinked',
+            reason: 'Association retirée par l’utilisateur ; choisissez Associer… pour la rétablir.',
           )
         else if (byRef[audio.reference]!.status == MatchStatus.confirmed &&
             manualByEpisode.containsKey(byRef[audio.reference]!.episodeId))
@@ -596,6 +611,45 @@ final class CatalogStore {
     }
   }
 
+  static const _unlinkedKey = 'audio_unlinked_refs_v1';
+  Set<String> get unlinkedAudioReferences {
+    final rows = database.select(
+      'SELECT value FROM local_settings WHERE key=?',
+      [_unlinkedKey],
+    );
+    if (rows.isEmpty) return {};
+    return (jsonDecode(rows.single['value'] as String) as List)
+        .cast<String>()
+        .toSet();
+  }
+
+  void _saveUnlinked(Set<String> refs) {
+    database.execute(
+      'INSERT INTO local_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+      [_unlinkedKey, jsonEncode(refs.toList()..sort())],
+    );
+  }
+
+  /// Retrait local explicite ; ne modifie ni le fichier ni le suivi.
+  void unlinkAudio(String reference) {
+    database.execute('BEGIN IMMEDIATE');
+    try {
+      final rows = database.select(
+        'SELECT 1 FROM local_audio_links WHERE audio_ref=?',
+        [reference],
+      );
+      if (rows.isEmpty) throw StateError('Cette association n’existe plus.');
+      _saveUnlinked(unlinkedAudioReferences..add(reference));
+      database.execute('DELETE FROM local_audio_links WHERE audio_ref=?', [
+        reference,
+      ]);
+      database.execute('COMMIT');
+    } catch (_) {
+      database.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
   void recordManualLink(
     String episodeId,
     String reference,
@@ -611,6 +665,7 @@ final class CatalogStore {
       );
       if (owner.isNotEmpty && owner.single['episode_id'] != episodeId)
         throw StateError('Ce MP3 est déjà lié à un autre épisode.');
+      _saveUnlinked(unlinkedAudioReferences..remove(reference));
       _link(
         episodeId,
         reference,

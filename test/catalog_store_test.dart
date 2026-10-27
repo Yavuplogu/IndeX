@@ -676,6 +676,52 @@ void main() {
       );
     },
   );
+  test('Retrait explicite : suivi conservé, scans sans réassociation, choix manuel rétablit le lien', () {
+    store.importPlan(plan());
+    const ref = 'file:///root/episode.mp3';
+    store.applyAudioScan(scan([audio(ref)]));
+    expect(
+      store.database.select('SELECT * FROM local_audio_links'),
+      hasLength(1),
+    );
+    store.database.execute(
+      'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,12345,?,1)',
+      [firstId, 'EN_COURS'],
+    );
+    store.unlinkAudio(ref);
+    expect(store.unlinkedAudioReferences, contains(ref));
+    for (final complete in [false, true]) {
+      store.applyAudioScan(scan([audio(ref)], complete: complete));
+      expect(store.database.select('SELECT * FROM local_audio_links'), isEmpty);
+      final decision = jsonDecode(
+        store.database
+                .select(
+                  'SELECT decision_json FROM audio_scan_items ORDER BY run_id DESC LIMIT 1',
+                )
+                .single['decision_json']
+            as String,
+      ) as Map;
+      expect(decision['status'], 'unknown');
+      expect(decision['evidence_rule'], 'manual_unlinked');
+      expect(decision['reason'], contains('retirée par l’utilisateur'));
+    }
+    final state = store.database
+        .select('SELECT * FROM user_episode_state')
+        .single;
+    expect(state['position_ms'], 12345);
+    expect(state['is_favorite'], 1);
+    expect(state['listening_status'], 'EN_COURS');
+    store.recordManualLink(firstId, ref, firstOriginal);
+    expect(store.unlinkedAudioReferences, isEmpty);
+    store.applyAudioScan(scan([audio(ref)]));
+    expect(
+      store.database
+          .select('SELECT manual FROM local_audio_links')
+          .single['manual'],
+      1,
+    );
+  });
+
   test('Dossier inaccessible conserve les liens ; scan complet vide marque seulement l’indisponibilité', () {
     store.importPlan(plan());
     store.recordManualLink(firstId, 'file:///root/manual.mp3', 'manual.mp3');

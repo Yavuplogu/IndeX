@@ -45,7 +45,9 @@ final class MatchDecision {
     'matching_method': method,
     'reason': reason,
     'local_verification_status': 'NON_VERIFIEE',
-    'evidence_rule': method == 'manual' ? 'manual' : 'journal_filename_v1',
+    'evidence_rule': method == 'manual' || method == 'manual_unlinked'
+        ? method
+        : 'journal_filename_v1',
     'filename_comparison': 'unicode_nfc_case_insensitive_exact',
     'audio_content_verified': false,
   };

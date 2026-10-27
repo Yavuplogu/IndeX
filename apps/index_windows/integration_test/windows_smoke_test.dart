@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:index_windows/app.dart';
@@ -48,6 +49,22 @@ void main() {
           data = Directory('${root.path}/donnees')..createSync();
       var model = AppModel(portableDirectory: portable);
       try {
+        // Vérifie que le runner expose bien le canal natif de dossiers.
+        await tester.runAsync(() async {
+          await expectLater(
+            const MethodChannel('index/local_folders').invokeMethod<void>(
+              'openDirectory',
+              '${root.path}/dossier-absent',
+            ),
+            throwsA(
+              isA<PlatformException>().having(
+                (e) => e.code,
+                'code',
+                'missing_directory',
+              ),
+            ),
+          );
+        });
         await tester.runAsync(() => model.configure(data.path, '', true));
         expect(model.error, isEmpty);
         expect(model.catalog, hasLength(716));

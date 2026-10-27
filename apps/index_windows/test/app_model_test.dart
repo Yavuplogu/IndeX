@@ -108,6 +108,53 @@ void main() {
     },
   );
 
+  test('Retrait persistant après réouverture sans scan, puis scan et réassociation manuelle', () async {
+    final folder = Directory('${root.path}/mp3')..createSync();
+    model = AppModel(portableDirectory: portable);
+    await model!.configure(data.path, '', true);
+    final episode = model!.catalog.first;
+    final file = File('${folder.path}/${episode.originalName}')
+      ..writeAsBytesSync([]);
+    await model!.scan(folder.path);
+    expect(model!.availableAudioCount, 1);
+    model!.favorite(episode);
+    model!.setSkipStartupScan(true);
+    await model!.unlink(file.absolute.uri.toString());
+    expect(model!.error, isEmpty);
+    expect(model!.availableAudioCount, 0);
+    expect((model!.report!['decisions'] as List).single['status'], 'unknown');
+    await model!.closeSafely();
+    model!.dispose();
+    model = AppModel(portableDirectory: portable);
+    await model!.boot();
+    expect(model!.error, isEmpty);
+    expect(model!.availableAudioCount, 0);
+    expect(
+      model!.catalog.firstWhere((e) => e.id == episode.id).favorite,
+      isTrue,
+    );
+    expect((model!.report!['decisions'] as List).single['status'], 'unknown');
+    await model!.scan(folder.path);
+    expect(model!.availableAudioCount, 0);
+    await model!.manual(
+      episode.id,
+      file.absolute.uri.toString(),
+      episode.originalName,
+    );
+    expect(model!.error, isEmpty);
+    expect(model!.availableAudioCount, 1);
+    expect((model!.report!['decisions'] as List).single['status'], 'confirmed');
+    expect(
+      (model!.report!['decisions'] as List).single['matching_method'],
+      'manual',
+    );
+    expect(
+      (model!.report!['decisions'] as List).single['evidence_rule'],
+      'manual',
+    );
+    expect(file.existsSync(), isTrue);
+  });
+
   test(
     'Compteurs MP3 globaux indépendants des filtres et chemins lisibles',
     () async {

@@ -336,3 +336,25 @@ Cette révision remplace la présentation des compteurs décrite plus haut.
   une préférence explicite déjà enregistrée est conservée.
 - Les menus de tri et de statut permettent de passer de l’un à l’autre en un seul
   clic, même si le premier est ouvert. Menus accessibles par clavier conservés.
+
+## Dossiers, menus et associations — complément du 27 octobre 2026
+
+- L’ouverture du dossier MP3 passe par un canal Flutter du runner Windows vers
+  `ShellExecuteW`, avec le dossier en argument `lpFile`, sans construction de ligne
+  de commande Explorer. Chemin Windows normalisé, espaces et Unicode conservés ;
+  un dossier inaccessible produit une erreur, sans repli volontaire vers Documents.
+- Tous les menus déroulants ont le même fond que les boutons latéraux, sans teinte
+  de surface ajoutée. Apparence reprend le menu ancré sous son bouton, indépendamment
+  du mode sélectionné, au lieu de centrer la liste sur la valeur active.
+- Le chargement affiche « N’allons pas trop vite... » sous l’animation.
+- L’accueil explique la consultation/recherche du catalogue, les MP3 personnels
+  facultatifs et le dossier dédié aux favoris, au suivi et aux sauvegardes.
+- Dans Fichiers, les cartes sans association sont grises ; leur message est dans
+  le rouge du X, sans colorer le nom ou le chemin. Associer… conserve son beige.
+- Une association existante propose Enlever l’association, avec confirmation.
+  Le fichier et le suivi restent intacts. Une exclusion locale persistante par
+  référence empêche sa recréation au prochain scan. Une association manuelle
+  explicite lève cette exclusion. Aucun effet sur les autres fichiers ou épisodes.
+- Le bouton Diagnostic du scan précède Exporter le diagnostic TXT sur la même
+  ligne. Il ouvre un panneau flottant refermable avec résultats défilants,
+  sélectionnables et copiables ; aucun diagnostic reste déplié dans la page.

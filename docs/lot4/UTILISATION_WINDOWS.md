@@ -133,3 +133,15 @@ Dans Fichiers et associations, les fichiers proposant « Associer… » apparais
 en premier. Le texte des cartes et du diagnostic est sélectionnable. Les chemins
 s'affichent avec leurs espaces, également dans l'export TXT, sans altérer les
 références internes des associations.
+
+## Diagnostic et retrait d’une association
+
+Dans Fichiers et associations, le bouton **Diagnostic du scan**, placé avant
+l’export TXT, ouvre un panneau flottant. Les messages sont sélectionnables et
+copiables ; la liste peut défiler. Fermer revient à la liste des fichiers.
+
+Les fichiers non associés ont un fond gris et leur message apparaît dans le
+rouge du logo. Le bouton Associer… conserve son beige. Les fichiers associés
+proposent **Enlever l’association** : après confirmation, seul le lien local est
+retiré, sans supprimer le fichier ni les favoris ou le suivi. Ce choix résiste
+aux scans et aux réouvertures. Utiliser Associer… pour rétablir un lien manuellement.

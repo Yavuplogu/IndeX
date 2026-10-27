@@ -1,6 +1,8 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <shellapi.h>
+#include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -25,6 +27,41 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  folder_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "index/local_folders",
+      &flutter::StandardMethodCodec::GetInstance());
+  folder_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() != "openDirectory") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* path = call.arguments() ? std::get_if<std::string>(call.arguments()) : nullptr;
+        if (!path || path->empty() || path->size() > 32767 || path->find('\0') != std::string::npos) {
+          result->Error("invalid_path", "Chemin de dossier invalide.");
+          return;
+        }
+        const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path->data(), static_cast<int>(path->size()), nullptr, 0);
+        if (size <= 0) {
+          result->Error("invalid_path", "Chemin Unicode invalide.");
+          return;
+        }
+        std::wstring folder(static_cast<size_t>(size), L'\0');
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path->data(), static_cast<int>(path->size()), folder.data(), size);
+        const DWORD attributes = GetFileAttributesW(folder.c_str());
+        if (attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+          result->Error("missing_directory", "Dossier inaccessible.");
+          return;
+        }
+        const auto opened = reinterpret_cast<INT_PTR>(ShellExecuteW(
+            GetHandle(), L"open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL));
+        if (opened <= 32) {
+          result->Error("open_failed", "Impossible d'ouvrir le dossier.");
+          return;
+        }
+        result->Success();
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   // Dart/window_manager shows the window after its close listener and window
@@ -36,6 +73,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  folder_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

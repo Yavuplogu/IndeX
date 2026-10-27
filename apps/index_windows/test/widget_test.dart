@@ -112,6 +112,7 @@ void main() {
       await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('N’allons pas trop vite...'), findsOneWidget);
       expect(find.byType(StartupPage), findsNothing);
       expect(find.text('Choisir le dossier MP3'), findsNothing);
       model.opening = false;
@@ -169,6 +170,36 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(opened, [Directory('../../MP3_Files').absolute.uri.toFilePath()]);
+      final remove = find.byTooltip('Enlever l’association').first;
+      await tester.ensureVisible(remove);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect(find.text('Enlever cette association ?'), findsOneWidget);
+      await tester.tap(find.text('Enlever'));
+      await waitForCondition(tester, () => !model.busy, 'retrait du lien');
+      await tester.pumpAndSettle();
+      expect(model.availableAudioCount, 5);
+      final reassociate = find.widgetWithText(OutlinedButton, 'Associer…');
+      expect(reassociate, findsOneWidget);
+      expect(
+        tester
+            .widget<OutlinedButton>(reassociate)
+            .style!
+            .backgroundColor!
+            .resolve({}),
+        EditorialColors(false).controls,
+      );
+      expect(
+        tester.widget<Card>(find.byType(Card).first).color,
+        EditorialColors(false).missing,
+      );
+      final reason = find.textContaining(
+        'Association retirée par l’utilisateur',
+      );
+      expect(
+        tester.widget<Text>(reason).style!.color,
+        Theme.of(tester.element(reason)).colorScheme.primary,
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.runAsync(model.release);
@@ -249,6 +280,26 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Paramètres'));
       await tester.pumpAndSettle();
+      final appearance = find.byKey(const ValueKey('appearance-filter'));
+      for (final dark in [false, true]) {
+        model.setTheme(dark);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(appearance);
+        await tester.tap(appearance);
+        await tester.pumpAndSettle();
+        final lightItem = find.byKey(const ValueKey('appearance-filter-false'));
+        expect(
+          tester.getTopLeft(lightItem).dy,
+          greaterThanOrEqualTo(tester.getBottomLeft(appearance).dy),
+        );
+        final menuTheme = Theme.of(tester.element(lightItem)).menuTheme;
+        expect(
+          menuTheme.style!.backgroundColor!.resolve({}),
+          EditorialColors(dark).controls,
+        );
+        await tester.tap(find.byKey(ValueKey('appearance-filter-$dark')));
+        await tester.pumpAndSettle();
+      }
       expect(find.text('Données utilisateur'), findsOneWidget);
       expect(find.text('Dossier contenant les MP3'), findsNothing);
       expect(find.text('Analyser aussi les sous-dossiers'), findsNothing);
@@ -385,7 +436,9 @@ void main() {
       };
       await tester.tap(find.text('Fichiers'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Diagnostics du scan'));
+      await tester.tap(
+        find.widgetWithText(OutlinedButton, 'Diagnostic du scan'),
+      );
       await tester.pumpAndSettle();
       final diagnostics = find.byType(ScanDiagnostics);
       expect(
@@ -635,13 +688,23 @@ void main() {
       );
       expect(
         tester.widget<Card>(cards.first).color,
-        EditorialColors(false).controls,
+        EditorialColors(false).missing,
       );
       expect(find.textContaining(path.path), findsOneWidget);
       expect(find.textContaining('%20'), findsNothing);
-      await tester.tap(find.text('Diagnostics du scan'));
+      await tester.tap(
+        find.widgetWithText(OutlinedButton, 'Diagnostic du scan'),
+      );
       await tester.pumpAndSettle();
-      expect(find.text(path.path), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ScanDiagnostics),
+          matching: find.text(path.path),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Fermer').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Associer…'));
       await tester.pumpAndSettle();
       expect(find.byType(ManualEpisodePicker), findsOneWidget);
@@ -651,7 +714,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<Card>(cards.first).color,
-        EditorialColors(true).controls,
+        EditorialColors(true).missing,
       );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
