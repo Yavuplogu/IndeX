@@ -42,7 +42,12 @@ void AudioChannel::Handle(const flutter::MethodCall<flutter::EncodableValue>& ca
       return;
     }
     // Le pilote mpegvideo attend les structures digital-video completes.
-    MCI_DGV_OPEN_PARMSW args{}; args.lpstrDeviceType = L"mpegvideo"; args.lpstrElementName = path.c_str();
+    // Ces champs du SDK sont LPWSTR : buffers modifiables, sans const_cast.
+    // Leur duree de vie couvre l'appel synchrone MCI_OPEN (MCI_WAIT).
+    wchar_t device_type[] = L"mpegvideo";
+    MCI_DGV_OPEN_PARMSW args{};
+    args.lpstrDeviceType = device_type;
+    args.lpstrElementName = path.data();
     error = mciSendCommandW(0, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT | MCI_WAIT, reinterpret_cast<DWORD_PTR>(&args));
     if (!error) {
       device_ = args.wDeviceID;

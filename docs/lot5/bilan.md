@@ -184,3 +184,20 @@ affichée et préciser si tous les MP3 ou seulement certains sont concernés.
 Contrôles du correctif sur Linux : analyse de `windows_smoke_test.dart` sans
 anomalie, trois tests `audio_player_test.dart` réussis, formatage et
 `git diff --check` sans erreur. Aucun essai audio natif Windows exécuté ici.
+
+
+## Échec de compilation Windows — logs 110020027551
+
+Le build du correctif MCI s’arrête dans `audio_channel.cpp`, ligne 45, avec
+C2440 : conversion interdite de `const wchar_t*` vers `LPWSTR`. La structure
+`MCI_DGV_OPEN_PARMSW` attend des pointeurs modifiables pour le type de pilote et
+le chemin. Le correctif utilisait encore un littéral constant et `path.c_str()`.
+Ils sont remplacés par un tableau local `wchar_t[]` et `path.data()` (C++17),
+valides pendant tout l’appel synchrone `MCI_OPEN`. Aucun retrait de constance
+par cast ; les blocs de paramètres MCI corrigés restent en place.
+
+Les logs valident avant cet échec 187 tests Dart avec un test ignoré sur Windows,
+24 tests Flutter et les analyses. La recette native n’a pas pu démarrer et aucun
+nouveau paquet Windows n’a été produit. Contrôle local du nouveau changement :
+`git diff --check` sans erreur ; compilation et écoute Windows restent à refaire
+par la CI puis sur la machine de l’utilisateur. Aucun changement Dart ou Android.
