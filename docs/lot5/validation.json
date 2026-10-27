@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-27",
+  "dart_tests": 188,
+  "flutter_tests": 24,
+  "linux_checks": "passed",
+  "android_build": "debug ARM64, JDK21 SDK36",
+  "apk_sha256": "e9b278a44d7e4c53bf95acf54c0dbd4ba5241eff9ba424c6221ed6794d8dccdf",
+  "apk_size_bytes": 103385542,
+  "embedded_mp3_count": 0,
+  "embedded_seed_sha256": "d559490cea33a490348bbe4ed1efce8291f2e863a35f853e52c45d18bce5305a",
+  "windows_audio_native_test": "not run here; dedicated hardware target supplied",
+  "android_physical_test": "not run; no attached physical device qualified",
+  "background_android": "pause and checkpoint; no background media service",
+  "git_commit_push": "not performed"
+}

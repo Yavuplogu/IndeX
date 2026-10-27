@@ -44,6 +44,122 @@ void main() {
     return s;
   }
 
+  test('Migration utilisateur réelle v4 vers v5 conserve favori, statut et progression', () async {
+    final copy = File('${data.path}/index-utilisateur.sqlite');
+    await copy.writeAsBytes(seed);
+    final old = sqlite3.open(copy.path);
+    final id =
+        old.select('SELECT id FROM episodes LIMIT 1').single['id'] as String;
+    expect(old.select('PRAGMA user_version').single.values.single, 4);
+    old.execute(
+      'INSERT INTO user_episode_state(episode_id,position_ms,duration_ms,listening_status,is_favorite) VALUES(?,42000,120000,?,1)',
+      [id, 'EN_COURS'],
+    );
+    old.close();
+    final s = await start(existing: true);
+    expect(
+      s.store.database.select('PRAGMA user_version').single.values.single,
+      5,
+    );
+    final state = s.listeningState(id)!;
+    expect(state['position_ms'], 42000);
+    expect(state['is_favorite'], 1);
+    expect(state['listening_status'], 'EN_COURS');
+    expect(state['playback_status'], 'stopped');
+    s.checkpoint(
+      id,
+      positionMs: 45000,
+      durationMs: 120000,
+      progressed: true,
+      completed: false,
+      playbackStatus: 'paused',
+    );
+    expect(s.listeningState(id)!['is_favorite'], 1);
+  });
+
+  test('SAF : URI persistantes, scan incomplet sans perte, suppression détectée au scan complet', () async {
+    final s = await start();
+    final e = s.episodes().first;
+    s.favorite(e.id, true);
+    const tree = 'content://test.documents/tree/root';
+    const ref = '$tree/document/root%2Fa.mp3';
+    await s.scanDocuments(
+      tree,
+      [
+        {'reference': ref, 'name': e.originalName},
+      ],
+      complete: true,
+      recursive: false,
+      errors: [],
+    );
+    expect(s.episodes().firstWhere((v) => v.id == e.id).audioAvailable, isTrue);
+    await s.scanDocuments(
+      tree,
+      [],
+      complete: false,
+      recursive: false,
+      errors: ['Permission retirée'],
+    );
+    expect(s.episodes().firstWhere((v) => v.id == e.id).audioAvailable, isTrue);
+    await s.scanDocuments(
+      tree,
+      [],
+      complete: true,
+      recursive: false,
+      errors: [],
+    );
+    expect(
+      s.episodes().firstWhere((v) => v.id == e.id).audioAvailable,
+      isFalse,
+    );
+    expect(s.episodes().firstWhere((v) => v.id == e.id).favorite, isTrue);
+  });
+
+  test(
+    'Checkpoint durable, reprise, statut manuel et seed v4 vers v5 sans perte',
+    () async {
+      final s = await start();
+      final id = s.episodes().first.id;
+      s.favorite(id, true);
+      s.checkpoint(
+        id,
+        positionMs: 9000,
+        durationMs: 120000,
+        progressed: true,
+        completed: false,
+        playbackStatus: 'playing',
+      );
+      expect(s.listeningState(id)!['listening_status'], 'EN_COURS');
+      expect(s.listeningState(id)!['is_favorite'], 1);
+      await s.dispose();
+      final reopened = await start(existing: true);
+      expect(reopened.listeningState(id)!['position_ms'], 9000);
+      expect(reopened.listeningState(id)!['last_played_at'], isNotNull);
+      reopened.checkpoint(
+        id,
+        positionMs: 119000,
+        durationMs: 120000,
+        progressed: true,
+        completed: true,
+        playbackStatus: 'paused',
+      );
+      expect(reopened.listeningState(id)!['completed_at'], isNotNull);
+      reopened.checkpoint(
+        id,
+        positionMs: 1000,
+        durationMs: 120000,
+        progressed: true,
+        completed: false,
+        playbackStatus: 'playing',
+      );
+      expect(reopened.listeningState(id)!['listening_status'], 'ECOUTE');
+      reopened.listened(id, false, resetConfirmed: true);
+      expect(reopened.listeningState(id)!['completed_at'], isNull);
+      expect(reopened.listeningState(id)!['position_ms'], 0);
+      expect(reopened.listeningState(id)!['is_favorite'], 1);
+    },
+  );
+
   test('Catalogue sans sources externes, pointeur portable et suivi durable dès modification', () async {
     final s = await start();
     final entries = s.episodes();

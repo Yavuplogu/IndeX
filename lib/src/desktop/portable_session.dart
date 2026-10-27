@@ -8,6 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../io/catalog_sources.dart';
+import '../catalog/models.dart';
+import '../matching/matching_engine.dart';
 import '../search/search_engine.dart';
 import '../search/sqlite_search_engine.dart';
 import '../storage/catalog_store.dart';
@@ -188,6 +190,8 @@ final class PortableSession {
     final root = setting('mp3_directory');
     final scope = root == null || root.isEmpty
         ? null
+        : root.startsWith('content://')
+        ? root
         : Directory(root).absolute.uri.toString();
     final sources = <String, List<Map<String, Object?>>>{},
         music = <String, List<Map<String, Object?>>>{};
@@ -267,10 +271,12 @@ final class PortableSession {
         );
       if (listened != null)
         store.database.execute(
-          'UPDATE user_episode_state SET listening_status=?,position_ms=CASE WHEN ?=0 THEN 0 ELSE position_ms END,updated_at=? WHERE episode_id=?',
+          'UPDATE user_episode_state SET listening_status=?,position_ms=CASE WHEN ?=0 THEN 0 ELSE position_ms END,completed_at=CASE WHEN ?=1 THEN COALESCE(completed_at,?) ELSE NULL END,updated_at=? WHERE episode_id=?',
           [
             listened ? 'ECOUTE' : 'NON_ECOUTE',
             listened ? 1 : 0,
+            listened ? 1 : 0,
+            DateTime.now().toUtc().toIso8601String(),
             DateTime.now().toUtc().toIso8601String(),
             id,
           ],
@@ -280,6 +286,86 @@ final class PortableSession {
       store.database.execute('ROLLBACK');
       rethrow;
     }
+  }
+
+  /// Un checkpoint ne change jamais un favori ni un statut Écouté explicite.
+  void checkpoint(
+    String id, {
+    required int positionMs,
+    required int? durationMs,
+    required bool progressed,
+    required bool completed,
+    required String playbackStatus,
+  }) {
+    if (_closed) throw StateError('Session fermée.');
+    final stamp = DateTime.now().toUtc().toIso8601String();
+    final duration = durationMs != null && durationMs > 0 ? durationMs : null;
+    final position = positionMs.clamp(0, duration ?? 2147483647);
+    store.database.execute('BEGIN IMMEDIATE');
+    try {
+      store.database.execute(
+        'INSERT OR IGNORE INTO user_episode_state(episode_id) VALUES(?)',
+        [id],
+      );
+      store.database.execute(
+        '''UPDATE user_episode_state SET position_ms=?,duration_ms=?,
+        listening_status=CASE WHEN listening_status='ECOUTE' OR ?=1 THEN 'ECOUTE'
+          WHEN ?=1 THEN 'EN_COURS' ELSE listening_status END,
+        completed_at=CASE WHEN ?=1 THEN COALESCE(completed_at,?) ELSE completed_at END,
+        last_played_at=CASE WHEN ?=1 THEN ? ELSE last_played_at END,
+        playback_status=?,updated_at=? WHERE episode_id=?''',
+        [
+          position,
+          duration,
+          completed ? 1 : 0,
+          progressed ? 1 : 0,
+          completed ? 1 : 0,
+          stamp,
+          progressed ? 1 : 0,
+          stamp,
+          playbackStatus,
+          stamp,
+          id,
+        ],
+      );
+      setSetting('last_played_episode', id);
+      store.database.execute('COMMIT');
+    } catch (_) {
+      store.database.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
+  Map<String, Object?>? listeningState(String id) {
+    final rows = store.database.select(
+      'SELECT * FROM user_episode_state WHERE episode_id=?',
+      [id],
+    );
+    return rows.isEmpty ? null : Map<String, Object?>.from(rows.single);
+  }
+
+  Future<Map<String, Object?>> scanDocuments(
+    String scope,
+    List<Map<String, String>> files, {
+    required bool complete,
+    required bool recursive,
+    required List<String> errors,
+  }) {
+    if (_scan != null) throw StateError('Un scan est déjà en cours.');
+    setSetting('mp3_directory', scope);
+    setSetting('recursive', recursive.toString());
+    final task = _startDocumentScanWorker(
+      databasePath,
+      scope,
+      files,
+      complete,
+      recursive,
+      errors,
+    );
+    _scan = task;
+    return task.whenComplete(() {
+      _scan = null;
+    });
   }
 
   Future<Map<String, Object?>> scan(String path, {bool recursive = false}) {
@@ -431,6 +517,49 @@ Future<Map<String, Object?>> _startScanWorker(
       'count': scan.audios.length,
       'issues': issues.map((i) => i.toJson()).toList(),
       'decisions': decisions,
+    };
+  } finally {
+    target.close();
+  }
+});
+
+Future<Map<String, Object?>> _startDocumentScanWorker(
+  String dbPath,
+  String scope,
+  List<Map<String, String>> files,
+  bool complete,
+  bool recursive,
+  List<String> errors,
+) => Isolate.run(() {
+  final target = CatalogStore.open(dbPath);
+  try {
+    final scan = AudioScan(
+      scope: scope,
+      complete: complete,
+      recursive: recursive,
+      audios: [
+        for (final f in files)
+          AudioCandidate(reference: f['reference']!, currentName: f['name']!),
+      ],
+      issues: [
+        for (final error in errors)
+          CatalogIssue('android_storage', error, source: scope),
+      ],
+    );
+    final issues = target.applyAudioScan(scan);
+    final run = target.database
+        .select('SELECT id FROM audio_scan_runs ORDER BY id DESC LIMIT 1')
+        .single['id'];
+    return <String, Object?>{
+      'complete': complete,
+      'count': files.length,
+      'issues': issues.map((i) => i.toJson()).toList(),
+      'decisions': target.database
+          .select('SELECT decision_json FROM audio_scan_items WHERE run_id=?', [
+            run,
+          ])
+          .map((r) => jsonDecode(r['decision_json'] as String))
+          .toList(),
     };
   } finally {
     target.close();

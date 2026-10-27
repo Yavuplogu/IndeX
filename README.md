@@ -1,19 +1,16 @@
 # IndeX
 
+[Lot 5 : architecture, contrôles et recette native restante](docs/lot5/bilan.md).
+
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : code du Lot 4 implémenté ; qualification Windows en attente.**
+**État : Lot 5 en cours — lecteur audio Windows/Android et suivi automatique.**
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
-la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Les
-contrôles Linux passent ; le workflow de construction et de recette Windows est
-préparé. Aucun binaire Windows qualifié ni application Android ne sont encore livrés.
-
-Les derniers logs Windows (`logs_109499819369.zip`) s'arrêtent sur deux tests
-Flutter de chemins : leurs valeurs attendues mélangent les séparateurs `/` et
-`\`, alors que l'application affiche des chemins Windows natifs avec espaces.
-La construction des chemins de test est corrigée ; la vérification Windows doit
-être relancée avant qualification du paquet (voir le bilan).
+la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
+apparent ni crash. Le Lot 5 ajoute le lecteur natif et Android ; leur qualification
+sur les deux cibles reste distincte des tests Linux. La recette et les limites
+sont détaillées dans le bilan du Lot 5.
 
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans

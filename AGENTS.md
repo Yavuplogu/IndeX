@@ -2,10 +2,10 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 4**, lancé explicitement par l'utilisateur.
+- Périmètre actuellement autorisé : **Lot 5**, lancé explicitement par l'utilisateur.
   GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
   Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
-  Le lecteur réel/Android restent au Lot 5, renommage/JSON aux Lots 5 bis/5 ter.
+  Lecteur réel et Android autorisés ; voir docs/lot5/bilan.md. Renommage/JSON restent aux Lots 5 bis/5 ter.
   Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
@@ -101,3 +101,9 @@
   conservé. Apparence : deux boutons clair/sombre. Fichiers : filtres associés,
   non associés et tous (non associés en tête). Ouverture du
   dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.
+
+- Lot 5 : AudioPort natif MCI Windows / MediaPlayer Android, aucune dépendance
+  binaire audio redistribuée. Schéma de travail v5 ; seed livré v4 conservé.
+  Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
+  Mise en pause/sauvegarde en arrière-plan Android, SAF et droits persistants.
+  Ne pas annoncer une recette physique Android sans appareil réel.

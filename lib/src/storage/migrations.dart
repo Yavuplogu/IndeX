@@ -1,7 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 const applicationId = 0x49445831;
-const schemaVersion = 4;
+const schemaVersion = 5;
 
 // Version 1 réellement utilisable comme fixture de migration vers les données locales v2.
 const schemaV1 = '''
@@ -68,8 +68,15 @@ const schemaV4 = '''
 CREATE TABLE local_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 ''';
 
+const schemaV5 = '''
+ALTER TABLE user_episode_state ADD COLUMN last_played_at TEXT;
+ALTER TABLE user_episode_state ADD COLUMN completed_at TEXT;
+ALTER TABLE user_episode_state ADD COLUMN playback_status TEXT NOT NULL DEFAULT 'stopped';
+''';
+
 void migrate(Database db) {
   db.execute('PRAGMA foreign_keys=ON');
+  db.execute('PRAGMA busy_timeout=5000');
   final version = db.select('PRAGMA user_version').single.values.single as int;
   final app = db.select('PRAGMA application_id').single.values.single as int;
   if (version > schemaVersion)
@@ -104,6 +111,10 @@ void migrate(Database db) {
     if (version < 4) {
       db.execute(schemaV4);
       db.execute('PRAGMA user_version=4');
+    }
+    if (version < 5) {
+      db.execute(schemaV5);
+      db.execute('PRAGMA user_version=5');
     }
     db.execute('COMMIT');
   } catch (_) {

@@ -10,13 +10,15 @@ import 'package:index_core/index_desktop.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app_model.dart';
+import 'audio_player.dart';
 import 'document_text.dart';
 import 'episode_search.dart';
 import 'window_port.dart';
 
 typedef DirectoryPicker = Future<String?> Function();
-Future<String?> nativeDirectoryPicker() =>
-    getDirectoryPath(confirmButtonText: 'Choisir ce dossier');
+Future<String?> nativeDirectoryPicker() => Platform.isAndroid
+    ? AppModel.androidChannel.invokeMethod<String>('pickTree')
+    : getDirectoryPath(confirmButtonText: 'Choisir ce dossier');
 
 final class EditorialColors {
   EditorialColors(bool dark)
@@ -110,7 +112,8 @@ class IndeXApp extends StatefulWidget {
   State<IndeXApp> createState() => _IndeXAppState();
 }
 
-class _IndeXAppState extends State<IndeXApp> with WindowListener {
+class _IndeXAppState extends State<IndeXApp>
+    with WindowListener, WidgetsBindingObserver {
   final navigator = GlobalKey<NavigatorState>();
   bool closing = false;
   bool closeErrorDialog = false;
@@ -119,12 +122,29 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
   void initState() {
     super.initState();
     if (widget.nativeWindow) windowManager.addListener(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     if (widget.nativeWindow) windowManager.removeListener(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (m.android &&
+        (state == AppLifecycleState.paused ||
+            state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.detached)) {
+      unawaited(
+        m.playback.suspend().catchError((Object e) {
+          m.error = 'Sauvegarde audio impossible : $e';
+          m.changed();
+        }),
+      );
+    }
   }
 
   @override
@@ -233,96 +253,106 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
         locale: const Locale('fr'),
         supportedLocales: const [Locale('fr')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: Scaffold(
-          body: SafeArea(
-            child: Column(
-              children: [
-                Container(
-                  key: const ValueKey('window-title-bar'),
-                  height: 32,
-                  color: c.titleBar,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: widget.nativeWindow
-                            ? const DragToMoveArea(child: SizedBox.expand())
-                            : const SizedBox(),
-                      ),
-                      IconButton(
-                        tooltip: 'Réduire',
-                        onPressed: () => unawaited(widget.window.minimize()),
-                        icon: const Icon(Icons.minimize, size: 17),
-                        padding: EdgeInsets.zero,
-                      ),
-                      IconButton(
-                        tooltip: 'Agrandir ou restaurer',
-                        onPressed: () =>
-                            unawaited(widget.window.maximizeOrRestore()),
-                        icon: const Icon(Icons.crop_square, size: 16),
-                        padding: EdgeInsets.zero,
-                      ),
-                      IconButton(
-                        tooltip: 'Fermer',
-                        onPressed: closing ? null : () => unawaited(close()),
-                        icon: const Icon(Icons.close, size: 18),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
-                ),
-                if (m.busy || closing)
-                  const LinearProgressIndicator(minHeight: 3),
-                if (m.busy || closing)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    child: Text(
-                      closing ? 'Sauvegarde et fermeture…' : m.message,
-                      style: TextStyle(fontSize: 12, color: c.muted),
-                    ),
-                  ),
-                if (m.error.isNotEmpty)
-                  MaterialBanner(
-                    content: SelectableText(m.error),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          m.error = '';
-                          m.changed();
-                        },
-                        child: const Text('Masquer'),
-                      ),
-                    ],
-                  ),
-                Expanded(
-                  child: AbsorbPointer(
-                    absorbing: m.busy || closing,
-                    child: m.opening || (m.busy && m.session == null)
-                        ? const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 18),
-                                Text('N’allons pas trop vite...'),
-                              ],
-                            ),
-                          )
-                        : m.needsSetup
-                        ? StartupPage(
-                            model: m,
-                            pickDirectory: widget.pickDirectory,
-                            onQuit: close,
-                          )
-                        : LibraryPage(
-                            model: m,
-                            pickDirectory: widget.pickDirectory,
+        home: PopScope<Object?>(
+          canPop: !m.android,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && m.android) unawaited(close());
+          },
+          child: Scaffold(
+            body: SafeArea(
+              child: Column(
+                children: [
+                  if (!m.android)
+                    Container(
+                      key: const ValueKey('window-title-bar'),
+                      height: 32,
+                      color: c.titleBar,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: widget.nativeWindow
+                                ? const DragToMoveArea(child: SizedBox.expand())
+                                : const SizedBox(),
                           ),
+                          IconButton(
+                            tooltip: 'Réduire',
+                            onPressed: () =>
+                                unawaited(widget.window.minimize()),
+                            icon: const Icon(Icons.minimize, size: 17),
+                            padding: EdgeInsets.zero,
+                          ),
+                          IconButton(
+                            tooltip: 'Agrandir ou restaurer',
+                            onPressed: () =>
+                                unawaited(widget.window.maximizeOrRestore()),
+                            icon: const Icon(Icons.crop_square, size: 16),
+                            padding: EdgeInsets.zero,
+                          ),
+                          IconButton(
+                            tooltip: 'Fermer',
+                            onPressed: closing
+                                ? null
+                                : () => unawaited(close()),
+                            icon: const Icon(Icons.close, size: 18),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (m.busy || closing)
+                    const LinearProgressIndicator(minHeight: 3),
+                  if (m.busy || closing)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        closing ? 'Sauvegarde et fermeture…' : m.message,
+                        style: TextStyle(fontSize: 12, color: c.muted),
+                      ),
+                    ),
+                  if (m.error.isNotEmpty)
+                    MaterialBanner(
+                      content: SelectableText(m.error),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            m.error = '';
+                            m.changed();
+                          },
+                          child: const Text('Masquer'),
+                        ),
+                      ],
+                    ),
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: m.busy || closing,
+                      child: m.opening || (m.busy && m.session == null)
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 18),
+                                  Text('N’allons pas trop vite...'),
+                                ],
+                              ),
+                            )
+                          : m.needsSetup
+                          ? StartupPage(
+                              model: m,
+                              pickDirectory: widget.pickDirectory,
+                              onQuit: close,
+                            )
+                          : LibraryPage(
+                              model: m,
+                              pickDirectory: widget.pickDirectory,
+                            ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -412,7 +442,7 @@ class _StartupPageState extends State<StartupPage> {
                   label: 'Dossier des données utilisateur',
                   controller: data,
                   picker: widget.pickDirectory,
-                  enabled: m.session == null,
+                  enabled: m.session == null && !m.android,
                   validator: (v) => (v ?? '').trim().isEmpty
                       ? 'Ce dossier est obligatoire.'
                       : null,
@@ -585,6 +615,7 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   final search = TextEditingController();
   Timer? debounce;
+  double? seekPreview;
   final listFocus = FocusNode(debugLabel: 'Liste des épisodes');
   final listScroll = ScrollController();
   KeyEventResult navigateList(FocusNode node, KeyEvent event) {
@@ -1026,6 +1057,8 @@ class _LibraryPageState extends State<LibraryPage> {
                                     ),
                                     Text(
                                       dateLabel(e.date),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: color,
@@ -1070,7 +1103,9 @@ class _LibraryPageState extends State<LibraryPage> {
                                     ],
                                   ),
                                   Text(
-                                    m.availability(e),
+                                    compact && !m.audioKnown
+                                        ? 'MP3 non vérifié'
+                                        : m.availability(e),
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: missing ? c.alert : c.muted,
@@ -1093,20 +1128,33 @@ class _LibraryPageState extends State<LibraryPage> {
     ],
   );
   Widget _futurePlayer(EditorialColors c) {
+    final p = m.playback;
+    final episode = m.playingEpisode;
+    final enabled = !m.busy && !p.busy;
+    final canPlay =
+        enabled &&
+        (episode != null ||
+            m.resumeEpisode != null ||
+            m.selected?.audioAvailable == true);
+    final canChoose = enabled && m.availableAudioCount > 0;
     return Container(
       decoration: BoxDecoration(
         color: c.background,
         border: Border(top: BorderSide(color: c.line)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Aucun épisode en lecture',
+          if (p.error.isNotEmpty)
+            Text(p.error, style: TextStyle(color: c.alert, fontSize: 12)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  episode == null
+                      ? 'Aucun épisode en lecture'
+                      : '${episode.title} · ${dateLabel(episode.date)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1115,20 +1163,73 @@ class _LibraryPageState extends State<LibraryPage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  m.audioKnown ? 'Lecteur audio prévu au Lot 5' : m.folderLabel,
-                  style: TextStyle(fontSize: 11, color: c.muted),
+              ),
+              IconButton(
+                tooltip: 'Épisode précédent',
+                onPressed: canChoose ? () => unawaited(m.nextAudio(-1)) : null,
+                icon: const Icon(Icons.skip_previous),
+              ),
+              IconButton(
+                tooltip: 'Arrêt',
+                onPressed: enabled && episode != null
+                    ? () => unawaited(p.stop())
+                    : null,
+                icon: const Icon(Icons.stop),
+              ),
+              IconButton(
+                tooltip: p.state.playing ? 'Pause' : 'Lecture / reprise',
+                onPressed: canPlay ? () => unawaited(m.playToggle()) : null,
+                icon: Icon(p.state.playing ? Icons.pause : Icons.play_arrow),
+              ),
+              IconButton(
+                tooltip: 'Épisode suivant',
+                onPressed: canChoose ? () => unawaited(m.nextAudio(1)) : null,
+                icon: const Icon(Icons.skip_next),
+              ),
+              IconButton(
+                tooltip: 'Lecture aléatoire',
+                onPressed: canChoose
+                    ? () => unawaited(m.nextAudio(0, random: true))
+                    : null,
+                icon: const Icon(Icons.shuffle),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text(
+                '${playbackTime(p.state.position)} / ${p.state.duration > 0 ? playbackTime(p.state.duration) : '—'}',
+                style: const TextStyle(fontSize: 11),
+              ),
+              Expanded(
+                child: Slider(
+                  value: (seekPreview ?? p.state.position.toDouble())
+                      .clamp(0, p.state.duration > 0 ? p.state.duration : 1)
+                      .toDouble(),
+                  max: p.state.duration > 0 ? p.state.duration.toDouble() : 1,
+                  onChanged: enabled && episode != null && p.state.duration > 0
+                      ? (v) => setState(() => seekPreview = v)
+                      : null,
+                  onChangeEnd:
+                      enabled && episode != null && p.state.duration > 0
+                      ? (v) {
+                          setState(() => seekPreview = null);
+                          unawaited(p.seek(v.round()));
+                        }
+                      : null,
+                  semanticFormatterCallback: (v) => playbackTime(v.round()),
                 ),
-              ],
-            ),
+              ),
+              const Icon(Icons.volume_up, size: 18),
+              SizedBox(
+                width: 80,
+                child: Slider(
+                  value: p.level,
+                  onChanged: enabled ? (v) => unawaited(p.setVolume(v)) : null,
+                ),
+              ),
+            ],
           ),
-          const Tooltip(
-            message: 'Lecture audio disponible au Lot 5',
-            child: IconButton(onPressed: null, icon: Icon(Icons.play_arrow)),
-          ),
-          const SizedBox(width: 4),
-          const Text('— / —', style: TextStyle(fontSize: 11)),
         ],
       ),
     );
@@ -1303,6 +1404,16 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                               onPressed: () => unawaited(toggle(e)),
                               icon: Icon(statusIcon(e.status), size: 18),
                               label: Text('${statusLabel(e.status)} ↻'),
+                            ),
+                            FilledButton.icon(
+                              onPressed:
+                                  e.audioAvailable &&
+                                      !m.busy &&
+                                      !m.playback.busy
+                                  ? () => unawaited(m.playEpisode(e))
+                                  : null,
+                              icon: const Icon(Icons.play_arrow),
+                              label: const Text('Écouter'),
                             ),
                             OutlinedButton.icon(
                               onPressed: () {
@@ -1827,11 +1938,31 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               style: const TextStyle(fontSize: 12),
                             ),
                             const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: () => unawaited(move()),
-                              child: const Text(
-                                'Changer le dossier des données…',
+                            if (!m.android)
+                              OutlinedButton(
+                                onPressed: () => unawaited(move()),
+                                child: const Text(
+                                  'Changer le dossier des données…',
+                                ),
                               ),
+                          ], c),
+                          group('Lecture et reprise', [
+                            CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                'Reprendre à la dernière position sauvegardée',
+                              ),
+                              value: m.resumePlayback,
+                              onChanged: (value) {
+                                m.session!.setSetting(
+                                  'resume_playback',
+                                  value.toString(),
+                                );
+                                m.changed();
+                              },
+                            ),
+                            const Text(
+                              'La lecture en arrière-plan est mise en pause avec sauvegarde de la position.',
                             ),
                           ], c),
                           group('Analyse au démarrage', [
@@ -2157,11 +2288,21 @@ class ScanPage extends StatelessWidget {
                           onPressed: () async {
                             try {
                               final file = await model.exportScanDiagnostic();
+                              var location = file.path;
+                              if (model.android) {
+                                final target = await AppModel.androidChannel
+                                    .invokeMethod<String>('exportText', {
+                                      'name': file.uri.pathSegments.last,
+                                      'text': await file.readAsString(),
+                                    });
+                                if (target == null) return;
+                                location = target;
+                              }
                               if (context.mounted)
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: SelectableText(
-                                      'Diagnostic exporté : ${file.path}',
+                                      'Diagnostic exporté : $location',
                                     ),
                                   ),
                                 );

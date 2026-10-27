@@ -87,7 +87,7 @@ class _DocumentTextState extends State<DocumentText> {
   }
 
   void scheduleReveal() {
-    if (pending || active == null) return;
+    if (pending || active == null || widget.segment.id == 'title') return;
     pending = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       pending = false;

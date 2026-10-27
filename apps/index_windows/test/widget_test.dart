@@ -8,55 +8,74 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
-import 'package:index_windows/window_port.dart';
+
+import 'support/app_harness.dart';
+
 import 'package:index_windows/document_text.dart';
 import 'package:index_windows/episode_search.dart';
+import 'package:index_windows/audio_player.dart';
 
-final class FakeWindow implements WindowPort {
-  FakeWindow({this.destroyGate});
-  final Future<void>? destroyGate;
-  bool closeRequested = false;
-  int destroyed = 0;
-  @override
-  Future<void> destroy() async {
-    closeRequested = true;
-    if (destroyGate != null) await destroyGate;
-    destroyed++;
-  }
-
-  @override
-  Future<void> minimize() async {}
-  @override
-  Future<void> maximizeOrRestore() async {}
-}
-
-// pumpAndSettle ne fait pas attendre les E/S réelles : leur laisser progresser
-// jusqu'à l'état attendu, avec un délai maximal, puis terminer les animations.
-Future<void> waitForCondition(
-  WidgetTester tester,
-  bool Function() condition,
-  String description,
-) async {
-  final watch = Stopwatch()..start();
-  while (!condition()) {
-    if (watch.elapsed > const Duration(seconds: 20)) {
-      fail('État attendu non atteint : $description');
-    }
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-    await tester.pump();
-  }
-}
-
-Future<void> waitForWidget(WidgetTester tester, Finder finder) =>
-    waitForCondition(
-      tester,
-      () => finder.evaluate().isNotEmpty,
-      finder.toString(),
-    );
+import 'support/fake_audio.dart';
 
 void main() {
+  testWidgets(
+    'Lecteur indépendant de la fiche, progression durable et mise en page téléphone',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-player-widget-');
+      final data = Directory('${root.path}/user')..createSync();
+      final audio = FakeAudio();
+      final model = AppModel(
+        portableDirectory: root,
+        audioPort: audio,
+        pollAudio: false,
+      );
+      await tester.runAsync(
+        () => model.configure(
+          data.path,
+          Directory('../../MP3_Files').absolute.path,
+          false,
+        ),
+      );
+      final episode = model.catalog.firstWhere((e) => e.audioAvailable);
+      model.select(episode);
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Écouter'));
+      await waitForCondition(tester, () => !model.playback.busy, 'audio prêt');
+      await tester.pumpAndSettle();
+      expect(model.playingEpisode!.id, episode.id);
+      model.select(model.catalog.firstWhere((e) => e.id != episode.id));
+      await tester.pumpAndSettle();
+      expect(model.playingEpisode!.id, episode.id);
+      audio.value = const AudioSnapshot(1000, 120000, true);
+      await model.playback.poll();
+      audio.value = const AudioSnapshot(2000, 120000, true);
+      await model.playback.poll();
+      audio.value = const AudioSnapshot(3000, 120000, true);
+      await model.playback.poll();
+      audio.value = const AudioSnapshot(4000, 120000, true);
+      await model.playback.poll();
+      audio.value = const AudioSnapshot(5000, 120000, true);
+      await model.playback.poll();
+      expect(model.session!.listeningState(episode.id)!['position_ms'], 5000);
+      expect(
+        model.session!.listeningState(episode.id)!['listening_status'],
+        'EN_COURS',
+      );
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    },
+  );
+
   testWidgets(
     'Démarrage : aucun contournement HTML, dossiers et report explicite',
     (tester) async {

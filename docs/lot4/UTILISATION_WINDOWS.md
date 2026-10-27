@@ -1,8 +1,9 @@
 # IndeX portable Windows — Lot 4
 
 Cette version propose le catalogue, la recherche documentaire, les favoris,
-les statuts manuels et l'association des MP3. La lecture audio sera ajoutée au
-Lot 5 ; ses commandes ne sont pas actives ici. Renommage et transfert JSON
+les statuts manuels et l'association des MP3. Le Lot 5 raccorde désormais le
+lecteur audio et le suivi automatique ; sa recette native est décrite dans le
+[bilan Lot 5](../lot5/bilan.md). Renommage et transfert JSON
 restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
 
 ## Démarrer
@@ -156,3 +157,18 @@ Juste avant la liste de Fichiers et associations, les filtres **Fichiers associ�
 affichées. Tous les fichiers est actif initialement, avec les fichiers non associés
 en premier. Les statistiques globales et le diagnostic restent indépendants de ce
 filtre. Si aucun fichier ne correspond, un message le signale.
+
+## Lecteur audio — Lot 5
+
+Écouter charge l’épisode de la fiche. Le lecteur du bas conserve son propre épisode
+lorsque vous consultez une autre fiche. Il affiche son titre et sa date, la position
+et la durée, les commandes lecture/pause/arrêt, précédent/suivant, aléatoire et volume.
+Relâcher le curseur applique le déplacement. Arrêt conserve la position pour reprise.
+Sans MP3 disponible, les commandes de lancement restent désactivées.
+
+La position est sauvegardée toutes les cinq secondes et aux transitions. Le passage
+En cours exige une progression réelle ; un simple seek vers la fin ne marque pas
+l’épisode Écouté. La reprise à la dernière position peut être désactivée dans Paramètres.
+Une erreur d’audio ou de stockage est affichée ; une sauvegarde défaillante bloque
+la fermeture avec les mêmes possibilités Réessayer/Annuler. La lecture Windows
+peut continuer quand la fenêtre est réduite ; Android met en pause en arrière-plan.

@@ -81,6 +81,25 @@ void main() {
         await tester.runAsync(() => model.scan(fixture));
         expect(model.error, isEmpty);
         expect(model.catalog.where((e) => e.audioAvailable), hasLength(6));
+        // Recette matérielle séparée : les runners CI peuvent être sans sortie audio.
+        const exerciseAudio = bool.fromEnvironment('INDEX_TEST_AUDIO');
+        final audible = model.catalog.firstWhere((e) => e.audioAvailable);
+        int? audioPosition;
+        if (exerciseAudio) {
+          // Décode réellement un MP3 local, sans son audible sur le runner CI.
+          await tester.runAsync(() => model.playback.setVolume(0));
+          await tester.runAsync(() => model.playEpisode(audible));
+          expect(model.playback.error, isEmpty);
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 1500)),
+          );
+          await tester.runAsync(model.playback.poll);
+          await tester.runAsync(model.playback.stop);
+          expect(model.playback.error, isEmpty);
+          expect(model.playback.state.duration, greaterThan(0));
+          expect(model.playback.state.position, greaterThan(0));
+          audioPosition = model.playback.state.position;
+        }
         await tester.runAsync(() => windowManager.close());
         await tester.runAsync(
           () => probe.closed.future.timeout(const Duration(seconds: 5)),
@@ -91,6 +110,11 @@ void main() {
         model = AppModel(portableDirectory: portable);
         await tester.runAsync(model.boot);
         expect(model.error, isEmpty);
+        if (audioPosition != null)
+          expect(
+            model.session!.listeningState(audible.id)!['position_ms'],
+            audioPosition,
+          );
         final saved = model.catalog.firstWhere((e) => e.id == episode.id);
         expect(saved.favorite, isTrue);
         expect(saved.status, 'ECOUTE');

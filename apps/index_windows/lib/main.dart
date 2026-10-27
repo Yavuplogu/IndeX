@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
@@ -9,6 +10,21 @@ import 'window_port.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isAndroid) {
+    final path = await AppModel.androidChannel.invokeMethod<String>(
+      'privateDirectory',
+    );
+    final directory = Directory(path!);
+    final model = AppModel(
+      portableDirectory: directory,
+      defaultDataDirectory: directory,
+      android: true,
+    );
+    final boot = model.boot();
+    runApp(IndeXApp(model: model, window: AndroidWindowPort()));
+    await boot;
+    return;
+  }
   if (!Platform.isWindows) {
     runApp(
       const MaterialApp(
@@ -47,4 +63,13 @@ Future<void> main() async {
   await windowManager.show();
   await windowManager.focus();
   await boot;
+}
+
+final class AndroidWindowPort implements WindowPort {
+  @override
+  Future<void> destroy() => SystemNavigator.pop();
+  @override
+  Future<void> minimize() async {}
+  @override
+  Future<void> maximizeOrRestore() async {}
 }

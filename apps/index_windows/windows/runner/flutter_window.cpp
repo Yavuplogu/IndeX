@@ -62,6 +62,7 @@ bool FlutterWindow::OnCreate() {
         }
         result->Success();
       });
+  audio_channel_ = std::make_unique<AudioChannel>(flutter_controller_->engine()->messenger());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   // Dart/window_manager shows the window after its close listener and window
@@ -73,6 +74,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  audio_channel_.reset();
   folder_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;

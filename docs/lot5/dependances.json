@@ -1,0 +1,53 @@
+[
+  {
+    "component": "Windows MCI / winmm / mpegvideo",
+    "api": "Windows 10/11 SDK",
+    "usage": "Adaptateur local Unicode, bibliothèque système winmm.lib",
+    "redistributed_binary": false,
+    "license": "API système Windows ; pas de codec tiers redistribué",
+    "risk": "Lecture MP3/VBR, seek, durées et sortie audio à éprouver sur Windows"
+  },
+  {
+    "component": "Android MediaPlayer / AudioManager / SAF",
+    "api": "minSdk 23, compileSdk et targetSdk 36",
+    "usage": "Lecture content URI locale, permissions persistantes, priorité audio",
+    "redistributed_binary": false,
+    "license": "API Android système, code Kotlin du projet",
+    "risk": "Fournisseurs SAF, permissions révoquées, interruptions et appareil réel"
+  },
+  {
+    "component": "Flutter / Dart",
+    "version": "3.47.7 / 3.13.5",
+    "license": "BSD-3-Clause",
+    "usage": "SDK déjà retenu au Lot 4, aucune nouvelle dépendance pub"
+  },
+  {
+    "component": "Gradle",
+    "version": "9.3.1",
+    "distribution": "https://services.gradle.org/distributions/gradle-9.3.1-all.zip",
+    "sha256": "17f277867f6914d61b1aa02efab1ba7bb439ad652ca485cd8ca6842fccec6e43",
+    "license": "Apache-2.0",
+    "usage": "Construction seulement"
+  },
+  {
+    "component": "Android Gradle Plugin / Kotlin",
+    "version": "9.1.0 / 2.4.0",
+    "license": "Apache-2.0",
+    "usage": "Versions du template Flutter 3.47.7, construction seulement"
+  },
+  {
+    "component": "Android command-line tools",
+    "version": "19.0",
+    "source": "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip",
+    "official_repository_sha1": "5fdcc763663eefb86a5b8879697aa6088b041e70",
+    "usage": "Installation locale vérifiée ; SDK non redistribué"
+  },
+  {
+    "component": "Temurin JDK",
+    "version": "21.0.9+10",
+    "source": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jdk_x64_linux_hotspot_21.0.9_10.tar.gz",
+    "sha256": "810d3773df7e0d6c4394e4e244b264c8b30e0b05a0acf542d065fd78a6b65c2f",
+    "license": "GPL-2.0 avec Classpath Exception",
+    "usage": "Construction locale seulement ; non redistribué"
+  }
+]

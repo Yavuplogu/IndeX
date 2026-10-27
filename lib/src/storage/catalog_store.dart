@@ -215,6 +215,7 @@ final class CatalogStore {
           !{
             2,
             3,
+            4,
             schemaVersion,
           }.contains(source.select('PRAGMA user_version').single.values.single))
         throw const FormatException('Catalogue de référence non reconnu.');
@@ -501,7 +502,8 @@ final class CatalogStore {
           final ref = row['audio_ref'] as String;
           final inScope =
               ref.startsWith(scan.scope) &&
-              (scan.recursive ||
+              (scan.scope.startsWith('content://') ||
+                  scan.recursive ||
                   !ref.substring(scan.scope.length).contains('/'));
           if (inScope) {
             if (row['manual'] == 1) {

@@ -50,3 +50,21 @@ La recette acquiert le handle du processus enfant avant fermeture afin de lire
 son code même après sa disparition sous Windows. Le contrôle autonome
 `./tools/lot4/test_process_windows.ps1` vérifie la conservation des codes de sortie
 et refuse explicitement les codes absents ; il est exécuté avant la compilation CI.
+
+## Lot 5 — source commune Android et Windows
+
+Le lecteur et le suivi automatique sont décrits dans le [bilan Lot 5](../../docs/lot5/bilan.md).
+Le nom du package reste `index_windows`, mais le dossier `android/` et la branche
+Android de `main.dart` réutilisent le même catalogue et la même interface responsive.
+
+Avec JDK 21, Android SDK 36 et NDK 28.2.13676358 configurés :
+
+```sh
+bash tools/lot5/build_android.sh
+```
+
+Cette commande s’exécute depuis la racine du dépôt. L’APK ARM64 de test est produit
+sous `apps/index_windows/build/app/outputs/flutter-apk/app-debug.apk` et est ignoré
+par Git. Le workflow Android conserve cet APK comme artefact ; la signature de
+production et une publication en magasin ne font pas partie de cette construction.
+Recette audio réelle sur Windows avec sortie audio : `tools/lot5/check_windows_audio.ps1`.

@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:index_core/index_core.dart';
 import 'package:index_core/index_desktop.dart';
+
+import 'audio_player.dart';
 
 final class SeedData {
   const SeedData(this.bytes, this.sha256);
@@ -72,10 +75,82 @@ final class AppModel extends ChangeNotifier {
     this.seedLoader = bundledSeed,
     this.folderOpener = openNativeFolder,
     Directory? defaultDataDirectory,
+    AudioPort audioPort = const NativeAudioPort(),
+    bool pollAudio = true,
+    this.android = false,
   }) : defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
+    playback = Playback(audioPort, _saveAudio, autoPoll: pollAudio)
+      ..addListener(changed);
   }
+  final bool android;
+  static const androidChannel = MethodChannel('index/android');
+  late final Playback playback;
+  void _saveAudio(
+    String id,
+    AudioSnapshot state,
+    ListeningGuard guard,
+    String status,
+  ) {
+    session!.checkpoint(
+      id,
+      positionMs: state.position,
+      durationMs: state.duration,
+      progressed: guard.progressed,
+      completed: guard.completed,
+      playbackStatus: status,
+    );
+    reload();
+  }
+
+  bool get resumePlayback => session?.setting('resume_playback') != 'false';
+  DesktopEpisode? get playingEpisode {
+    final id = playback.episodeId;
+    return catalog.where((e) => e.id == id).firstOrNull;
+  }
+
+  DesktopEpisode? get resumeEpisode => catalog
+      .where(
+        (e) =>
+            e.id == session?.setting('last_played_episode') && e.audioAvailable,
+      )
+      .firstOrNull;
+  Future<void> playEpisode(DesktopEpisode episode) async {
+    if (busy || !episode.audioAvailable || episode.audioRef == null) return;
+    final duration =
+        session!.listeningState(episode.id)?['duration_ms'] as int?;
+    final atEnd = duration != null && episode.positionMs >= duration - 1000;
+    await playback.start(
+      episode.id,
+      episode.audioRef!,
+      resumePlayback && !atEnd ? episode.positionMs : 0,
+    );
+  }
+
+  Future<void> playToggle() async {
+    if (playback.episodeId != null) {
+      if (playback.state.ended) await playback.seek(0);
+      await playback.toggle();
+      return;
+    }
+    final episode = (resumePlayback ? resumeEpisode : null) ?? selected;
+    if (episode != null) await playEpisode(episode);
+  }
+
+  Future<void> nextAudio(int delta, {bool random = false}) async {
+    final queue = catalog.where((e) => e.audioAvailable).toList();
+    if (queue.isEmpty) return;
+    final current = queue.indexWhere((e) => e.id == playback.episodeId);
+    final alternatives = queue
+        .where((e) => e.id != playback.episodeId)
+        .toList();
+    final episode = random && alternatives.isNotEmpty
+        ? alternatives[Random().nextInt(alternatives.length)]
+        : queue[current < 0 ? 0 : (current + delta) % queue.length];
+    await playEpisode(episode);
+  }
+
   final Future<void> Function(String) folderOpener;
   final Directory defaultDataDirectory;
   bool opening = false;
@@ -176,6 +251,10 @@ final class AppModel extends ChangeNotifier {
 
   Future<void> openMp3Folder() =>
       runWork('Ouverture du dossier MP3…', () async {
+        if (android) {
+          await androidChannel.invokeMethod<void>('showTree', mp3Path);
+          return;
+        }
         if (mp3Path.isEmpty || !await Directory(mp3Path).exists()) {
           throw const FileSystemException(
             'Le dossier MP3 est introuvable ou inaccessible.',
@@ -212,7 +291,7 @@ final class AppModel extends ChangeNotifier {
     if (mp3Path.isEmpty)
       audioState = AudioFolderState.unconfigured;
     else
-      audioState = await Directory(mp3Path).exists()
+      audioState = android || await Directory(mp3Path).exists()
           ? AudioFolderState.ready
           : AudioFolderState.unavailable;
     _lastReport();
@@ -314,6 +393,7 @@ final class AppModel extends ChangeNotifier {
 
   Future<void> unlink(String reference) =>
       runWork('Retrait de l’association…', () async {
+        if (playback.reference == reference) await playback.unload();
         session!.store.unlinkAudio(reference);
         _refreshAssociationReport();
         reload();
@@ -322,12 +402,29 @@ final class AppModel extends ChangeNotifier {
   Future<void> _scan(String path) async {
     message = 'Association par noms d’origine et système du journal…';
     changed();
-    mp3Path = Directory(path).absolute.path;
-    report = await session!.scan(mp3Path, recursive: recursive);
+    mp3Path = android ? path : Directory(path).absolute.path;
+    if (android) {
+      final raw = await androidChannel.invokeMapMethod<String, dynamic>(
+        'scan',
+        {'tree': path, 'recursive': recursive},
+      );
+      report = await session!.scanDocuments(
+        path,
+        [
+          for (final f in raw!['files'] as List)
+            Map<String, String>.from(f as Map),
+        ],
+        complete: raw['complete'] == true,
+        recursive: recursive,
+        errors: (raw['errors'] as List).cast<String>(),
+      );
+    } else {
+      report = await session!.scan(mp3Path, recursive: recursive);
+    }
     audioState = report!['complete'] == true
         ? AudioFolderState.ready
         : AudioFolderState.incomplete;
-    if (!await Directory(mp3Path).exists())
+    if (!android && !await Directory(mp3Path).exists())
       audioState = AudioFolderState.unavailable;
     reload();
     message = 'Scan terminé : ${report!['count']} fichier(s).';
@@ -348,6 +445,7 @@ final class AppModel extends ChangeNotifier {
       });
   Future<void> relocate(Directory target) =>
       runWork('Copie et contrôle des données…', () async {
+        await playback.suspend();
         session = await session!.relocate(target);
         dataPath = session!.dataDirectory.path;
         reload();
@@ -478,14 +576,26 @@ final class AppModel extends ChangeNotifier {
   }
 
   void listened(DesktopEpisode e, {bool reset = false}) {
-    session!.listened(e.id, e.status != 'ECOUTE', resetConfirmed: reset);
-    reload();
+    if (playback.episodeId == e.id && reset) {
+      unawaited(
+        runWork('Remise à zéro du suivi…', () async {
+          await playback.unload();
+          session!.listened(e.id, false, resetConfirmed: true);
+          reload();
+        }),
+      );
+    } else {
+      session!.listened(e.id, e.status != 'ECOUTE', resetConfirmed: reset);
+      reload();
+    }
   }
 
   Future<void> manual(String id, String reference, String name) =>
       runWork('Enregistrement du choix manuel…', () async {
         final uri = Uri.parse(reference);
-        if (uri.scheme != 'file' || !await File.fromUri(uri).exists())
+        if ((!android &&
+                (uri.scheme != 'file' || !await File.fromUri(uri).exists())) ||
+            (android && uri.scheme != 'content'))
           throw StateError('Le MP3 sélectionné est introuvable.');
         session!.store.recordManualLink(id, reference, name);
         _refreshAssociationReport();
@@ -497,6 +607,7 @@ final class AppModel extends ChangeNotifier {
   ).isNotEmpty;
   Future<void> closeSafely() async {
     if (_work != null) await _work;
+    await playback.unload();
     if (session != null) {
       await session!.closeSafely();
       session = null;
@@ -505,6 +616,7 @@ final class AppModel extends ChangeNotifier {
 
   Future<void> release() async {
     if (_work != null) await _work;
+    await playback.release();
     await session?.dispose();
     session = null;
   }
@@ -512,6 +624,8 @@ final class AppModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    playback.removeListener(changed);
+    playback.dispose();
     super.dispose();
   }
 }
