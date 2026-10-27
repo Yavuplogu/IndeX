@@ -239,3 +239,26 @@ réservation CI persistante sans modification de main). Scripts PowerShell valid
 par leur analyseur syntaxique et script Bash par `bash -n`. Le lockfile Flutter
 n’a changé que pour la version du package local index_core, sans dépendance ajoutée.
 Aucun build/essai natif Windows exécuté ici, ni nouvelle qualification Android.
+
+
+## Échec du compteur Windows — logs 110050750608 (28 octobre 2026)
+
+L’étape de réservation initiale a attribué `0.5.01`, mais les tests Python du
+compteur échouent avant les tests Dart/Flutter et la compilation. Sous Windows,
+`subprocess.run(..., text=True, input=...)` traduit LF en CRLF sur stdin. Le CR
+reste dans le nom d’entrée donné à `git mktree` : `counters.json\r`. La relecture
+par le nom attendu échoue. Ce défaut touche aussi la branche technique réelle,
+confirmée en lecture seule par `git ls-tree -z` ; elle contient la valeur 1.
+
+Correctif : échanges Git en octets UTF-8 et arbre terminé par NUL (`mktree -z`).
+Récupération explicite de l’ancien blob au nom erroné, sans remettre le compteur
+à zéro ; le prochain build réserve `0.5.02` et réécrit le nom canonique dans un
+nouveau commit de la branche technique. Aucun changement distant effectué ici.
+Un compteur manquant/ambigu/invalide est refusé.
+
+Contrôles locaux : quatre tests Python réussis, dont reproduction exacte de
+l’ancien nom avec CR, récupération sans réutilisation de 01, relecture du nom
+canonique et réservation suivante 03, plus refus d’un compteur manquant.
+Le compteur réel est relu à 1 sans modification. `git diff --check` sans erreur.
+Aucun changement applicatif/Dart/Android ; la compilation et la recette audio
+Windows restent à refaire après push du correctif.

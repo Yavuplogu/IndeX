@@ -46,3 +46,14 @@ avant de retirer un éventuel `dist/version-reservation.lock` résiduel.
 
 Contrôles : `python -m unittest discover -s tools/versioning -p 'test_*.py'`.
 Les tests utilisent uniquement un dépôt Git temporaire local et ne contactent pas GitHub.
+
+
+## Compatibilité Windows (correctif du 28 octobre 2026)
+
+Les échanges de plomberie Git utilisent explicitement des octets UTF-8, sans
+traduction LF → CRLF par Python. La création d’arbre utilise des entrées terminées
+par NUL (`mktree -z`). Le premier compteur Windows a pu créer le nom Git
+`counters.json` suivi d’un retour chariot : le script récupère ce blob uniquement,
+conserve sa valeur et écrit le nom canonique à la prochaine réservation. Aucun
+reset du compteur ni suppression de branche n’est nécessaire. Un compteur absent,
+ambigu ou invalide bloque la réservation plutôt que de réattribuer un numéro.

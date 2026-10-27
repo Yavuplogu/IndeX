@@ -12,8 +12,30 @@ BRANCH = 'index-build-versions'
 
 
 def git(*args, input=None, env=None):
-    return subprocess.run(['git', *args], cwd=ROOT, input=input, text=True,
-                          check=True, stdout=subprocess.PIPE, env=env).stdout.strip()
+    # Le mode texte de stdin traduit LF en CRLF sur Windows. Pour la plomberie
+    # Git, ce CR devient un octet du nom d'entree de l'arbre : utiliser UTF-8 brut.
+    raw = None if input is None else input.encode('utf-8')
+    return subprocess.run(['git', *args], cwd=ROOT, input=raw,
+                          check=True, stdout=subprocess.PIPE, env=env).stdout.decode('utf-8').strip()
+
+
+def read_counters(parent):
+    # Recuperation ciblee du nom errone produit par les premiers builds Windows.
+    # Ne jamais repartir de zero si l'arbre ou le compteur est incoherent.
+    entries = []
+    for entry in git('ls-tree', '-z', parent).split('\0'):
+        if not entry:
+            continue
+        metadata, name = entry.split('\t', 1)
+        mode, kind, oid = metadata.split()
+        if name in ('counters.json', 'counters.json\r') and kind == 'blob':
+            entries.append(oid)
+    if len(entries) != 1:
+        raise ValueError('Compteur Git absent ou ambigu ; reservation refusee sans remise a zero.')
+    counters = json.loads(git('cat-file', 'blob', entries[0]))
+    if not isinstance(counters, dict) or any(type(v) is not int or v < 0 for v in counters.values()):
+        raise ValueError('Compteur Git invalide ; reservation refusee.')
+    return counters
 
 
 def reserve(ci=False):
@@ -28,7 +50,7 @@ def reserve(ci=False):
         if remote:
             git('fetch', '--no-tags', 'origin', f'refs/heads/{BRANCH}')
             parent = git('rev-parse', 'FETCH_HEAD')
-            counters = json.loads(git('show', f'{parent}:counters.json'))
+            counters = read_counters(parent)
         else:
             counters = {}
     else:
@@ -40,7 +62,7 @@ def reserve(ci=False):
         # La CI Windows sérialise les réservations. Un push concurrent est refusé
         # (pas de force), jamais réessayé avec un numéro déjà attribué.
         blob = git('hash-object', '-w', '--stdin', input=content)
-        tree = git('mktree', input=f'100644 blob {blob}\tcounters.json\n')
+        tree = git('mktree', '-z', input=f'100644 blob {blob}\tcounters.json\0')
         identity = dict(os.environ, GIT_AUTHOR_NAME='IndeX build', GIT_AUTHOR_EMAIL='index-build@users.noreply.github.com',
                         GIT_COMMITTER_NAME='IndeX build', GIT_COMMITTER_EMAIL='index-build@users.noreply.github.com')
         args = ['commit-tree', tree, '-m', f'Réserver IndeX {key}.{minor:02d}']
