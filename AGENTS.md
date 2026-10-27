@@ -5,7 +5,10 @@
 - Périmètre actuellement autorisé : **Lot 5**, lancé explicitement par l'utilisateur.
   GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
   Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
-  Lecteur réel et Android autorisés ; voir docs/lot5/bilan.md. Renommage/JSON restent aux Lots 5 bis/5 ter.
+  Priorité du 27 octobre 2026 : finaliser Windows ; développement et recette Android
+  en pause. Conserver le code Android et la portabilité de toutes les fonctionnalités
+  essentielles (interfaces de plateforme, cœur et données communs). Voir l’avenant
+  au cahier des charges et docs/lot5/bilan.md. Renommage/JSON restent aux Lots 5 bis/5 ter.
   Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;

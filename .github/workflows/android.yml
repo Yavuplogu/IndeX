@@ -1,7 +1,6 @@
 name: Verification Android Lot 5
 on:
-  push:
-  pull_request:
+  # Android en pause : construction à la demande uniquement.
   workflow_dispatch:
 permissions:
   contents: read

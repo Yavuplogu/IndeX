@@ -5,6 +5,20 @@ signalé fonctionnel par l’utilisateur, sans problème apparent ni crash. Cett
 recette utilisateur permet d’engager le lot, sans constituer une qualification
 native du nouveau code audio.
 
+## Priorité révisée le 27 octobre 2026
+
+Windows est désormais prioritaire : terminer sa recette audio et stabiliser le
+suivi avant de reprendre Android. Le code Android décrit ci-dessous est conservé,
+mais son développement et sa recette physique sont en pause. Toutes les fonctions
+essentielles restent à porter ; les règles métier et données restent communes,
+les API système isolées. Voir l’avenant au cahier des charges. Les Lots 5 bis et
+5 ter ne sont pas lancés par ce changement de priorité.
+
+Le workflow Android est désormais manuel (`workflow_dispatch`) ; aucun APK n’est
+construit automatiquement à chaque push/PR. Les tests de régression communs et
+les tests Android simulés existants sont conservés. Les résultats ci-dessous
+restent ceux observés avant cette mise en pause, sans nouvelle qualification.
+
 ## Décisions
 
 Le code Flutter existant `apps/index_windows` devient la source commune Windows
@@ -128,13 +142,12 @@ ne sont pas versionnés. La CI emploie setup-java et setup-android.
   Le Lot 5 est implémenté pour recette ; il n’est pas déclaré qualifié sur appareil.
 
 L’APK et les caches SDK/Gradle sont des sorties ignorées par Git. Les workflows
-Windows et Android constituent les chemins de construction reproductibles après
-commit/push, sans publication en magasin ni commit automatique.
+Windows (automatique) et Android (manuel) constituent les chemins de construction reproductibles, sans publication en magasin ni commit automatique.
 
 ## Installer l’APK de test
 
-Après commit/push, ouvrir GitHub Actions, choisir **Verification Android Lot 5**,
-puis télécharger l’artefact **IndeX-Android-arm64-test** du run réussi. Extraire
+Lors de la reprise Android, ouvrir GitHub Actions, choisir **Verification Android Lot 5**,
+cliquer sur **Run workflow**, puis télécharger l’artefact **IndeX-Android-arm64-test** du run réussi. Extraire
 `app-debug.apk`, le transférer sur un téléphone ARM64 Android >=6 et autoriser son
 installation depuis la source choisie si Android le demande. Ouvrir IndeX,
 choisir un dossier local de MP3 ou reporter ce choix. Les données sont privées à

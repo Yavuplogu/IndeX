@@ -5,7 +5,12 @@
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français et entièrement hors ligne à l'utilisation.
 
-**État : Lot 5 en cours — lecteur audio Windows/Android et suivi automatique.**
+**État : Lot 5 en cours — priorité à la finalisation Windows ; Android en pause.**
+Décision du 27 octobre 2026 : conserver le socle partagé et tous les objectifs
+fonctionnels du futur portage Android. Voir l’[avenant au cahier des charges](docs/Cahier_des_charges_IndeX_Codex_V1.4.md#avenant-du-27-octobre-2026--priorité-windows-android-en-pause).
+Le code Android existant est conservé ; le workflow APK se lance uniquement à la
+main. Les Lots 5 bis et 5 ter nécessitent toujours leur lancement explicite.
+
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
 apparent ni crash. Le Lot 5 ajoute le lecteur natif et Android ; leur qualification

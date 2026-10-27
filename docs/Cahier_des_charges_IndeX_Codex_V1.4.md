@@ -5,6 +5,32 @@
 **Cibles :** Windows et Android  
 **Langue de l'interface :** français  
 
+## Avenant du 27 octobre 2026 — priorité Windows, Android en pause
+
+Décision explicite de l’utilisateur : finaliser et valider Windows avant de reprendre
+le développement et la recette Android. Cet avenant modifie l’ordre de livraison
+des lots ; il ne retire pas Android des cibles finales.
+
+- Priorité actuelle : stabilisation et recette Windows du Lot 5 (lecteur réel,
+  reprise, suivi durable et fermeture sûre). Les Lots 5 bis et 5 ter restent
+  soumis à un lancement explicite ; leur réalisation Windows pourra précéder Android.
+- Le code et les adaptateurs Android existants sont conservés. Leur développement
+  et leur qualification sur appareil sont différés ; la construction APK reste
+  disponible manuellement, sans exécution automatique à chaque push/PR.
+- Le portage devra couvrir toutes les fonctionnalités essentielles : catalogue
+  SQLite hors ligne sans MP3 embarqué, recherche et fiches, associations et
+  diagnostics, lecture/reprise, statuts et favoris, export/import JSON avec fusion
+  sûre, ainsi que renommage facultatif avec aperçu et confirmation. Les limites
+  documentées du fournisseur de stockage Android prévues au §5.5 restent applicables.
+- Les règles métier, identifiants, migrations et format JSON doivent rester communs.
+  Isoler les chemins Windows, URI et permissions Android, accès aux fichiers,
+  lecture native et cycle de vie derrière des interfaces de plateforme. Aucune
+  nouvelle fonction essentielle ne doit dépendre uniquement d’une API Windows
+  sans prévoir son adaptation Android et ses critères de recette.
+- La validation Windows ne vaut pas validation Android. La reprise Android exigera
+  une recette sur appareil réel, incluant droits persistants, interruptions audio
+  et transferts JSON dans les deux sens ; aucun calendrier n’est fixé ici.
+
 ## 1. Vision et objectifs
 
 Créer avec **OpenAI Codex** une application nommée **IndeX** à interface graphique (GUI) permettant de parcourir, rechercher, consulter et écouter une bibliothèque locale de plusieurs centaines d'épisodes d'un même podcast. Chaque épisode dispose d'un MP3 (environ 20 à 40 minutes) et d'une fiche TXT contenant des métadonnées documentaires.
