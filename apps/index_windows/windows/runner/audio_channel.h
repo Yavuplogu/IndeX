@@ -16,5 +16,6 @@ class AudioChannel {
   void Handle(const flutter::MethodCall<flutter::EncodableValue>& call,
               std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
   DWORD Status(DWORD item, MCIERROR* error);
+  MCIERROR CloseDevice();
 };
 #endif

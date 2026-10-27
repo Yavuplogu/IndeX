@@ -153,3 +153,34 @@ installation depuis la source choisie si Android le demande. Ouvrir IndeX,
 choisir un dossier local de MP3 ou reporter ce choix. Les données sont privées à
 l’application ; Windows et Android gardent chacun leur propre suivi pour le moment.
 L’export/import de suivi des paramètres reste prévu au Lot 5 ter.
+
+
+## Incident Windows du 27 octobre 2026 — MCI 277 et crash mciqtz32
+
+Recette utilisateur : fermeture au clic Écouter ; Moniteur de fiabilité :
+`mciqtz32.dll` 10.0.26100.1150, exception `0xc0000005`, offset `0x4e67`.
+Un autre essai affiche `audio_native`, MCI 277 (`MCIERR_NULL_PARAMETER_BLOCK`).
+
+Défaut identifié dans notre adaptateur : `MCI_PLAY` recevait un bloc de paramètres
+nul, comme `MCI_PAUSE` et `MCI_CLOSE`. Le pilote `mpegvideo` recevait également
+les petites structures génériques pour OPEN/SET. Correction : blocs initialisés
+pour PLAY/PAUSE/CLOSE et structures `MCI_DGV_OPEN_PARMSW` / `MCI_DGV_SET_PARMS`
+complètes pour OPEN/SET. Une fermeture en erreur conserve l’identifiant du lecteur
+pour ne pas perdre sa référence. Les erreurs retournées incluent maintenant le
+nom de la commande et le texte système de `mciGetErrorStringW`.
+
+MCI 277 est cohérent avec le pointeur nul ; le lien exact entre ce défaut et
+l’accès mémoire invalide reste à confirmer par une nouvelle recette Windows.
+Aucun remplacement de DLL système ni changement des MP3 n’est requis.
+La recette native optionnelle couvre aussi pause répétée, seek, volume et reprise :
+`tools/lot5/check_windows_audio.ps1` sur Windows avec une sortie audio disponible.
+La compilation et cette recette ne peuvent pas être exécutées sur l’hôte Linux ;
+les tests avec faux lecteur ne qualifient pas ce correctif natif.
+
+Il n’existe toujours pas de journal de crash persistant dans l’application.
+En cas de récidive, conserver le rapport Windows, la commande MCI éventuellement
+affichée et préciser si tous les MP3 ou seulement certains sont concernés.
+
+Contrôles du correctif sur Linux : analyse de `windows_smoke_test.dart` sans
+anomalie, trois tests `audio_player_test.dart` réussis, formatage et
+`git diff --check` sans erreur. Aucun essai audio natif Windows exécuté ici.

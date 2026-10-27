@@ -9,7 +9,15 @@ AudioChannel::AudioChannel(flutter::BinaryMessenger* messenger) {
   channel_->SetMethodCallHandler([this](const auto& call, auto result) { Handle(call, std::move(result)); });
 }
 AudioChannel::~AudioChannel() {
-  if (device_) mciSendCommandW(device_, MCI_CLOSE, MCI_WAIT, 0);
+  CloseDevice();
+}
+MCIERROR AudioChannel::CloseDevice() {
+  if (!device_) return 0;
+  MCI_GENERIC_PARMS args{};
+  const MCIERROR error = mciSendCommandW(device_, MCI_CLOSE, MCI_WAIT,
+      reinterpret_cast<DWORD_PTR>(&args));
+  if (!error) { device_ = 0; was_playing_ = false; }
+  return error;
 }
 DWORD AudioChannel::Status(DWORD item, MCIERROR* error) {
   MCI_STATUS_PARMS args{}; args.dwItem = item;
@@ -28,24 +36,34 @@ void AudioChannel::Handle(const flutter::MethodCall<flutter::EncodableValue>& ca
     if (size <= 0) { result->Error("audio_path", "Chemin Unicode invalide."); return; }
     std::wstring path(static_cast<size_t>(size), L'\0');
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, raw->data(), static_cast<int>(raw->size()), path.data(), size);
-    if (device_) { mciSendCommandW(device_, MCI_CLOSE, MCI_WAIT, 0); device_ = 0; }
-    MCI_OPEN_PARMSW args{}; args.lpstrDeviceType = L"mpegvideo"; args.lpstrElementName = path.c_str();
+    error = CloseDevice();
+    if (error) {
+      result->Error("audio_native", "Impossible de liberer le lecteur Windows (MCI " + std::to_string(error) + ").");
+      return;
+    }
+    // Le pilote mpegvideo attend les structures digital-video completes.
+    MCI_DGV_OPEN_PARMSW args{}; args.lpstrDeviceType = L"mpegvideo"; args.lpstrElementName = path.c_str();
     error = mciSendCommandW(0, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT | MCI_WAIT, reinterpret_cast<DWORD_PTR>(&args));
     if (!error) {
       device_ = args.wDeviceID;
-      MCI_SET_PARMS format{}; format.dwTimeFormat = MCI_FORMAT_MILLISECONDS;
+      MCI_DGV_SET_PARMS format{}; format.dwTimeFormat = MCI_FORMAT_MILLISECONDS;
       error = mciSendCommandW(device_, MCI_SET, MCI_SET_TIME_FORMAT | MCI_WAIT, reinterpret_cast<DWORD_PTR>(&format));
     }
     was_playing_ = false;
   } else if (method == "release") {
-    if (device_) error = mciSendCommandW(device_, MCI_CLOSE, MCI_WAIT, 0);
-    device_ = 0; was_playing_ = false;
+    error = CloseDevice();
   } else if (!device_) { result->Error("audio_closed", "Aucun audio ouvert."); return;
   } else if (method == "play") {
-    error = mciSendCommandW(device_, MCI_PLAY, 0, 0); was_playing_ = !error;
+    // Meme sans MCI_FROM/MCI_TO, le bloc de parametres est obligatoire.
+    MCI_PLAY_PARMS args{};
+    error = mciSendCommandW(device_, MCI_PLAY, 0, reinterpret_cast<DWORD_PTR>(&args));
+    was_playing_ = !error;
   } else if (method == "pause") {
     const DWORD mode = Status(MCI_STATUS_MODE, &error);
-    if (!error && mode == MCI_MODE_PLAY) error = mciSendCommandW(device_, MCI_PAUSE, MCI_WAIT, 0);
+    if (!error && mode == MCI_MODE_PLAY) {
+      MCI_GENERIC_PARMS args{};
+      error = mciSendCommandW(device_, MCI_PAUSE, MCI_WAIT, reinterpret_cast<DWORD_PTR>(&args));
+    }
     was_playing_ = false;
   } else if (method == "seek") {
     int64_t value = 0;
@@ -76,6 +94,19 @@ void AudioChannel::Handle(const flutter::MethodCall<flutter::EncodableValue>& ca
         {flutter::EncodableValue("ended"), flutter::EncodableValue(ended)}})); return;
     }
   } else { result->NotImplemented(); return; }
-  if (error) { wchar_t message[256]{}; mciGetErrorStringW(error, message, 256); result->Error("audio_native", "Echec du lecteur Windows (MCI " + std::to_string(error) + ")."); }
+  if (error) {
+    wchar_t message[256]{};
+    std::string detail;
+    if (mciGetErrorStringW(error, message, 256)) {
+      const int size = WideCharToMultiByte(CP_UTF8, 0, message, -1, nullptr, 0, nullptr, nullptr);
+      if (size > 1) {
+        detail.resize(static_cast<size_t>(size));
+        WideCharToMultiByte(CP_UTF8, 0, message, -1, detail.data(), size, nullptr, nullptr);
+        detail.pop_back();
+      }
+    }
+    result->Error("audio_native", "Echec du lecteur Windows [" + method + "] (MCI " +
+        std::to_string(error) + "). " + detail);
+  }
   else result->Success();
 }

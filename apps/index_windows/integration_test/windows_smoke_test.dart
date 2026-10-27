@@ -98,6 +98,24 @@ void main() {
           expect(model.playback.error, isEmpty);
           expect(model.playback.state.duration, greaterThan(0));
           expect(model.playback.state.position, greaterThan(0));
+          // Exercices natifs : pause repetee, seek, volume et reprise.
+          // Aucun faux AudioPort ici : un pointeur MCI invalide fait echouer
+          // ce processus, meme si les tests Dart avec doubles passent.
+          await tester.runAsync(model.playback.stop);
+          await tester.runAsync(() => model.playback.seek(500));
+          expect(model.playback.error, isEmpty);
+          expect(model.playback.state.playing, isFalse);
+          await tester.runAsync(() => model.playback.setVolume(0.1));
+          await tester.runAsync(() => model.playback.setVolume(0));
+          await tester.runAsync(model.playback.toggle);
+          expect(model.playback.error, isEmpty);
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 1000)),
+          );
+          await tester.runAsync(model.playback.poll);
+          await tester.runAsync(model.playback.stop);
+          expect(model.playback.error, isEmpty);
+          expect(model.playback.state.position, greaterThan(500));
           audioPosition = model.playback.state.position;
         }
         await tester.runAsync(() => windowManager.close());
