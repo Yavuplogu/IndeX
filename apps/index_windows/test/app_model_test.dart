@@ -48,6 +48,8 @@ void main() {
     model = AppModel(portableDirectory: portable);
     await model!.configure(data.path, mp3.path, false);
     expect(model!.skipStartupScan, isFalse);
+    expect(model!.recursive, isTrue);
+    model!.setRecursive(false);
     final count = model!.session!.store.database
         .select('SELECT count(*) AS n FROM audio_scan_runs')
         .single['n'];
@@ -87,6 +89,26 @@ void main() {
   });
 
   test(
+    'Ouverture dossier : chemin exact, échec signalé si dossier inaccessible',
+    () async {
+      final folder = Directory('${root.path}/dossier MP3 avec espaces')
+        ..createSync();
+      final opened = <String>[];
+      model = AppModel(
+        portableDirectory: portable,
+        folderOpener: (path) async => opened.add(path),
+      );
+      await model!.configure(data.path, folder.path, false);
+      await model!.openMp3Folder();
+      expect(opened, [folder.absolute.uri.toFilePath()]);
+      folder.deleteSync();
+      await model!.openMp3Folder();
+      expect(model!.error, contains('introuvable ou inaccessible'));
+      expect(opened, hasLength(1));
+    },
+  );
+
+  test(
     'Compteurs MP3 globaux indépendants des filtres et chemins lisibles',
     () async {
       model = AppModel(portableDirectory: portable);
@@ -97,12 +119,12 @@ void main() {
       );
       expect(model!.availableAudioCount, 6);
       expect(model!.missingAudioCount, 710);
-      expect(model!.episodeCountLabel, '716 / 6 épisodes · 710 MP3 absents');
+      expect(model!.episodeCountLabel, '716 / 716 épisodes');
       model!.search('Masque');
       expect(model!.visible.length, lessThan(716));
       expect(
         model!.episodeCountLabel,
-        '${model!.visible.length} / 6 épisodes · 710 MP3 absents',
+        '${model!.visible.length} / 716 épisodes',
       );
       final file = File(
         [
@@ -198,7 +220,18 @@ void main() {
       await model!.closeSafely();
       model!.dispose();
       model = AppModel(portableDirectory: portable);
+      var scanObserved = false;
+      model!.addListener(() {
+        if (model!.opening &&
+            model!.message.startsWith('Association par noms')) {
+          scanObserved = true;
+          expect(model!.opening, isTrue);
+          expect(model!.needsSetup, isFalse);
+        }
+      });
       await model!.boot();
+      expect(scanObserved, isTrue);
+      expect(model!.opening, isFalse);
       expect(model!.error, isEmpty);
       expect(model!.needsSetup, isFalse);
       expect(model!.report!['count'], 6);

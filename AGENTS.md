@@ -88,7 +88,9 @@
 - Révision UI du 26 octobre : en-tête de fiche séparé des données défilantes,
   sans hauteur fixe réservée sous les onglets. Navigation Résultat précédent/suivant
   dans les seules données ; fond beige des Paramètres et encre identique au X.
-  Compteur gauche inchangé, droite MP3 disponibles globaux, rappel des absents
-  uniquement après scan complet. Décoder les URI uniquement pour affichage/export
+  Révision du 27 octobre : compteur sous les filtres = épisodes visibles / total
+  du catalogue, sans rappel. Statistiques MP3 dans Fichiers et associations
+  (détectés, associés, manquants), ouverture du dossier par Explorateur Windows.
+  Récursivité activée par défaut sauf choix explicite conservé. Décoder les URI uniquement pour affichage/export
   du diagnostic, jamais pour modifier les références stockées. Cartes de scan
   sélectionnables, fichiers avec bouton Associer en tête, même fond que Paramètres.

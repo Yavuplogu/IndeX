@@ -293,7 +293,7 @@ class _IndeXAppState extends State<IndeXApp> with WindowListener {
                 Expanded(
                   child: AbsorbPointer(
                     absorbing: m.busy || closing,
-                    child: m.busy && m.session == null
+                    child: m.opening || (m.busy && m.session == null)
                         ? const Center(child: CircularProgressIndicator())
                         : m.needsSetup
                         ? StartupPage(
@@ -503,6 +503,54 @@ class Brand extends StatelessWidget {
         style: TextStyle(fontSize: 12, height: 1.5),
       ),
     ],
+  );
+}
+
+class FilterMenu<T> extends StatelessWidget {
+  const FilterMenu({
+    super.key,
+    required this.menuKey,
+    required this.value,
+    required this.labels,
+    required this.onChanged,
+  });
+  final String menuKey;
+  final T value;
+  final Map<T, String> labels;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) => MenuAnchor(
+    consumeOutsideTap: false,
+    menuChildren: [
+      for (final entry in labels.entries)
+        MenuItemButton(
+          key: ValueKey('$menuKey-${entry.key}'),
+          onPressed: () => onChanged(entry.key),
+          leadingIcon: entry.key == value
+              ? const Icon(Icons.check, size: 16)
+              : const SizedBox(width: 16),
+          child: Text(entry.value, style: const TextStyle(fontSize: 12)),
+        ),
+    ],
+    builder: (context, controller, child) => TextButton(
+      key: ValueKey(menuKey),
+      style: TextButton.styleFrom(
+        foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        textStyle: const TextStyle(fontSize: 12),
+      ),
+      onPressed: () =>
+          controller.isOpen ? controller.close() : controller.open(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(labels[value]!),
+          const SizedBox(width: 6),
+          const Icon(Icons.arrow_drop_down, size: 20),
+        ],
+      ),
+    ),
   );
 }
 
@@ -822,50 +870,31 @@ class _LibraryPageState extends State<LibraryPage> {
               runSpacing: 6,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                DropdownButton<CatalogSort>(
-                  mouseCursor: WidgetStateMouseCursor.clickable,
-                  dropdownMenuItemMouseCursor: WidgetStateMouseCursor.clickable,
+                FilterMenu<CatalogSort>(
+                  menuKey: 'sort-filter',
                   value: m.sort,
-                  isDense: true,
-                  items: [
-                    for (final entry in sortNames.entries)
-                      DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(
-                          entry.value,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    m.sort = v!;
+                  labels: sortNames,
+                  onChanged: (value) {
+                    m.sort = value;
                     m.reload();
                   },
                 ),
-                DropdownButton<String>(
-                  mouseCursor: WidgetStateMouseCursor.clickable,
-                  dropdownMenuItemMouseCursor: WidgetStateMouseCursor.clickable,
+                FilterMenu<String>(
+                  menuKey: 'status-filter',
                   value: m.status,
-                  isDense: true,
-                  items: [
+                  labels: {
                     for (final value in [
                       'Tous',
                       'NON_ECOUTE',
                       'EN_COURS',
                       'ECOUTE',
                     ])
-                      DropdownMenuItem(
-                        value: value,
-                        child: Text(
-                          value == 'Tous'
-                              ? 'Tous les états'
-                              : statusLabel(value),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    m.status = v!;
+                      value: value == 'Tous'
+                          ? 'Tous les états'
+                          : statusLabel(value),
+                  },
+                  onChanged: (value) {
+                    m.status = value;
                     m.reload();
                   },
                 ),
@@ -1930,138 +1959,172 @@ class ScanPage extends StatelessWidget {
           (b.manual || b.decision['status'] == 'confirmed' ? 1 : 0);
       return rank != 0 ? rank : a.index.compareTo(b.index);
     });
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Fichiers et associations',
-                style: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(model.folderLabel),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
+    return LayoutBuilder(
+      builder: (context, bounds) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: bounds.maxHeight * .75),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FilledButton.icon(
-                    onPressed: () async {
-                      final path = await pickDirectory();
-                      if (path != null) await model.scan(path);
-                    },
-                    icon: const Icon(Icons.folder_open),
-                    label: const Text('Choisir un dossier MP3'),
+                  const Text(
+                    'Fichiers et associations',
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  OutlinedButton(
-                    onPressed: model.mp3Path.isEmpty
-                        ? null
-                        : () => unawaited(model.scan(model.mp3Path)),
-                    child: const Text('Relancer le scan'),
+                  const SizedBox(height: 10),
+                  Text(model.folderLabel),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 18,
+                    runSpacing: 6,
+                    children: [
+                      Text('Catalogue : ${model.catalog.length} épisodes'),
+                      Text(
+                        'Dossier MP3 : ${model.mp3Path.isEmpty ? 'Non analysé' : model.report?['count'] ?? 'Non analysé'} fichiers',
+                      ),
+                      Text(
+                        'Épisodes associés : ${model.mp3Path.isEmpty ? 'Non vérifié' : model.availableAudioCount}',
+                      ),
+                      Text(
+                        'Épisodes manquants : ${model.audioKnown ? model.missingAudioCount : 'Non vérifié'}',
+                      ),
+                    ],
                   ),
-                  if (model.mp3Path.isNotEmpty)
-                    TextButton(
-                      onPressed: () =>
-                          unawaited(model.folders('', model.recursive)),
-                      child: const Text('Retirer le dossier MP3'),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final path = await pickDirectory();
+                          if (path != null) await model.scan(path);
+                        },
+                        icon: const Icon(Icons.folder_open),
+                        label: const Text('Choisir un dossier MP3'),
+                      ),
+                      OutlinedButton(
+                        onPressed: model.mp3Path.isEmpty
+                            ? null
+                            : () => unawaited(model.scan(model.mp3Path)),
+                        child: const Text('Relancer le scan'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: model.mp3Path.isEmpty
+                            ? null
+                            : () => unawaited(model.openMp3Folder()),
+                        icon: const Icon(Icons.folder_open),
+                        label: const Text('Ouvrir le dossier MP3'),
+                      ),
+                      if (model.mp3Path.isNotEmpty)
+                        TextButton(
+                          onPressed: () =>
+                              unawaited(model.folders('', model.recursive)),
+                          child: const Text('Retirer le dossier MP3'),
+                        ),
+                    ],
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text('Analyser aussi les sous-dossiers'),
+                    value: model.recursive,
+                    onChanged: (value) => model.setRecursive(value!),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    model.report == null
+                        ? 'Aucun scan réalisé.'
+                        : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
+                  ),
+                  if (model.report != null)
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.save_alt),
+                      label: const Text('Exporter le diagnostic TXT'),
+                      onPressed: () async {
+                        try {
+                          final file = await model.exportScanDiagnostic();
+                          if (context.mounted)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: SelectableText(
+                                  'Diagnostic exporté : ${file.path}',
+                                ),
+                              ),
+                            );
+                        } catch (error) {
+                          model.error =
+                              'Export du diagnostic impossible : $error';
+                          model.changed();
+                        }
+                      },
+                    ),
+                  if (issues.isNotEmpty)
+                    ExpansionTile(
+                      title: const Text('Diagnostics du scan'),
+                      children: [
+                        SizedBox(
+                          height: 180,
+                          child: ScanDiagnostics(issues: issues),
+                        ),
+                      ],
                     ),
                 ],
               ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text('Analyser aussi les sous-dossiers'),
-                value: model.recursive,
-                onChanged: (value) => model.setRecursive(value!),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                model.report == null
-                    ? 'Aucun scan réalisé.'
-                    : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
-              ),
-              if (model.report != null)
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.save_alt),
-                  label: const Text('Exporter le diagnostic TXT'),
-                  onPressed: () async {
-                    try {
-                      final file = await model.exportScanDiagnostic();
-                      if (context.mounted)
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: SelectableText(
-                              'Diagnostic exporté : ${file.path}',
-                            ),
-                          ),
-                        );
-                    } catch (error) {
-                      model.error = 'Export du diagnostic impossible : $error';
-                      model.changed();
-                    }
-                  },
-                ),
-              if (issues.isNotEmpty)
-                ExpansionTile(
-                  title: const Text('Diagnostics du scan'),
-                  children: [
-                    SizedBox(
-                      height: 180,
-                      child: ScanDiagnostics(issues: issues),
-                    ),
-                  ],
-                ),
-            ],
+            ),
           ),
-        ),
-        Expanded(
-          child: decisions.isEmpty
-              ? const Center(
-                  child: Text('Sélectionnez un dossier pour analyser les MP3.'),
-                )
-              : ListView.builder(
-                  key: const ValueKey('scan-associations-list'),
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final decision = entries[index].decision;
-                    final manual = entries[index].manual;
-                    return SelectionArea(
-                      child: Card(
-                        color: c.controls,
-                        surfaceTintColor: Colors.transparent,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 5,
-                        ),
-                        child: ListTile(
-                          title: Text(decision['current_name'] as String),
-                          subtitle: Text(
-                            '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}\n${displayDiagnosticPath(decision['audio_reference'] as String)}',
+          Expanded(
+            child: decisions.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Sélectionnez un dossier pour analyser les MP3.',
+                    ),
+                  )
+                : ListView.builder(
+                    key: const ValueKey('scan-associations-list'),
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final decision = entries[index].decision;
+                      final manual = entries[index].manual;
+                      return SelectionArea(
+                        child: Card(
+                          color: c.controls,
+                          surfaceTintColor: Colors.transparent,
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 5,
                           ),
-                          trailing: decision['status'] == 'confirmed' || manual
-                              ? Icon(
-                                  Icons.check_circle_outline,
-                                  color: c.accent,
-                                )
-                              : OutlinedButton(
-                                  onPressed: () =>
-                                      unawaited(associate(context, decision)),
-                                  child: const Text('Associer…'),
-                                ),
+                          child: ListTile(
+                            title: Text(decision['current_name'] as String),
+                            subtitle: Text(
+                              '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}\n${displayDiagnosticPath(decision['audio_reference'] as String)}',
+                            ),
+                            trailing:
+                                decision['status'] == 'confirmed' || manual
+                                ? Icon(
+                                    Icons.check_circle_outline,
+                                    color: c.accent,
+                                  )
+                                : OutlinedButton(
+                                    onPressed: () =>
+                                        unawaited(associate(context, decision)),
+                                    child: const Text('Associer…'),
+                                  ),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

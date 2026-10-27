@@ -574,3 +574,24 @@ conservés, la persistance des options de scan et de récursivité, l’absence 
 automatique quand désactivé, le scan manuel et le rétablissement du scan au lancement.
 Les tests de widgets vérifient aussi le retrait du choix MP3 des Paramètres et la
 case décochée par défaut. La validation native Windows du paquet reste à effectuer.
+
+## Chargement et Fichiers — 27 octobre 2026
+
+Le formulaire réapparaissait pendant le scan de démarrage : le contrôle de
+chargement exigeait une session encore nulle, alors que la base était déjà ouverte.
+Un état d’ouverture explicite couvre désormais l’import et le scan ; le profil
+existant quitte l’état premier démarrage avant le scan, même si celui-ci échoue.
+
+Le compteur sous filtres revient à visibles / total du catalogue, sans rappel.
+Les statistiques audio sont regroupées dans Fichiers, avec ouverture du dossier
+par l’Explorateur Windows et récursivité par défaut. Les menus tri/statut utilisent
+MenuAnchor sans consommation du clic extérieur, pour basculer en un clic.
+
+Contrôles Linux : **184 tests Dart réussis** lors du contrôle Lots 1–4, puis
+**17 tests Flutter réussis** après correction d’un débordement du panneau Fichiers
+avec diagnostic déplié à 1024 × 740. Le haut de ce panneau devient défilable si
+nécessaire, en conservant une zone pour la liste. Analyse Flutter sans diagnostic
+et formatage vérifiés. Les régressions couvrent l’animation avec session déjà
+ouverte, les transitions tri/état en un clic dans les deux sens, les statistiques,
+la récursivité par défaut et la transmission du chemin à l’ouvreur de dossier.
+L’ouverture réelle de l’Explorateur et le paquet restent à valider sur Windows.

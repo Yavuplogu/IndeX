@@ -118,11 +118,16 @@ accessible, les données existantes sont conservées jusqu'à un scan complet.
 
 ## Compteurs et diagnostic
 
-Sous les filtres, le nombre de gauche reste le nombre d'épisodes affichés. Celui
-de droite compte les épisodes du catalogue ayant un MP3 associé et disponible,
-indépendamment des filtres. Le rappel « Y MP3 absents » compte les autres épisodes
-après un scan complet ; sans vérification complète, « Disponibilité non vérifiée »
-évite de déclarer des fichiers absents sans preuve.
+Sous les filtres, le nombre de gauche compte les épisodes affichés et celui de
+droite le total du catalogue. Aucun rappel à côté. Les menus de tri et d’état
+peuvent être ouverts alternativement en un clic.
+
+Fichiers et associations regroupe le total du catalogue, les fichiers MP3 détectés,
+les épisodes associés disponibles et les manquants après un scan complet. Sans
+vérification complète, les manquants sont indiqués « Non vérifié ». Les fichiers
+inconnus/doublons peuvent expliquer un écart entre MP3 détectés et épisodes associés.
+« Ouvrir le dossier MP3 » affiche le dossier configuré dans l’Explorateur Windows.
+L’analyse des sous-dossiers est cochée par défaut ; votre choix est conservé.
 
 Dans Fichiers et associations, les fichiers proposant « Associer… » apparaissent
 en premier. Le texte des cartes et du diagnostic est sélectionnable. Les chemins

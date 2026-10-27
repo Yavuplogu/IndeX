@@ -316,3 +316,23 @@ bordures arrondies, des fonds et des textes de la palette Éditorial. Le cadre d
 est séparé, sans cadre de choix MP3. Le texte Transfert précise la création future
 d’un fichier `.json` dans `exports` du dossier utilisateur (Lot 5 ter inchangé).
 Le chevron de « Résultat suivant » est placé après le libellé.
+
+## Chargement, compteurs et menus — révision du 27 octobre 2026
+
+Cette révision remplace la présentation des compteurs décrite plus haut.
+- Pendant toute l’ouverture d’un profil existant, y compris après ouverture de la
+  base et pendant le scan, afficher une animation de chargement. Le formulaire de
+  premier démarrage ne doit pas réapparaître ; les erreurs de données restent signalées.
+- Sous les filtres, restaurer « épisodes affichés / total du catalogue épisodes »,
+  sans rappel des MP3 absents ni message de disponibilité à côté.
+- Dans Fichiers et associations : total des épisodes du catalogue, fichiers MP3
+  détectés au dernier scan, épisodes associés disponibles et épisodes manquants.
+  Le nombre de fichiers peut dépasser celui des épisodes associés (inconnus,
+  doublons, conflits). Sans scan complet, les manquants restent « Non vérifié ».
+- Ajouter « Ouvrir le dossier MP3 » : ouvrir le dossier configuré dans l’Explorateur
+  Windows, sans shell ni nouvelle dépendance. Bouton désactivé sans dossier ; erreur
+  explicite si le dossier est devenu inaccessible.
+- « Analyser aussi les sous-dossiers » est coché par défaut en l’absence de réglage ;
+  une préférence explicite déjà enregistrée est conservée.
+- Les menus de tri et de statut permettent de passer de l’un à l’autre en un seul
+  clic, même si le premier est ouvert. Menus accessibles par clavier conservés.

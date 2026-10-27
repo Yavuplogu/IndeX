@@ -84,6 +84,100 @@ void main() {
     },
   );
   testWidgets(
+    'Chargement après ouverture de la base, menus en un clic et statistiques MP3',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-boot-menus-');
+      final data = Directory('${root.path}/data')..createSync();
+      final opened = <String>[];
+      final model = AppModel(
+        portableDirectory: root,
+        folderOpener: (path) async => opened.add(path),
+      );
+      await tester.runAsync(
+        () => model.configure(
+          data.path,
+          Directory('../../MP3_Files').absolute.path,
+          false,
+        ),
+      );
+      expect(model.error, isEmpty);
+      // État intermédiaire réel : session ouverte, initialisation encore en cours.
+      model.opening = true;
+      model.busy = true;
+      model.needsSetup = true;
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(StartupPage), findsNothing);
+      expect(find.text('Choisir le dossier MP3'), findsNothing);
+      model.opening = false;
+      model.busy = false;
+      model.needsSetup = false;
+      model.sort = CatalogSort.relevance;
+      model.changed();
+      await tester.pumpAndSettle();
+      expect(find.text('716 / 716 épisodes'), findsOneWidget);
+      expect(find.textContaining('MP3 absents'), findsNothing);
+      final sort = find.byKey(const ValueKey('sort-filter'));
+      final status = find.byKey(const ValueKey('status-filter'));
+      await tester.tap(sort);
+      await tester.pumpAndSettle();
+      expect(find.byType(MenuItemButton), findsNWidgets(sortNames.length));
+      await tester.tap(status);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('status-filter-ECOUTE')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('sort-filter-CatalogSort.titleAZ')),
+        findsNothing,
+      );
+      await tester.tap(sort);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('status-filter-ECOUTE')), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey('sort-filter-CatalogSort.titleAZ')),
+      );
+      await tester.pumpAndSettle();
+      expect(model.sort, CatalogSort.titleAZ);
+      await tester.tap(status);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('status-filter-ECOUTE')));
+      await tester.pumpAndSettle();
+      expect(model.status, 'ECOUTE');
+      await tester.tap(find.text('Fichiers'));
+      await tester.pumpAndSettle();
+      expect(find.text('Catalogue : 716 épisodes'), findsOneWidget);
+      expect(find.text('Dossier MP3 : 6 fichiers'), findsOneWidget);
+      expect(find.text('Épisodes associés : 6'), findsOneWidget);
+      expect(find.text('Épisodes manquants : 710'), findsOneWidget);
+      final recursive = find.widgetWithText(
+        CheckboxListTile,
+        'Analyser aussi les sous-dossiers',
+      );
+      expect(tester.widget<CheckboxListTile>(recursive).value, isTrue);
+      await tester.tap(find.text('Ouvrir le dossier MP3'));
+      await waitForCondition(
+        tester,
+        () => !model.busy,
+        'ouverture du dossier MP3',
+      );
+      await tester.pumpAndSettle();
+      expect(opened, [Directory('../../MP3_Files').absolute.uri.toFilePath()]);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    },
+  );
+
+  testWidgets(
     'Catalogue intégré, sources, filtres FTS, favoris et paramètres',
     (tester) async {
       tester.view.physicalSize = const Size(1440, 1000);

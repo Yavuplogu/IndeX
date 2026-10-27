@@ -22,7 +22,9 @@ MP3 restent aux emplacements choisis. Au premier démarrage, `IndeX/user` est
 présélectionné pour les données (modifiable). Les ouvertures suivantes vont
 directement à la bibliothèque après chargement ; le scan automatique des MP3
 peut être désactivé dans Paramètres. Leur dossier et la récursivité se règlent
-dans Fichiers et associations.
+dans Fichiers et associations, avec statistiques détaillées et ouverture du
+dossier MP3 dans l’Explorateur. Le compteur sous filtres affiche visibles / total
+du catalogue, sans rappel.
 
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)

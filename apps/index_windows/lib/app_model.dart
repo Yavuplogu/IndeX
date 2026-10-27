@@ -58,16 +58,26 @@ enum CatalogSort {
 
 enum AudioFolderState { unconfigured, ready, unavailable, incomplete }
 
+/// Ouvre un dossier local sans interprétation de commande ni nouvelle dépendance.
+Future<void> openNativeFolder(String path) async {
+  if (!Platform.isWindows)
+    throw UnsupportedError('Ouverture disponible sur Windows.');
+  await Process.start('explorer.exe', [path], mode: ProcessStartMode.detached);
+}
+
 final class AppModel extends ChangeNotifier {
   AppModel({
     required this.portableDirectory,
     this.seedLoader = bundledSeed,
+    this.folderOpener = openNativeFolder,
     Directory? defaultDataDirectory,
   }) : defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
   }
+  final Future<void> Function(String) folderOpener;
   final Directory defaultDataDirectory;
+  bool opening = false;
   final Directory portableDirectory;
   final Future<SeedData> Function() seedLoader;
   PortableSession? session;
@@ -99,8 +109,7 @@ final class AppModel extends ChangeNotifier {
   int get availableAudioCount => catalog.where((e) => e.audioAvailable).length;
   int get missingAudioCount => catalog.length - availableAudioCount;
   String get episodeCountLabel =>
-      '${visible.length} / $availableAudioCount épisodes · '
-      '${audioKnown ? '$missingAudioCount MP3 absents' : 'Disponibilité non vérifiée'}';
+      '${visible.length} / ${catalog.length} épisodes';
   Set<String> get manualAudioReferences => {
     for (final row in session!.store.database.select(
       'SELECT audio_ref FROM local_audio_links WHERE manual=1',
@@ -142,22 +151,40 @@ final class AppModel extends ChangeNotifier {
   }
 
   Future<void> boot() => runWork('Ouverture des données…', () async {
-    requireExisting = File('${portableDirectory.path}/index-portable.json')
-        .existsSync();
-    final known = PortableSession.configuredDirectory(portableDirectory);
-    if (known == null) {
-      // Créer seulement la proposition initiale ; aucun profil avant validation.
-      await defaultDataDirectory.create(recursive: true);
-      return;
+    opening = true;
+    changed();
+    try {
+      requireExisting = File('${portableDirectory.path}/index-portable.json')
+          .existsSync();
+      final known = PortableSession.configuredDirectory(portableDirectory);
+      if (known == null) {
+        await defaultDataDirectory.create(recursive: true);
+        return;
+      }
+      requireExisting = true;
+      dataPath = known.path;
+      await _open(known, true);
+      // Le profil existe : ne jamais réafficher le formulaire pendant le scan.
+      needsSetup = false;
+      if (mp3Path.isNotEmpty && !skipStartupScan) await _scan(mp3Path);
+    } finally {
+      opening = false;
     }
-    requireExisting = true;
-    dataPath = known.path;
-    await _open(known, true);
-    if (mp3Path.isNotEmpty && !skipStartupScan) await _scan(mp3Path);
-    needsSetup = false;
   });
+
+  Future<void> openMp3Folder() =>
+      runWork('Ouverture du dossier MP3…', () async {
+        if (mp3Path.isEmpty || !await Directory(mp3Path).exists()) {
+          throw const FileSystemException(
+            'Le dossier MP3 est introuvable ou inaccessible.',
+          );
+        }
+        final path = Directory(mp3Path).absolute.uri.toFilePath();
+        await folderOpener(path);
+      });
+
   bool get skipStartupScan => session?.setting('skip_startup_scan') == 'true';
-  bool get recursive => session?.setting('recursive') == 'true';
+  bool get recursive => session?.setting('recursive') != 'false';
   void setSkipStartupScan(bool value) {
     session!.setSetting('skip_startup_scan', value.toString());
     changed();
@@ -246,10 +273,7 @@ final class AppModel extends ChangeNotifier {
     message = 'Association par noms d’origine et système du journal…';
     changed();
     mp3Path = Directory(path).absolute.path;
-    report = await session!.scan(
-      mp3Path,
-      recursive: session!.setting('recursive') == 'true',
-    );
+    report = await session!.scan(mp3Path, recursive: recursive);
     audioState = report!['complete'] == true
         ? AudioFolderState.ready
         : AudioFolderState.incomplete;
