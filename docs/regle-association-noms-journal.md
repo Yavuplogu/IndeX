@@ -87,11 +87,13 @@ utilisateur v4 ne change pas de schéma pour cette règle.
 
 ## Retrait explicite d’un lien local — 27 octobre 2026
 
-Après confirmation, Enlever l’association supprime le lien local du fichier sans
-modifier ses octets, son nom ni l’état d’écoute de l’épisode. La référence figure
+Dernière révision utilisateur du 27 octobre : après confirmation, Enlever
+l’association supprime le lien local et les données utilisateur de cet épisode
+(favori, statut, position et durée). Ses octets et son nom restent inchangés. La référence figure
 alors dans une exclusion locale persistante (`audio_unlinked_refs_v1`) : les scans,
 complets ou incomplets, ne la réassocient pas automatiquement. Le rapport indique
 `unknown`, `matching_method=manual_unlinked`, `evidence_rule=manual_unlinked`.
-Un choix Associer… explicite lève cette exclusion et enregistre un lien manuel.
+Un choix Associer… explicite lève cette exclusion et enregistre un lien manuel,
+sans restaurer le favori ou le suivi supprimés.
 Ce réglage porte sur une référence locale, pas sur l’identité documentaire ni sur
 un transfert JSON entre appareils. Les autres règles de concordance ne changent pas.

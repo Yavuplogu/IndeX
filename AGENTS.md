@@ -96,5 +96,8 @@
   sélectionnables, fichiers avec bouton Associer en tête ; cartes non associées
   grises, message rouge du X et bouton beige. Diagnostic dans un panneau flottant.
   Retrait confirmé : exclusion locale persistante par référence, levée par
-  association manuelle ; aucun changement de fichier ni de suivi. Ouverture du
+  association manuelle. Dernière décision du 27 octobre : retrait confirmé =
+  suppression transactionnelle du favori et du suivi de cet épisode, fichier MP3
+  conservé. Apparence : deux boutons clair/sombre. Fichiers : filtres associés,
+  non associés et tous (non associés en tête). Ouverture du
   dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.

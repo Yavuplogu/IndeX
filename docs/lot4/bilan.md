@@ -623,3 +623,24 @@ thèmes et transmission native de chemins Windows/UNC avec espaces et Unicode.
 Le test d’intégration Windows vérifie aussi la présence du canal et le rejet d’un
 dossier inexistant ; il reste à exécuter sur Windows, avec compilation du runner
 et contrôle manuel de l’ouverture du dossier cible dans l’Explorateur.
+
+## Dernière révision Apparence et filtres — 27 octobre 2026
+
+Deux boutons de thème remplacent le menu Apparence, avec état actif visible et
+persistance du choix. Trois filtres sont placés juste avant la liste des fichiers :
+associés, non associés, tous (défaut, non associés en tête). Les statistiques globales
+restent indépendantes et une liste vide est expliquée.
+
+Sur demande explicite, le retrait d’association supprime désormais aussi la ligne
+personnelle de l’épisode (favori et suivi complet), dans la transaction du retrait
+et de l’exclusion locale. Cette règle remplace la conservation du suivi annoncée
+par la révision précédente. Le dialogue est explicite ; MP3 et autres épisodes
+restent intacts. Réassocier ne restaure pas ces données.
+
+Validation Linux : `bash tools/lot4/check.sh` passe avec **185 tests Dart et
+19 tests Flutter**, formatage et analyses sans diagnostic. Les tests vérifient
+la suppression ciblée du favori et du suivi, la conservation des autres épisodes,
+l’absence de restauration après réouverture/réassociation et la présence du MP3.
+Les widgets vérifient les deux boutons de thème et la persistance du choix,
+les trois filtres, leur état vide et le tri des non associés en tête.
+La validation native du paquet Windows reste à effectuer.

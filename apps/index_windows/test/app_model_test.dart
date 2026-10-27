@@ -118,6 +118,10 @@ void main() {
     await model!.scan(folder.path);
     expect(model!.availableAudioCount, 1);
     model!.favorite(episode);
+    model!.session!.store.database.execute(
+      'UPDATE user_episode_state SET position_ms=12345,duration_ms=60000,listening_status=? WHERE episode_id=?',
+      ['EN_COURS', episode.id],
+    );
     model!.setSkipStartupScan(true);
     await model!.unlink(file.absolute.uri.toString());
     expect(model!.error, isEmpty);
@@ -131,7 +135,7 @@ void main() {
     expect(model!.availableAudioCount, 0);
     expect(
       model!.catalog.firstWhere((e) => e.id == episode.id).favorite,
-      isTrue,
+      isFalse,
     );
     expect((model!.report!['decisions'] as List).single['status'], 'unknown');
     await model!.scan(folder.path);
@@ -151,6 +155,17 @@ void main() {
     expect(
       (model!.report!['decisions'] as List).single['evidence_rule'],
       'manual',
+    );
+    final reset = model!.catalog.firstWhere((e) => e.id == episode.id);
+    expect(reset.favorite, isFalse);
+    expect(reset.positionMs, 0);
+    expect(reset.status, 'NON_ECOUTE');
+    expect(
+      model!.session!.store.database.select(
+        'SELECT * FROM user_episode_state WHERE episode_id=?',
+        [episode.id],
+      ),
+      isEmpty,
     );
     expect(file.existsSync(), isTrue);
   });

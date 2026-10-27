@@ -528,9 +528,7 @@ class FilterMenu<T> extends StatelessWidget {
     required this.value,
     required this.labels,
     required this.onChanged,
-    this.framed = false,
   });
-  final bool framed;
   final String menuKey;
   final T value;
   final Map<T, String> labels;
@@ -554,14 +552,9 @@ class FilterMenu<T> extends StatelessWidget {
       key: ValueKey(menuKey),
       style: TextButton.styleFrom(
         foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
-        backgroundColor: framed ? Theme.of(context).colorScheme.surface : null,
-        side: framed ? BorderSide(color: Theme.of(context).dividerColor) : null,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: EdgeInsets.symmetric(
-          horizontal: framed ? 12 : 4,
-          vertical: framed ? 12 : 0,
-        ),
-        textStyle: TextStyle(fontSize: framed ? 14 : 12),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        textStyle: const TextStyle(fontSize: 12),
       ),
       onPressed: () =>
           controller.isOpen ? controller.close() : controller.open(),
@@ -1782,22 +1775,50 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           if (m.error.isNotEmpty)
                             Text(m.error, style: TextStyle(color: c.alert)),
                           group('Apparence', [
-                            FilterMenu<bool>(
-                              menuKey: 'appearance-filter',
-                              framed: true,
-                              value: m.dark,
-                              labels: const {
-                                false: 'Mode clair',
-                                true: 'Mode sombre',
-                              },
-                              onChanged: (value) {
-                                try {
-                                  m.setTheme(value);
-                                } catch (e) {
-                                  m.error = e.toString();
-                                  m.changed();
-                                }
-                              },
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 8,
+                              children: [
+                                for (final dark in [false, true])
+                                  Semantics(
+                                    selected: m.dark == dark,
+                                    child: OutlinedButton.icon(
+                                      key: ValueKey(
+                                        dark
+                                            ? 'appearance-dark'
+                                            : 'appearance-light',
+                                      ),
+                                      icon: Icon(
+                                        dark
+                                            ? Icons.dark_mode_outlined
+                                            : Icons.light_mode_outlined,
+                                      ),
+                                      label: Text(
+                                        dark ? 'Mode sombre' : 'Mode clair',
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: m.dark == dark
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                            : c.controls,
+                                        foregroundColor: m.dark == dark
+                                            ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary
+                                            : c.ink,
+                                      ),
+                                      onPressed: () {
+                                        try {
+                                          m.setTheme(dark);
+                                        } catch (e) {
+                                          m.error = e.toString();
+                                          m.changed();
+                                        }
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
                           ], c),
                           group('Données utilisateur', [
@@ -1943,7 +1964,7 @@ class ScanPage extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Enlever cette association ?'),
         content: const Text(
-          'Le fichier MP3, les favoris et le suivi sont conservés. Le fichier restera sans association lors des prochains scans ; utilisez Associer… pour le rétablir.',
+          'Le favori et le suivi d’écoute de cet épisode (statut, progression et durée) seront supprimés. Le fichier MP3 est conservé. Il restera sans association lors des prochains scans ; utilisez Associer… pour rétablir le lien, sans restaurer les données supprimées.',
         ),
         actions: [
           TextButton(
@@ -2024,6 +2045,14 @@ class ScanPage extends StatelessWidget {
           (a.manual || a.decision['status'] == 'confirmed' ? 1 : 0) -
           (b.manual || b.decision['status'] == 'confirmed' ? 1 : 0);
       return rank != 0 ? rank : a.index.compareTo(b.index);
+    });
+    entries.removeWhere((entry) {
+      final linked = entry.manual || entry.decision['status'] == 'confirmed';
+      return switch (model.audioFileFilter) {
+        AudioFileFilter.all => false,
+        AudioFileFilter.associated => !linked,
+        AudioFileFilter.unassociated => linked,
+      };
     });
     return LayoutBuilder(
       builder: (context, bounds) => Column(
@@ -2149,11 +2178,36 @@ class ScanPage extends StatelessWidget {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final entry in const {
+                  AudioFileFilter.associated: 'Fichiers associés',
+                  AudioFileFilter.unassociated: 'Fichiers non associés',
+                  AudioFileFilter.all: 'Tous les fichiers',
+                }.entries)
+                  ChoiceChip(
+                    key: ValueKey('audio-files-${entry.key.name}'),
+                    label: Text(entry.value),
+                    selected: model.audioFileFilter == entry.key,
+                    onSelected: (_) {
+                      model.audioFileFilter = entry.key;
+                      model.changed();
+                    },
+                  ),
+              ],
+            ),
+          ),
           Expanded(
-            child: decisions.isEmpty
-                ? const Center(
+            child: entries.isEmpty
+                ? Center(
                     child: Text(
-                      'Sélectionnez un dossier pour analyser les MP3.',
+                      decisions.isEmpty
+                          ? 'Sélectionnez un dossier pour analyser les MP3.'
+                          : 'Aucun fichier pour ce filtre.',
                     ),
                   )
                 : ListView.builder(

@@ -358,3 +358,21 @@ Cette révision remplace la présentation des compteurs décrite plus haut.
 - Le bouton Diagnostic du scan précède Exporter le diagnostic TXT sur la même
   ligne. Il ouvre un panneau flottant refermable avec résultats défilants,
   sélectionnables et copiables ; aucun diagnostic reste déplié dans la page.
+
+## Apparence, retrait et filtres — dernière révision du 27 octobre 2026
+
+Cette décision remplace le menu Apparence et la conservation du suivi lors du
+retrait décrits dans la révision précédente.
+
+- Apparence : deux boutons Mode clair / Mode sombre, choix actif distinct et
+  préférence persistée ; aucun menu déroulant dans ce cadre.
+- Retrait confirmé : supprimer dans une seule transaction le lien et la ligne
+  `user_episode_state` de l’épisode lié (favori, statut, progression, durée), tout
+  en conservant le MP3 et les données des autres épisodes. Le dialogue annonce
+  explicitement cette suppression. L’exclusion locale persiste ; réassocier ne
+  restaure pas les données effacées. Une erreur annule l’ensemble de la transaction.
+- Juste avant la liste des fichiers : Fichiers associés, Fichiers non associés,
+  Tous les fichiers. Ce dernier est actif initialement, non associés en premier.
+  Un retrait ou une association actualise immédiatement le résultat du filtre.
+  Le filtre concerne la liste du dernier scan ; compteurs et diagnostics globaux
+  ne sont pas filtrés. Prévoir un message si aucun résultat.

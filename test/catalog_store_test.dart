@@ -676,8 +676,8 @@ void main() {
       );
     },
   );
-  test('Retrait explicite : suivi conservé, scans sans réassociation, choix manuel rétablit le lien', () {
-    store.importPlan(plan());
+  test('Retrait explicite : favori et suivi supprimés uniquement pour cet épisode, scans sans réassociation, choix manuel rétablit le lien', () {
+    store.importPlan(twoJournalEpisodes());
     const ref = 'file:///root/episode.mp3';
     store.applyAudioScan(scan([audio(ref)]));
     expect(
@@ -688,7 +688,20 @@ void main() {
       'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,12345,?,1)',
       [firstId, 'EN_COURS'],
     );
+    store.database.execute(
+      'INSERT INTO user_episode_state(episode_id,position_ms,listening_status,is_favorite) VALUES(?,7890,?,1)',
+      ['mrx:$secondOriginal', 'ECOUTE'],
+    );
     store.unlinkAudio(ref);
+    expect(
+      store.database.select(
+        'SELECT * FROM user_episode_state WHERE episode_id=?',
+        [firstId],
+      ),
+      isEmpty,
+    );
+    expect(() => store.unlinkAudio(ref), throwsStateError);
+
     expect(store.unlinkedAudioReferences, contains(ref));
     for (final complete in [false, true]) {
       store.applyAudioScan(scan([audio(ref)], complete: complete));
@@ -708,10 +721,18 @@ void main() {
     final state = store.database
         .select('SELECT * FROM user_episode_state')
         .single;
-    expect(state['position_ms'], 12345);
+    expect(state['episode_id'], 'mrx:$secondOriginal');
+    expect(state['position_ms'], 7890);
     expect(state['is_favorite'], 1);
-    expect(state['listening_status'], 'EN_COURS');
+    expect(state['listening_status'], 'ECOUTE');
     store.recordManualLink(firstId, ref, firstOriginal);
+    expect(
+      store.database.select(
+        'SELECT * FROM user_episode_state WHERE episode_id=?',
+        [firstId],
+      ),
+      isEmpty,
+    );
     expect(store.unlinkedAudioReferences, isEmpty);
     store.applyAudioScan(scan([audio(ref)]));
     expect(

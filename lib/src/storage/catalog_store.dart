@@ -630,16 +630,19 @@ final class CatalogStore {
     );
   }
 
-  /// Retrait local explicite ; ne modifie ni le fichier ni le suivi.
+  /// Retrait explicite du lien et du suivi personnel de cet épisode, sans toucher au fichier.
   void unlinkAudio(String reference) {
     database.execute('BEGIN IMMEDIATE');
     try {
       final rows = database.select(
-        'SELECT 1 FROM local_audio_links WHERE audio_ref=?',
+        'SELECT episode_id FROM local_audio_links WHERE audio_ref=?',
         [reference],
       );
       if (rows.isEmpty) throw StateError('Cette association n’existe plus.');
       _saveUnlinked(unlinkedAudioReferences..add(reference));
+      database.execute('DELETE FROM user_episode_state WHERE episode_id=?', [
+        rows.single['episode_id'],
+      ]);
       database.execute('DELETE FROM local_audio_links WHERE audio_ref=?', [
         reference,
       ]);

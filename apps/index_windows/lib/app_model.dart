@@ -56,6 +56,8 @@ enum CatalogSort {
   audioLast,
 }
 
+enum AudioFileFilter { all, associated, unassociated }
+
 enum AudioFolderState { unconfigured, ready, unavailable, incomplete }
 
 /// Ouvre un dossier local sans interprétation de commande ni nouvelle dépendance.
@@ -95,6 +97,7 @@ final class AppModel extends ChangeNotifier {
       queryError = '';
   AudioFolderState audioState = AudioFolderState.unconfigured;
   CatalogSort sort = CatalogSort.dateNew;
+  AudioFileFilter audioFileFilter = AudioFileFilter.all;
   Set<SearchField> fields = Set.of(SearchField.values);
   List<DesktopEpisode> catalog = [], visible = [];
   DesktopEpisode? selected;

@@ -143,5 +143,16 @@ copiables ; la liste peut défiler. Fermer revient à la liste des fichiers.
 Les fichiers non associés ont un fond gris et leur message apparaît dans le
 rouge du logo. Le bouton Associer… conserve son beige. Les fichiers associés
 proposent **Enlever l’association** : après confirmation, seul le lien local est
-retiré, sans supprimer le fichier ni les favoris ou le suivi. Ce choix résiste
-aux scans et aux réouvertures. Utiliser Associer… pour rétablir un lien manuellement.
+retiré et les données personnelles de cet épisode sont supprimées (favori, statut,
+progression et durée). Le fichier MP3 est conservé. Ce choix résiste aux scans et
+aux réouvertures. Utiliser Associer… pour rétablir un lien manuellement, sans
+restaurer les données supprimées.
+
+Dans Paramètres, deux boutons **Mode clair** et **Mode sombre** remplacent le menu
+Apparence ; le mode actif est mis en évidence et le choix est mémorisé.
+
+Juste avant la liste de Fichiers et associations, les filtres **Fichiers associés**,
+**Fichiers non associés** et **Tous les fichiers** permettent de choisir les lignes
+affichées. Tous les fichiers est actif initialement, avec les fichiers non associés
+en premier. Les statistiques globales et le diagnostic restent indépendants de ce
+filtre. Si aucun fichier ne correspond, un message le signale.

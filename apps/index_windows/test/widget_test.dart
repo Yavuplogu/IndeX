@@ -170,11 +170,17 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(opened, [Directory('../../MP3_Files').absolute.uri.toFilePath()]);
+      await tester.tap(find.byKey(const ValueKey('audio-files-unassociated')));
+      await tester.pumpAndSettle();
+      expect(find.text('Aucun fichier pour ce filtre.'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('audio-files-all')));
+      await tester.pumpAndSettle();
       final remove = find.byTooltip('Enlever l’association').first;
       await tester.ensureVisible(remove);
       await tester.tap(remove);
       await tester.pumpAndSettle();
       expect(find.text('Enlever cette association ?'), findsOneWidget);
+      expect(find.textContaining('seront supprimés'), findsOneWidget);
       await tester.tap(find.text('Enlever'));
       await waitForCondition(tester, () => !model.busy, 'retrait du lien');
       await tester.pumpAndSettle();
@@ -199,6 +205,26 @@ void main() {
       expect(
         tester.widget<Text>(reason).style!.color,
         Theme.of(tester.element(reason)).colorScheme.primary,
+      );
+      for (final entry in {
+        'associated': 5,
+        'unassociated': 1,
+        'all': 6,
+      }.entries) {
+        await tester.tap(find.byKey(ValueKey('audio-files-${entry.key}')));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<ListView>(
+                find.byKey(const ValueKey('scan-associations-list')),
+              )
+              .semanticChildCount,
+          entry.value,
+        );
+      }
+      expect(
+        tester.widget<Card>(find.byType(Card).first).color,
+        EditorialColors(false).missing,
       );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -280,25 +306,24 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Paramètres'));
       await tester.pumpAndSettle();
-      final appearance = find.byKey(const ValueKey('appearance-filter'));
-      for (final dark in [false, true]) {
-        model.setTheme(dark);
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(appearance);
-        await tester.tap(appearance);
-        await tester.pumpAndSettle();
-        final lightItem = find.byKey(const ValueKey('appearance-filter-false'));
-        expect(
-          tester.getTopLeft(lightItem).dy,
-          greaterThanOrEqualTo(tester.getBottomLeft(appearance).dy),
+      expect(find.byType(FilterMenu<bool>), findsNothing);
+      for (final dark in [true, false]) {
+        final button = find.byKey(
+          ValueKey(dark ? 'appearance-dark' : 'appearance-light'),
         );
-        final menuTheme = Theme.of(tester.element(lightItem)).menuTheme;
-        expect(
-          menuTheme.style!.backgroundColor!.resolve({}),
-          EditorialColors(dark).controls,
-        );
-        await tester.tap(find.byKey(ValueKey('appearance-filter-$dark')));
+        await tester.ensureVisible(button);
+        await tester.tap(button);
         await tester.pumpAndSettle();
+        expect(model.dark, dark);
+        expect(model.session!.setting('theme'), dark ? 'dark' : 'light');
+        expect(
+          tester
+              .widget<OutlinedButton>(button)
+              .style!
+              .backgroundColor!
+              .resolve({}),
+          Theme.of(tester.element(button)).colorScheme.primary,
+        );
       }
       expect(find.text('Données utilisateur'), findsOneWidget);
       expect(find.text('Dossier contenant les MP3'), findsNothing);
