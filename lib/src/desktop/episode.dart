@@ -26,6 +26,7 @@ final class DesktopEpisode {
     required this.audioRef,
     required this.audioAvailable,
     required this.positionMs,
+    this.durationMs = 0,
     this.excerpt = '',
     this.markedExcerpt = '',
     this.matchedFields = const {},
@@ -40,7 +41,7 @@ final class DesktopEpisode {
       status;
   final String? date, audioRef;
   final bool favorite, audioAvailable;
-  final int positionMs;
+  final int positionMs, durationMs;
   final String excerpt, markedExcerpt;
   final Set<SearchField> matchedFields;
   final Map<SearchField, String> markedFields;

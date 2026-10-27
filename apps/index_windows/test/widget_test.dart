@@ -66,6 +66,25 @@ void main() {
         model.session!.listeningState(episode.id)!['listening_status'],
         'EN_COURS',
       );
+      await tester.tap(find.byKey(const ValueKey('player-episode-title')));
+      await tester.pumpAndSettle();
+      expect(model.selected!.id, episode.id);
+      expect(find.text('En cours (4 %)'), findsOneWidget);
+      Focus.of(tester.element(find.byKey(const ValueKey('episode-list'))))
+          .requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(model.playback.state.position, 15000);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      expect(model.playback.state.position, 5000);
+      await tester.tap(find.text('En cours (4 %)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Marquer comme écouté ?'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(model.playingEpisode!.status, 'EN_COURS');
       tester.view.physicalSize = const Size(390, 844);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

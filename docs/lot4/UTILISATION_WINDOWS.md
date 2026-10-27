@@ -163,7 +163,7 @@ filtre. Si aucun fichier ne correspond, un message le signale.
 Écouter charge l’épisode de la fiche. Le lecteur du bas conserve son propre épisode
 lorsque vous consultez une autre fiche. Il affiche son titre et sa date, la position
 et la durée, les commandes lecture/pause/arrêt, précédent/suivant, aléatoire et volume.
-Relâcher le curseur applique le déplacement. Arrêt conserve la position pour reprise.
+Relâcher le curseur applique le déplacement. Arrêt remet la position à zéro et le statut à Non écouté ; le favori est conservé. Pause et fermeture conservent la reprise.
 Sans MP3 disponible, les commandes de lancement restent désactivées.
 
 La position est sauvegardée toutes les cinq secondes et aux transitions. Le passage
@@ -172,3 +172,26 @@ l’épisode Écouté. La reprise à la dernière position peut être désactiv�
 Une erreur d’audio ou de stockage est affichée ; une sauvegarde défaillante bloque
 la fermeture avec les mêmes possibilités Réessayer/Annuler. La lecture Windows
 peut continuer quand la fenêtre est réduite ; Android met en pause en arrière-plan.
+
+
+## Version bêta 0.5.01 et commandes du lecteur
+
+Le nom du ZIP et de l’artefact indique la version, par exemple
+`IndeX_0.5.01_windows_x64_portable.zip`. Le dernier nombre augmente à chaque
+construction distribuable ; télécharger l’artefact du run réussi le plus récent.
+
+- Survoler la barre de progression affiche le temps ciblé. Relâcher le clic
+  applique le déplacement, sans retour visuel intermédiaire à l’ancienne position.
+- Flèches gauche/droite : reculer/avancer de 10 secondes (hors saisie de texte).
+- Cliquer le titre dans le lecteur ouvre la fiche de l’épisode réellement lu.
+- Le bouton En cours affiche le pourcentage ; le fond de la ligne se remplit
+  progressivement avec la couleur des épisodes écoutés. La durée doit être connue.
+- Le changement manuel en Écouté exige une confirmation, arrête cet épisode et
+  remet sa position à zéro. Le statut Écouté masque le pourcentage.
+- Lecture automatique suivante est activée par défaut. Elle suit la liste affichée,
+  saute les MP3 indisponibles et s’arrête au dernier épisode disponible.
+- Lecture aléatoire est désactivée par défaut. L’activer lance immédiatement un
+  autre épisode disponible de la liste, puis en choisit un autre à chaque fin,
+  même si la lecture suivante dans l’ordre est désactivée. La désactiver ne coupe
+  pas la piste en cours. Avec un seul MP3 disponible, il n’est pas relancé en boucle.
+  Ces deux modes sont conservés localement entre les ouvertures.

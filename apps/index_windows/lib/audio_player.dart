@@ -111,6 +111,8 @@ final class Playback extends ChangeNotifier {
   final AudioPort port;
   final Checkpoint save;
   final bool autoPoll;
+  Future<void> Function()? onEnded;
+  bool _endedHandled = false;
   String? episodeId, reference;
   AudioSnapshot state = const AudioSnapshot(0, 0, false);
   ListeningGuard guard = ListeningGuard();
@@ -157,6 +159,7 @@ final class Playback extends ChangeNotifier {
     episodeId = id;
     reference = ref;
     guard = ListeningGuard();
+    _endedHandled = false;
     var initial = await port.snapshot();
     final position = resume.clamp(
       0,
@@ -222,7 +225,25 @@ final class Playback extends ChangeNotifier {
       _polling = false;
       if (!_closed) notifyListeners();
     }
+    if (!_closed && error.isEmpty && state.ended && !_endedHandled) {
+      _endedHandled = true;
+      await onEnded?.call();
+    }
   }
+
+  /// Arrêt demandé par l’utilisateur, distinct de la pause de sauvegarde.
+  Future<void> rewind() => _command(() async {
+    if (episodeId == null) return;
+    await _waitPoll();
+    await port.pause();
+    await port.seek(0);
+    _timer?.cancel();
+    _timer = null;
+    state = AudioSnapshot(0, state.duration, false);
+    guard = ListeningGuard()..discontinuity(0);
+    _endedHandled = false;
+    flush('stopped');
+  });
 
   Future<void> toggle() => _command(() async {
     if (episodeId == null) return;
@@ -263,6 +284,7 @@ final class Playback extends ChangeNotifier {
     if (playing) await port.play();
     state = AudioSnapshot(target, state.duration, playing);
     guard.discontinuity(target);
+    _endedHandled = false;
     flush(playing ? 'playing' : 'paused');
   });
   Future<void> setVolume(double value) => _command(() async {

@@ -110,3 +110,13 @@
   Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
   Mise en pause/sauvegarde en arrière-plan Android, SAF et droits persistants.
   Ne pas annoncer une recette physique Android sans appareil réel.
+
+- Décision du 28 octobre 2026 : version publique `0.5.01` au premier nouveau build.
+  Premier nombre : 0 bêta / 1 finale, second : majeur (5), dernier : mineur sur
+  au moins deux chiffres, incrémenté à chaque build distribuable. Ne jamais changer
+  le majeur ni passer en finale sans ordre explicite. Voir tools/versioning/README.md.
+  Arrêt utilisateur remet position/statut à zéro ; pause/fermeture conservent la reprise.
+  Changement manuel en Écouté confirmé, position remise à zéro. Pourcentage en cours
+  et remplissage dynamique de la ligne ; flèches gauche/droite ±10 s, titre lecteur
+  cliquable. Auto-suivant actif par défaut ; aléatoire inactif par défaut, enchaînant
+  au hasard lorsqu’activé. Ordre et candidats de la liste affichée, MP3 disponibles.

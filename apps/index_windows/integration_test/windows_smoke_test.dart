@@ -75,7 +75,11 @@ void main() {
         model.search('');
         final episode = model.catalog.first;
         model.favorite(episode);
-        model.listened(model.catalog.firstWhere((e) => e.id == episode.id));
+        await tester.runAsync(
+          () => model.listened(
+            model.catalog.firstWhere((e) => e.id == episode.id),
+          ),
+        );
         const fixture = String.fromEnvironment('INDEX_TEST_MP3_DIR');
         expect(fixture, isNotEmpty);
         await tester.runAsync(() => model.scan(fixture));

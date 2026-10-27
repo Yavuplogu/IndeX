@@ -9,6 +9,7 @@ try {
   $env:CI = 'true'
   $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'
   $env:ANALYZER_STATE_LOCATION_OVERRIDE = Join-Path $projectDir '.dart_tool/analyzer-state'
+  Run-Checked python @('-m','unittest','discover','-s','tools/versioning','-p','test_*.py')
   Run-Checked dart @('pub','get','--enforce-lockfile')
   Run-Checked dart @('format','--output=none','--set-exit-if-changed','lib','test','bin')
   Run-Checked dart @('analyze','--fatal-infos')

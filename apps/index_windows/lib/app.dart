@@ -615,7 +615,6 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   final search = TextEditingController();
   Timer? debounce;
-  double? seekPreview;
   final listFocus = FocusNode(debugLabel: 'Liste des épisodes');
   final listScroll = ScrollController();
   KeyEventResult navigateList(FocusNode node, KeyEvent event) {
@@ -667,121 +666,139 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   Widget build(BuildContext context) {
     final c = EditorialColors(m.dark);
-    return Column(
-      children: [
-        if (m.mp3Path.isEmpty || m.audioState != AudioFolderState.ready)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-            color: c.background,
-            child: Text(
-              m.folderLabel,
-              style: TextStyle(
-                fontSize: 12,
-                color: m.audioState == AudioFolderState.ready
-                    ? c.muted
-                    : c.accent,
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+          return KeyEventResult.ignored;
+        final focus = FocusManager.instance.primaryFocus?.context;
+        if (focus?.findAncestorWidgetOfExactType<EditableText>() != null)
+          return KeyEventResult.ignored;
+        final delta = event.logicalKey == LogicalKeyboardKey.arrowLeft
+            ? -10000
+            : event.logicalKey == LogicalKeyboardKey.arrowRight
+            ? 10000
+            : 0;
+        if (delta == 0 || m.playback.episodeId == null || m.playback.busy)
+          return KeyEventResult.ignored;
+        unawaited(m.playback.seek(m.playback.state.position + delta));
+        return KeyEventResult.handled;
+      },
+      child: Column(
+        children: [
+          if (m.mp3Path.isEmpty || m.audioState != AudioFolderState.ready)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+              color: c.background,
+              child: Text(
+                m.folderLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: m.audioState == AudioFolderState.ready
+                      ? c.muted
+                      : c.accent,
+                ),
               ),
             ),
-          ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, size) {
-              final compact = size.maxWidth < 950;
-              return Row(
-                children: [
-                  if (!compact)
-                    Container(
-                      width: 172,
-                      decoration: BoxDecoration(
-                        border: Border(right: BorderSide(color: c.line)),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, size) {
+                final compact = size.maxWidth < 950;
+                return Row(
+                  children: [
+                    if (!compact)
+                      Container(
+                        width: 172,
+                        decoration: BoxDecoration(
+                          border: Border(right: BorderSide(color: c.line)),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Brand(),
+                            const SizedBox(height: 20),
+                            _nav(
+                              'Bibliothèque',
+                              Icons.library_books,
+                              !m.filesView && !m.favoritesOnly,
+                              () => section(false, false),
+                            ),
+                            _nav(
+                              'Favoris',
+                              Icons.star_border,
+                              !m.filesView && m.favoritesOnly,
+                              () => section(false, true),
+                            ),
+                            _nav(
+                              'Fichiers',
+                              Icons.folder_outlined,
+                              m.filesView,
+                              () => section(true, false),
+                            ),
+                            _nav(
+                              'Paramètres',
+                              Icons.settings_outlined,
+                              false,
+                              () => unawaited(settings()),
+                            ),
+                          ],
+                        ),
                       ),
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Brand(),
-                          const SizedBox(height: 20),
-                          _nav(
-                            'Bibliothèque',
-                            Icons.library_books,
-                            !m.filesView && !m.favoritesOnly,
-                            () => section(false, false),
-                          ),
-                          _nav(
-                            'Favoris',
-                            Icons.star_border,
-                            !m.filesView && m.favoritesOnly,
-                            () => section(false, true),
-                          ),
-                          _nav(
-                            'Fichiers',
-                            Icons.folder_outlined,
-                            m.filesView,
-                            () => section(true, false),
-                          ),
-                          _nav(
-                            'Paramètres',
-                            Icons.settings_outlined,
-                            false,
-                            () => unawaited(settings()),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Expanded(
-                    child: m.filesView
-                        ? ScanPage(
-                            model: m,
-                            pickDirectory: widget.pickDirectory,
-                          )
-                        : compact
-                        ? list(c, true)
-                        : Row(
-                            children: [
-                              Expanded(flex: 11, child: list(c, false)),
-                              VerticalDivider(width: 1, color: c.line),
-                              Expanded(
-                                flex: 10,
-                                child: EpisodeDetail(
-                                  model: m,
-                                  onRelated: related,
-                                  pickDirectory: widget.pickDirectory,
+                    Expanded(
+                      child: m.filesView
+                          ? ScanPage(
+                              model: m,
+                              pickDirectory: widget.pickDirectory,
+                            )
+                          : compact
+                          ? list(c, true)
+                          : Row(
+                              children: [
+                                Expanded(flex: 11, child: list(c, false)),
+                                VerticalDivider(width: 1, color: c.line),
+                                Expanded(
+                                  flex: 10,
+                                  child: EpisodeDetail(
+                                    model: m,
+                                    onRelated: related,
+                                    pickDirectory: widget.pickDirectory,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ],
-              );
-            },
+                              ],
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-        ),
-        _futurePlayer(c),
-        if (MediaQuery.sizeOf(context).width < 950)
-          Wrap(
-            alignment: WrapAlignment.spaceAround,
-            spacing: 12,
-            children: [
-              TextButton(
-                onPressed: () => section(false, false),
-                child: const Text('Bibliothèque'),
-              ),
-              TextButton(
-                onPressed: () => section(false, true),
-                child: const Text('Favoris'),
-              ),
-              TextButton(
-                onPressed: () => section(true, false),
-                child: const Text('Fichiers'),
-              ),
-              TextButton(
-                onPressed: () => unawaited(settings()),
-                child: const Text('Paramètres'),
-              ),
-            ],
-          ),
-      ],
+          _futurePlayer(c),
+          if (MediaQuery.sizeOf(context).width < 950)
+            Wrap(
+              alignment: WrapAlignment.spaceAround,
+              spacing: 12,
+              children: [
+                TextButton(
+                  onPressed: () => section(false, false),
+                  child: const Text('Bibliothèque'),
+                ),
+                TextButton(
+                  onPressed: () => section(false, true),
+                  child: const Text('Favoris'),
+                ),
+                TextButton(
+                  onPressed: () => section(true, false),
+                  child: const Text('Fichiers'),
+                ),
+                TextButton(
+                  onPressed: () => unawaited(settings()),
+                  child: const Text('Paramètres'),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 
@@ -1023,6 +1040,17 @@ class _LibraryPageState extends State<LibraryPage> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
+                            gradient: !heard && m.progress(e) > 0
+                                ? LinearGradient(
+                                    colors: [
+                                      c.heard,
+                                      c.heard,
+                                      Colors.transparent,
+                                      Colors.transparent,
+                                    ],
+                                    stops: [0, m.progress(e), m.progress(e), 1],
+                                  )
+                                : null,
                             border: Border(
                               top: BorderSide(color: c.line),
                               left: BorderSide(
@@ -1151,16 +1179,41 @@ class _LibraryPageState extends State<LibraryPage> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  episode == null
-                      ? 'Aucun épisode en lecture'
-                      : '${episode.title} · ${dateLabel(episode.date)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                child: InkWell(
+                  key: const ValueKey('player-episode-title'),
+                  onTap: episode == null ? null : () => related(episode),
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: episode?.title ?? 'Aucun épisode en lecture',
+                          style: const TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (episode != null)
+                          TextSpan(
+                            text: ' · ${dateLabel(episode.date)}',
+                            style: TextStyle(
+                              fontFamily: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.fontFamily,
+                              fontSize: 11,
+                              fontWeight: FontWeight.normal,
+                              color: m.audioKnown && !episode.audioAvailable
+                                  ? c.missingInk
+                                  : episode.status == 'ECOUTE'
+                                  ? c.heardInk
+                                  : c.ink,
+                            ),
+                          ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -1172,7 +1225,7 @@ class _LibraryPageState extends State<LibraryPage> {
               IconButton(
                 tooltip: 'Arrêt',
                 onPressed: enabled && episode != null
-                    ? () => unawaited(p.stop())
+                    ? () => unawaited(m.stopAudio())
                     : null,
                 icon: const Icon(Icons.stop),
               ),
@@ -1188,10 +1241,25 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
               IconButton(
                 tooltip: 'Lecture aléatoire',
+                isSelected: m.shuffle,
+                style: IconButton.styleFrom(
+                  backgroundColor: m.shuffle ? c.controls : Colors.transparent,
+                  foregroundColor: m.shuffle ? c.accent : c.ink,
+                ),
                 onPressed: canChoose
-                    ? () => unawaited(m.nextAudio(0, random: true))
+                    ? () => unawaited(m.toggleShuffle())
                     : null,
                 icon: const Icon(Icons.shuffle),
+              ),
+              IconButton(
+                tooltip: 'Lecture automatique suivante',
+                isSelected: m.autoNext,
+                style: IconButton.styleFrom(
+                  backgroundColor: m.autoNext ? c.controls : Colors.transparent,
+                  foregroundColor: m.autoNext ? c.accent : c.ink,
+                ),
+                onPressed: enabled ? m.toggleAutoNext : null,
+                icon: const Icon(Icons.playlist_play),
               ),
             ],
           ),
@@ -1202,22 +1270,10 @@ class _LibraryPageState extends State<LibraryPage> {
                 style: const TextStyle(fontSize: 11),
               ),
               Expanded(
-                child: Slider(
-                  value: (seekPreview ?? p.state.position.toDouble())
-                      .clamp(0, p.state.duration > 0 ? p.state.duration : 1)
-                      .toDouble(),
-                  max: p.state.duration > 0 ? p.state.duration.toDouble() : 1,
-                  onChanged: enabled && episode != null && p.state.duration > 0
-                      ? (v) => setState(() => seekPreview = v)
-                      : null,
-                  onChangeEnd:
-                      enabled && episode != null && p.state.duration > 0
-                      ? (v) {
-                          setState(() => seekPreview = null);
-                          unawaited(p.seek(v.round()));
-                        }
-                      : null,
-                  semanticFormatterCallback: (v) => playbackTime(v.round()),
+                child: PlayerSeekBar(
+                  key: ValueKey('player-seek-${p.episodeId}'),
+                  playback: p,
+                  enabled: enabled && episode != null && p.state.duration > 0,
                 ),
               ),
               const Icon(Icons.volume_up, size: 18),
@@ -1329,9 +1385,32 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
           ) ??
           false;
       if (!reset) return;
+    } else {
+      final confirmed =
+          await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Marquer comme écouté ?'),
+              content: const Text(
+                'La lecture de cet épisode sera arrêtée et sa progression remise à zéro. Le favori est conservé.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Confirmer'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!confirmed) return;
     }
     try {
-      m.listened(e, reset: reset);
+      await m.listened(e, reset: reset);
     } catch (error) {
       m.error = error.toString();
       m.changed();
@@ -1403,7 +1482,11 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                             OutlinedButton.icon(
                               onPressed: () => unawaited(toggle(e)),
                               icon: Icon(statusIcon(e.status), size: 18),
-                              label: Text('${statusLabel(e.status)} ↻'),
+                              label: Text(
+                                e.status == 'EN_COURS'
+                                    ? 'En cours (${(m.progress(e) * 100).floor()} %)'
+                                    : statusLabel(e.status),
+                              ),
                             ),
                             FilledButton.icon(
                               onPressed:
@@ -2332,6 +2415,9 @@ class ScanPage extends StatelessWidget {
                 }.entries)
                   ChoiceChip(
                     key: ValueKey('audio-files-${entry.key.name}'),
+                    backgroundColor: c.controls,
+                    selectedColor: c.controls,
+                    surfaceTintColor: Colors.transparent,
                     label: Text(entry.value),
                     selected: model.audioFileFilter == entry.key,
                     onSelected: (_) {
@@ -2544,5 +2630,103 @@ class _ScanDiagnosticsState extends State<ScanDiagnostics> {
         },
       ),
     ),
+  );
+}
+
+/// La cible reste affichée jusqu'à la confirmation du seek natif.
+class PlayerSeekBar extends StatefulWidget {
+  const PlayerSeekBar({
+    super.key,
+    required this.playback,
+    required this.enabled,
+  });
+  final Playback playback;
+  final bool enabled;
+  @override
+  State<PlayerSeekBar> createState() => _PlayerSeekBarState();
+}
+
+class _PlayerSeekBarState extends State<PlayerSeekBar> {
+  double? preview, hover;
+  int? hoverTime;
+  bool committing = false;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final p = widget.playback;
+      final duration = p.state.duration > 0 ? p.state.duration.toDouble() : 1.0;
+      return MouseRegion(
+        onExit: (_) => setState(() {
+          hover = null;
+          hoverTime = null;
+        }),
+        onHover: (event) {
+          if (p.state.duration <= 0) return;
+          final fraction =
+              ((event.localPosition.dx - 12) /
+                      (constraints.maxWidth - 24).clamp(1, double.infinity))
+                  .clamp(0.0, 1.0);
+          setState(() {
+            hover = event.localPosition.dx;
+            hoverTime = (fraction * duration).round();
+          });
+        },
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Slider(
+              key: const ValueKey('player-progress'),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              value: (preview ?? p.state.position.toDouble())
+                  .clamp(0, duration)
+                  .toDouble(),
+              max: duration,
+              onChanged: widget.enabled && !committing
+                  ? (v) => setState(() => preview = v)
+                  : null,
+              onChangeEnd: widget.enabled && !committing
+                  ? (v) async {
+                      setState(() {
+                        preview = v;
+                        committing = true;
+                      });
+                      await p.seek(v.round());
+                      if (mounted)
+                        setState(() {
+                          preview = null;
+                          committing = false;
+                        });
+                    }
+                  : null,
+              semanticFormatterCallback: (v) => playbackTime(v.round()),
+            ),
+            if (hover != null && hoverTime != null)
+              Positioned(
+                bottom: 28,
+                left: (hover! - 28).clamp(
+                  0.0,
+                  (constraints.maxWidth - 56).clamp(0.0, double.infinity),
+                ),
+                child: IgnorePointer(
+                  child: Material(
+                    elevation: 3,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        playbackTime(hoverTime!),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    },
   );
 }

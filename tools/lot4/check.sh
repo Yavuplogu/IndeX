@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 project_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+python3 -m unittest discover -s "$project_dir/tools/versioning" -p 'test_*.py'
 bash "$project_dir/tools/lot3/check.sh"
 python3 "$project_dir/tools/lot4/prepare_assets.py"
 cd "$project_dir/apps/index_windows"

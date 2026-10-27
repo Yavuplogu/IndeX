@@ -31,6 +31,36 @@ des lots ; il ne retire pas Android des cibles finales.
   une recette sur appareil réel, incluant droits persistants, interruptions audio
   et transferts JSON dans les deux sens ; aucun calendrier n’est fixé ici.
 
+## Avenant du 28 octobre 2026 — versions et commandes de lecture Windows
+
+Version publique initiale `0.5.01` : état 0 (bêta) / 1 (finale), majeur 5,
+mineur sur au moins deux chiffres. Chaque nouveau build de distribution réserve
+le mineur suivant, y compris après un échec ; majeur et passage en finale
+uniquement sur ordre explicite. Le numéro apparaît dans l’archive et l’artefact.
+Voir `tools/versioning/README.md` pour le compteur et la forme SemVer interne.
+
+Les décisions ci-dessous priment sur les comportements antérieurs du lecteur :
+
+- Arrêt utilisateur : position zéro et statut Non écouté, favori conservé.
+  Pause et fermeture conservent la reprise. Passage manuel en Écouté avec
+  confirmation, arrêt et position zéro de cet épisode ; pourcentage masqué.
+- En cours : pourcentage dans le bouton, sans flèche tournante. Fond de la ligne
+  rempli de gauche à droite selon position/durée, uniquement pour une écoute
+  commencée ; durée inconnue non estimée, progression connue conservée localement.
+- Survol du curseur : horodatage ciblé ; déplacement sans retour visuel à l’ancienne
+  position lors du relâchement. Flèches gauche/droite ±10 secondes hors saisie.
+  Titre du lecteur cliquable vers sa fiche, date de même police/couleur que la liste.
+- Auto-suivant actif par défaut : épisodes disponibles dans l’ordre de la liste
+  affichée, avec ses filtres/tris, arrêt au dernier. Aléatoire inactif par défaut :
+  activation = lancement immédiat d’une autre piste disponible, puis enchaînement
+  aléatoire à chaque fin, prioritaire sur auto-suivant. Désactivation sans coupure
+  de la piste en cours ; un seul candidat n’est pas relancé en boucle. Modes
+  conservés localement. Aucun enchaînement sur arrêt manuel ou pause.
+- Filtres Fichiers et associations : fond identique aux boutons du menu latéral.
+
+Ces règles de suivi et de lecture font partie des fonctionnalités essentielles
+à conserver lors de la reprise Android, qui demeure en pause.
+
 ## 1. Vision et objectifs
 
 Créer avec **OpenAI Codex** une application nommée **IndeX** à interface graphique (GUI) permettant de parcourir, rechercher, consulter et écouter une bibliothèque locale de plusieurs centaines d'épisodes d'un même podcast. Chaque épisode dispose d'un MP3 (environ 20 à 40 minutes) et d'une fiche TXT contenant des métadonnées documentaires.

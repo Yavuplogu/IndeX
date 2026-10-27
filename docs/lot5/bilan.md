@@ -48,7 +48,7 @@ sur Windows et sur téléphone. Références API :
 La fiche propose Écouter. Le lecteur compact affiche titre + date de l’épisode
 réellement chargé, lecture/pause, arrêt, précédent/suivant, choix aléatoire parmi
 les MP3 associés disponibles, position/durée, déplacement et volume. La navigation
-entre fiches ne change pas la lecture. L’arrêt sauvegarde et conserve la position.
+entre fiches ne change pas la lecture. Depuis la révision du 28 octobre, l’arrêt utilisateur remet le suivi à zéro ; pause et fermeture conservent la position.
 La reprise utilise l’identité métier et peut être désactivée dans Paramètres.
 Un épisode arrivé au terme repart du début pour une nouvelle lecture.
 
@@ -201,3 +201,41 @@ Les logs valident avant cet échec 187 tests Dart avec un test ignoré sur Windo
 nouveau paquet Windows n’a été produit. Contrôle local du nouveau changement :
 `git diff --check` sans erreur ; compilation et écoute Windows restent à refaire
 par la CI puis sur la machine de l’utilisateur. Aucun changement Dart ou Android.
+
+
+## Révision Windows du 28 octobre 2026 — version 0.5.01 et lecteur
+
+Les décisions du 28 octobre priment sur le comportement initial du lot : Arrêt
+utilisateur efface la progression et remet le statut à Non écouté (favori conservé).
+La pause et la fermeture gardent leurs checkpoints. Le passage manuel en Écouté
+est confirmé, arrête la piste concernée et remet sa position à zéro. Un nouveau
+ListeningGuard empêche l’ancien suivi en mémoire de rétablir l’état précédent.
+
+Fiche : pourcentage de progression en cours sans flèche tournante. Liste : fond
+proportionnel à la position/durée pour une écoute commencée, couleur des épisodes
+écoutés, actualisé depuis le lecteur et repris depuis SQLite après redémarrage.
+Sans durée connue, pas de pourcentage estimé ni de remplissage. Le titre du lecteur
+ouvre sa fiche ; date de même police/couleur que la liste, survol du curseur avec
+horodatage, cible conservée pendant le seek natif et raccourcis ±10 secondes.
+Les filtres de fichiers reprennent le fond des boutons latéraux.
+
+Les modes auto-suivant (défaut actif) et aléatoire (défaut inactif) sont persistés.
+L’aléatoire lance immédiatement une autre piste et enchaîne au hasard à chaque fin ;
+il prime sur auto-suivant. Hors aléatoire, auto-suivant respecte la liste affichée,
+les tris/filtres et les MP3 disponibles, sans boucler au dernier. Une fin est traitée
+une seule fois. Ni une pause ni un arrêt manuel ne provoquent d’enchaînement.
+Le cœur de suivi et ces modes restent communs pour le futur portage Android.
+
+Version publique et archives : voir `tools/versioning/README.md`. Le compteur de
+build est distinct des migrations SQLite et des versions de catalogue. Android
+reste en pause, aucun nouveau build Android n’est demandé par cette révision.
+
+Contrôles de cette révision : `bash tools/lot4/check.sh` — 188 tests Dart et
+26 tests Flutter réussis, analyses sans anomalie. Après les derniers ajustements,
+12 tests PortableSession, les deux nouveaux tests des modes/seek et le test UI
+lecteur ciblé réussissent ; analyse Flutter sans anomalie, formatage conforme.
+Deux tests Python du compteur passent (compteur local et dépôt Git temporaire,
+réservation CI persistante sans modification de main). Scripts PowerShell validés
+par leur analyseur syntaxique et script Bash par `bash -n`. Le lockfile Flutter
+n’a changé que pour la version du package local index_core, sans dépendance ajoutée.
+Aucun build/essai natif Windows exécuté ici, ni nouvelle qualification Android.

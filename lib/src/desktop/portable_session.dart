@@ -210,7 +210,7 @@ final class PortableSession {
           .add(Map<String, Object?>.from(row));
     }
     final rows = store.database.select(
-      '''SELECT e.*,u.position_ms,u.listening_status,u.is_favorite,
+      '''SELECT e.*,u.position_ms,u.duration_ms,u.listening_status,u.is_favorite,
       l.audio_ref,l.available,l.manual FROM episodes e LEFT JOIN user_episode_state u ON u.episode_id=e.id
       LEFT JOIN local_audio_links l ON l.episode_id=e.id ORDER BY e.broadcast_date DESC,e.id''',
     );
@@ -236,6 +236,7 @@ final class PortableSession {
                 (row['manual'] == 1 ||
                     (row['audio_ref'] as String).startsWith(scope)),
             positionMs: row['position_ms'] as int? ?? 0,
+            durationMs: row['duration_ms'] as int? ?? 0,
             excerpt: hits[row['id']]?.excerpt ?? '',
             markedExcerpt: hits[row['id']]?.markedExcerpt ?? '',
             matchedFields: hits[row['id']]?.matchedFields ?? const {},
@@ -271,10 +272,9 @@ final class PortableSession {
         );
       if (listened != null)
         store.database.execute(
-          'UPDATE user_episode_state SET listening_status=?,position_ms=CASE WHEN ?=0 THEN 0 ELSE position_ms END,completed_at=CASE WHEN ?=1 THEN COALESCE(completed_at,?) ELSE NULL END,updated_at=? WHERE episode_id=?',
+          'UPDATE user_episode_state SET listening_status=?,position_ms=0,playback_status=\'stopped\',completed_at=CASE WHEN ?=1 THEN COALESCE(completed_at,?) ELSE NULL END,updated_at=? WHERE episode_id=?',
           [
             listened ? 'ECOUTE' : 'NON_ECOUTE',
-            listened ? 1 : 0,
             listened ? 1 : 0,
             DateTime.now().toUtc().toIso8601String(),
             DateTime.now().toUtc().toIso8601String(),

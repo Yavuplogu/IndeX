@@ -24,7 +24,7 @@ et l'archive portable, utiliser PowerShell 7 depuis la racine :
 ./tools/lot4/test_runtime_windows.ps1
 ./tools/lot4/check.ps1
 ./tools/lot4/package_windows.ps1
-./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.4.0_windows_x64_portable.zip
+./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.5.01_windows_x64_portable.zip
 ```
 
 L'archive comprend les DLL Flutter/plugins/SQLite et le runtime C++ app-local,
@@ -68,3 +68,6 @@ sous `apps/index_windows/build/app/outputs/flutter-apk/app-debug.apk` et est ign
 par Git. Le workflow Android conserve cet APK comme artefact ; la signature de
 production et une publication en magasin ne font pas partie de cette construction.
 Recette audio réelle sur Windows avec sortie audio : `tools/lot5/check_windows_audio.ps1`.
+
+Le numéro de l’archive varie à chaque build. Remplacer `0.5.01` dans l’exemple
+par la version produite. Voir [la politique de version](../../tools/versioning/README.md).

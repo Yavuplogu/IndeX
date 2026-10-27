@@ -82,7 +82,8 @@ final class AppModel extends ChangeNotifier {
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
     playback = Playback(audioPort, _saveAudio, autoPoll: pollAudio)
-      ..addListener(changed);
+      ..addListener(changed)
+      ..onEnded = _audioEnded;
   }
   final bool android;
   static const androidChannel = MethodChannel('index/android');
@@ -138,17 +139,69 @@ final class AppModel extends ChangeNotifier {
     if (episode != null) await playEpisode(episode);
   }
 
-  Future<void> nextAudio(int delta, {bool random = false}) async {
-    final queue = catalog.where((e) => e.audioAvailable).toList();
+  bool get autoNext => session?.setting('auto_next') != 'false';
+  bool get shuffle => session?.setting('shuffle') == 'true';
+  Future<void> toggleShuffle() async {
+    final enabled = !shuffle;
+    session?.setSetting('shuffle', '$enabled');
+    changed();
+    if (enabled) await nextAudio(1, random: true);
+  }
+
+  void toggleAutoNext() {
+    session?.setSetting('auto_next', '${!autoNext}');
+    changed();
+  }
+
+  Future<void> _audioEnded() async {
+    if (_disposed || busy) return;
+    if (shuffle) {
+      await nextAudio(1, random: true, automatic: true);
+    } else if (autoNext) {
+      await nextAudio(1, automatic: true);
+    }
+  }
+
+  Future<void> nextAudio(
+    int delta, {
+    bool random = false,
+    bool automatic = false,
+  }) async {
+    // Ordre de la liste courante, avec les mêmes tris et filtres.
+    final queue = visible.where((e) => e.audioAvailable).toList();
     if (queue.isEmpty) return;
     final current = queue.indexWhere((e) => e.id == playback.episodeId);
     final alternatives = queue
         .where((e) => e.id != playback.episodeId)
         .toList();
+    if (automatic && !random && current == queue.length - 1) return;
+    if (random && alternatives.isEmpty && current >= 0) return;
     final episode = random && alternatives.isNotEmpty
         ? alternatives[Random().nextInt(alternatives.length)]
         : queue[current < 0 ? 0 : (current + delta) % queue.length];
     await playEpisode(episode);
+  }
+
+  double progress(DesktopEpisode e) {
+    final live = playback.episodeId == e.id;
+    final duration = live ? playback.state.duration : e.durationMs;
+    final started = live
+        ? playback.guard.progressed || e.status == 'EN_COURS'
+        : e.status == 'EN_COURS';
+    if (!started || duration <= 0) return 0;
+    return ((live ? playback.state.position : e.positionMs) / duration).clamp(
+      0.0,
+      1.0,
+    );
+  }
+
+  Future<void> stopAudio() async {
+    final id = playback.episodeId;
+    if (id == null || playback.busy) return;
+    await playback.rewind();
+    if (playback.error.isNotEmpty) return;
+    session!.listened(id, false, resetConfirmed: true);
+    reload();
   }
 
   final Future<void> Function(String) folderOpener;
@@ -575,19 +628,15 @@ final class AppModel extends ChangeNotifier {
     reload();
   }
 
-  void listened(DesktopEpisode e, {bool reset = false}) {
-    if (playback.episodeId == e.id && reset) {
-      unawaited(
-        runWork('Remise à zéro du suivi…', () async {
-          await playback.unload();
-          session!.listened(e.id, false, resetConfirmed: true);
-          reload();
-        }),
-      );
-    } else {
+  Future<void> listened(DesktopEpisode e, {bool reset = false}) async {
+    await runWork('Mise à jour du suivi…', () async {
+      if (playback.episodeId == e.id) {
+        await playback.rewind();
+        if (playback.error.isNotEmpty) throw StateError(playback.error);
+      }
       session!.listened(e.id, e.status != 'ECOUTE', resetConfirmed: reset);
       reload();
-    }
+    });
   }
 
   Future<void> manual(String id, String reference, String name) =>

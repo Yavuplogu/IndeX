@@ -1,5 +1,8 @@
 # IndeX
 
+Version de départ **0.5.01** (bêta) ; numéro mineur réservé automatiquement à
+chaque construction Windows distribuable. [Politique et compteur](tools/versioning/README.md).
+
 [Lot 5 : architecture, contrôles et recette native restante](docs/lot5/bilan.md).
 
 Projet d'application documentaire et de lecture locale pour Windows et Android,
