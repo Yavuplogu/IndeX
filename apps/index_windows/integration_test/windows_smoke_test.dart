@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
+import 'package:index_windows/just_audio_port.dart';
 import 'package:index_windows/window_port.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -48,6 +49,7 @@ void main() {
       final portable = Directory('${root.path}/app')..createSync(),
           data = Directory('${root.path}/donnees')..createSync();
       var model = AppModel(portableDirectory: portable);
+      expect(model.playback.port, isA<JustAudioPort>());
       try {
         // Vérifie que le runner expose bien le canal natif de dossiers.
         await tester.runAsync(() async {
@@ -106,7 +108,13 @@ void main() {
           // Aucun faux AudioPort ici : un pointeur MCI invalide fait echouer
           // ce processus, meme si les tests Dart avec doubles passent.
           await tester.runAsync(model.playback.stop);
+          final seekWatch = Stopwatch()..start();
           await tester.runAsync(() => model.playback.seek(500));
+          seekWatch.stop();
+          // Mesure de l'acquittement de commande, pas de la reprise audible.
+          debugPrint(
+            'WinRT seek : ${seekWatch.elapsedMilliseconds} ms (commande)',
+          );
           expect(model.playback.error, isEmpty);
           expect(model.playback.state.playing, isFalse);
           await tester.runAsync(() => model.playback.setVolume(0.1));

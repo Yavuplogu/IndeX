@@ -61,6 +61,16 @@ Les décisions ci-dessous priment sur les comportements antérieurs du lecteur :
 Ces règles de suivi et de lecture font partie des fonctionnalités essentielles
 à conserver lors de la reprise Android, qui demeure en pause.
 
+### Moteur Windows retenu le 28 octobre 2026
+
+Sur autorisation explicite, remplacer MCI par `just_audio` 0.10.6 et
+`just_audio_windows` 0.2.3 (WinRT MediaPlayer), derrière AudioPort. Préserver
+suivi, reprise, modes de lecture et distribution portable. Aucun MP3 ni moteur
+FFmpeg/libmpv ajouté ; inventorier les dépendances et notices. Mesurer la latence
+sur MP3 réels sous Windows avant toute promesse de déplacement quasi instantané.
+Android reste en pause avec son moteur existant ; le portage futur garde la même
+interface et devra valider SAF et interruptions. Voir `docs/lot5/bilan.md`.
+
 ## 1. Vision et objectifs
 
 Créer avec **OpenAI Codex** une application nommée **IndeX** à interface graphique (GUI) permettant de parcourir, rechercher, consulter et écouter une bibliothèque locale de plusieurs centaines d'épisodes d'un même podcast. Chaque épisode dispose d'un MP3 (environ 20 à 40 minutes) et d'une fiche TXT contenant des métadonnées documentaires.

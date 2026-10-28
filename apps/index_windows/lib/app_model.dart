@@ -10,6 +10,7 @@ import 'package:index_core/index_core.dart';
 import 'package:index_core/index_desktop.dart';
 
 import 'audio_player.dart';
+import 'just_audio_port.dart';
 
 final class SeedData {
   const SeedData(this.bytes, this.sha256);
@@ -75,15 +76,20 @@ final class AppModel extends ChangeNotifier {
     this.seedLoader = bundledSeed,
     this.folderOpener = openNativeFolder,
     Directory? defaultDataDirectory,
-    AudioPort audioPort = const NativeAudioPort(),
+    AudioPort? audioPort,
     bool pollAudio = true,
     this.android = false,
   }) : defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
-    playback = Playback(audioPort, _saveAudio, autoPoll: pollAudio)
-      ..addListener(changed)
-      ..onEnded = _audioEnded;
+    playback =
+        Playback(
+            audioPort ?? (android ? const NativeAudioPort() : JustAudioPort()),
+            _saveAudio,
+            autoPoll: pollAudio,
+          )
+          ..addListener(changed)
+          ..onEnded = _audioEnded;
   }
   final bool android;
   static const androidChannel = MethodChannel('index/android');

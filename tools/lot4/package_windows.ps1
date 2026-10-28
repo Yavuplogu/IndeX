@@ -22,6 +22,7 @@ try {
   & flutter build windows --release "--build-name=$($version.build_name)" "--build-number=$($version.build_number)"
   if ($LASTEXITCODE -ne 0) { throw 'Build Windows échoué.' }
   $built = Join-Path $app 'build/windows/x64/runner/Release'
+  if (-not (Test-Path (Join-Path $built 'just_audio_windows_plugin.dll'))) { throw 'Plugin audio WinRT absent du bundle.' }
   $launcher = Join-Path $app 'build/windows/x64/launcher/Release/IndeX.exe'
   if (-not (Test-Path $launcher)) { throw 'Lanceur portable absent.' }
   $stage = Join-Path ([IO.Path]::GetTempPath()) ('index-package-' + [Guid]::NewGuid().ToString('N'))

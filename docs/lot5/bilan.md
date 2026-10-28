@@ -26,8 +26,9 @@ et Android ; son nom de package est conservé pour ne pas déplacer l’applicat
 Le coeur Dart reste indépendant de Flutter. Pas de renommage ni de transfert JSON
 réel dans ce lot (Lots 5 bis / 5 ter).
 
-Les candidats media_kit/libmpv/FFmpeg du Lot 0 sont remplacés par des adaptateurs
-système, derrière AudioPort :
+Décision initiale du 27 octobre (moteur Windows remplacé le 28 octobre, voir
+la révision WinRT en fin de document) : les candidats media_kit/libmpv/FFmpeg du
+Lot 0 étaient remplacés par des adaptateurs système derrière AudioPort :
 
 - Windows : MCI `mpegvideo`, temps en millisecondes, commandes structurées
   `mciSendCommandW`, chemins Unicode séparés des commandes ; bibliothèque système
@@ -262,3 +263,56 @@ canonique et réservation suivante 03, plus refus d’un compteur manquant.
 Le compteur réel est relu à 1 sans modification. `git diff --check` sans erreur.
 Aucun changement applicatif/Dart/Android ; la compilation et la recette audio
 Windows restent à refaire après push du correctif.
+
+
+## Révision du 28 octobre 2026 — remplacement de MCI par just_audio / WinRT
+
+L’utilisateur autorise `just_audio` **0.10.6** et `just_audio_windows` **0.2.3**.
+Windows utilise désormais `JustAudioPort`, créé paresseusement au premier fichier,
+avec WinRT MediaPlayer. Le canal MCI, ses fichiers C++, sa propriété de fenêtre et
+le lien winmm sont retirés ; Flutter enregistre le plugin Windows généré. Le
+package vérifie `just_audio_windows_plugin.dll` dans le bundle ; le lanceur racine
+et la distribution sans installateur restent identiques. Aucun MP3 embarqué.
+
+L’interface AudioPort et la base utilisateur sont conservées. `play()` lance sans
+attendre la fin de piste (le Future just_audio peut rester pendant toute l’écoute),
+les erreurs de lecture asynchrones sont conservées et remontées au prochain poll.
+`ProcessingState.completed` produit une fin explicite, avec `playing=false`, pour
+les modes auto-suivant/aléatoire. Le seek conserve la lecture active sans second
+redémarrage natif. Dispose libère le moteur et une prochaine ouverture le recrée.
+Après erreur décodeur, le contrôleur sauvegarde son dernier état connu et permet
+une nouvelle piste ou une fermeture ; une erreur SQLite reste bloquante.
+
+Seules les URI locales file sont acceptées sur cet adaptateur : pas d’URL distante,
+proxy/cache réseau, conversion ou modification des fichiers. Les titres, dates,
+liens et suivis existants sont inchangés, sans migration SQL supplémentaire.
+
+Android reste en pause et garde son adaptateur MediaPlayer/SAF actuel. Les
+packages apportent des implémentations transitives d’autres plateformes ; leur
+présence n’engage pas un portage. `path_provider_android` **2.2.23** est contraint
+explicitement dans la plage autorisée de path_provider : la résolution initiale
+2.3.1 ajoutait JNI et son plugin CMake Windows, inutiles pour IndeX Windows.
+Le pin évite cette nouvelle chaîne Java ; il devra être réévalué lors de la reprise
+Android. Les dépendances et leurs licences sont relevées dans
+`just-audio-dependances.json`, archives verrouillées par SHA256. MIT/BSD-3-Clause/
+Apache-2.0 pour les nouveaux packages ; notices copiées par le packaging existant.
+Ni libmpv ni FFmpeg ne sont ajoutés.
+
+Recette native restante : ouvrir des MP3 locaux avec espaces/accents et pistes
+longues/VBR, pause/reprise, ±10 secondes, seek lointain, volume, fin/auto-suivant,
+arrêt, fermeture et redémarrage. La cible `tools/lot5/check_windows_audio.ps1`
+utilise le nouvel adaptateur et affiche le temps d’acquittement du seek ; cette
+mesure ne représente pas à elle seule le délai jusqu’au retour audible du son.
+Comparer ce dernier au MCI observé et viser <200 ms sans le déclarer acquis.
+La compilation et l’écoute Windows ne sont pas exécutables sur cet hôte Linux.
+
+Contrôles du remplacement : `bash tools/lot4/check.sh` réussit — 188 tests Dart,
+29 tests Flutter (dont trois nouveaux avec le vrai contrôleur just_audio et un
+backend de plateforme simulé), quatre tests Python du compteur ; analyses sans
+anomalie. Les tests de l’adaptateur vérifient play non bloquant, URI avec accents/
+espaces, seek sans redémarrage, fin explicite, erreurs tardives et réouverture.
+Après ajout du cas fermeture sur erreur : les trois tests ciblés passent encore,
+analyse Flutter conforme. Syntaxe du packaging PowerShell vérifiée ;
+`git diff --check` sans erreur. Aucun benchmark audible ni build Windows natif
+exécuté ici. Le mineur sera réservé automatiquement par le prochain build CI,
+sans changer le majeur 5. Aucun commit/push automatique.

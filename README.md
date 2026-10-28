@@ -20,6 +20,10 @@ apparent ni crash. Le Lot 5 ajoute le lecteur natif et Android ; leur qualificat
 sur les deux cibles reste distincte des tests Linux. La recette et les limites
 sont détaillées dans le bilan du Lot 5.
 
+Depuis le 28 octobre, le lecteur Windows utilise **just_audio + just_audio_windows**
+(WinRT MediaPlayer), en remplacement de MCI. Android conserve son moteur et reste
+en pause ; la réactivité native doit être confirmée sur Windows.
+
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans
 les onglets et des alignements/couleurs harmonisés. Le dossier utilisateur et les

@@ -145,44 +145,59 @@ final class Playback extends ChangeNotifier {
     }
   }
 
-  Future<void> start(String id, String ref, int resume) => _command(() async {
-    await _waitPoll();
-    if (episodeId != null) {
-      await port.pause();
-      await _capture();
-      flush('paused');
-    }
-    episodeId = null;
-    reference = null;
-    state = const AudioSnapshot(0, 0, false);
-    await port.open(ref).timeout(const Duration(seconds: 30));
-    episodeId = id;
-    reference = ref;
-    guard = ListeningGuard();
-    _endedHandled = false;
-    var initial = await port.snapshot();
-    final position = resume.clamp(
-      0,
-      initial.duration > 0 ? initial.duration : 2147483647,
-    );
-    await port.seek(position);
-    await port.volume(level);
-    state = AudioSnapshot(position, initial.duration, false);
-    guard.discontinuity(position);
-    _savedAt = position;
-    flush('paused');
-    await port.play();
-    state = AudioSnapshot(position, initial.duration, true);
-    if (autoPoll)
-      _timer ??= Timer.periodic(
-        const Duration(milliseconds: 250),
-        (_) => unawaited(poll()),
+  Future<void> start(String id, String ref, int resume) {
+    final recovering = error.isNotEmpty;
+    return _command(() async {
+      await _waitPoll();
+      if (episodeId != null) {
+        await _pauseForCheckpoint(recovering);
+        flush('paused');
+      }
+      episodeId = null;
+      reference = null;
+      state = const AudioSnapshot(0, 0, false);
+      await port.open(ref).timeout(const Duration(seconds: 30));
+      episodeId = id;
+      reference = ref;
+      guard = ListeningGuard();
+      _endedHandled = false;
+      var initial = await port.snapshot();
+      final position = resume.clamp(
+        0,
+        initial.duration > 0 ? initial.duration : 2147483647,
       );
-  });
+      await port.seek(position);
+      await port.volume(level);
+      state = AudioSnapshot(position, initial.duration, false);
+      guard.discontinuity(position);
+      _savedAt = position;
+      flush('paused');
+      await port.play();
+      state = AudioSnapshot(position, initial.duration, true);
+      if (autoPoll)
+        _timer ??= Timer.periodic(
+          const Duration(milliseconds: 250),
+          (_) => unawaited(poll()),
+        );
+    });
+  }
+
   Future<void> _waitPoll() async {
     while (_polling) {
       await Future<void>.delayed(const Duration(milliseconds: 1));
     }
+  }
+
+  Future<void> _pauseForCheckpoint(bool recovering) async {
+    try {
+      await port.pause();
+    } catch (_) {
+      if (!recovering) rethrow;
+    }
+    // Après une erreur du décodeur, ne pas redemander un snapshot au moteur
+    // défaillant. Sauvegarder le dernier état connu ; un échec SQLite reste bloquant.
+    if (!recovering) await _capture();
+    state = AudioSnapshot(state.position, state.duration, false);
   }
 
   Future<void> _capture() async {
@@ -263,15 +278,18 @@ final class Playback extends ChangeNotifier {
         );
     }
   });
-  Future<void> stop() => _command(() async {
-    if (episodeId == null) return;
-    await _waitPoll();
-    await port.pause();
-    await _capture();
-    flush('stopped');
-    state = AudioSnapshot(state.position, state.duration, false);
-    guard.discontinuity(state.position);
-  });
+  Future<void> stop() {
+    final recovering = error.isNotEmpty;
+    return _command(() async {
+      if (episodeId == null) return;
+      await _waitPoll();
+      await _pauseForCheckpoint(recovering);
+      flush('stopped');
+      state = AudioSnapshot(state.position, state.duration, false);
+      guard.discontinuity(state.position);
+    });
+  }
+
   Future<void> seek(int position) => _command(() async {
     if (episodeId == null) return;
     await _waitPoll();

@@ -195,3 +195,9 @@ construction distribuable ; télécharger l’artefact du run réussi le plus r�
   même si la lecture suivante dans l’ordre est désactivée. La désactiver ne coupe
   pas la piste en cours. Avec un seul MP3 disponible, il n’est pas relancé en boucle.
   Ces deux modes sont conservés localement entre les ouvertures.
+
+
+Le lecteur Windows utilise désormais WinRT MediaPlayer via just_audio. Les
+bibliothèques nécessaires accompagnent l’exécutable dans `application/` ; aucune
+installation de lecteur externe n’est demandée. La réactivité des déplacements
+dépend aussi du MP3 et de son emplacement ; elle reste à vérifier sur vos fichiers.

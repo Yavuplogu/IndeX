@@ -71,3 +71,12 @@ Recette audio réelle sur Windows avec sortie audio : `tools/lot5/check_windows_
 
 Le numéro de l’archive varie à chaque build. Remplacer `0.5.01` dans l’exemple
 par la version produite. Voir [la politique de version](../../tools/versioning/README.md).
+
+
+Lecteur Windows : `just_audio` 0.10.6 + `just_audio_windows` 0.2.3 (WinRT
+MediaPlayer), sans ancien moteur MCI. Le plugin DLL est inclus dans `application/`.
+Les licences sont copiées dans `documentation/licences/`, y compris les notices
+complètes transitives. `docs/lot5/just-audio-dependances.json` conserve versions,
+licences et empreintes des nouvelles dépendances. Pas de dépendance Java dans
+le bundle Windows ; path_provider_android est contraint à 2.2.23 pour éviter JNI.
+La recette audio réelle se lance sur Windows avec `tools/lot5/check_windows_audio.ps1`.

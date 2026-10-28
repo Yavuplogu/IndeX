@@ -1,0 +1,177 @@
+{
+  "date": "2026-10-28",
+  "source": "Archives pub résolues, licences et SHA256 du lockfile inspectés ; aucun SDK natif exécuté ici.",
+  "packages": [
+    {
+      "package": "audio_session",
+      "version": "0.2.4",
+      "archive": "https://pub.dev/api/archives/audio_session-0.2.4.tar.gz",
+      "archive_sha256": "f9e7711a0e24ca8b40f5d7ac374c3c6e55016f3157912badd18199cdbbca5c4d",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4",
+      "dependency": "transitive"
+    },
+    {
+      "package": "fixnum",
+      "version": "1.1.1",
+      "archive": "https://pub.dev/api/archives/fixnum-1.1.1.tar.gz",
+      "archive_sha256": "b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390",
+      "dependency": "transitive"
+    },
+    {
+      "package": "just_audio",
+      "version": "0.10.6",
+      "archive": "https://pub.dev/api/archives/just_audio-0.10.6.tar.gz",
+      "archive_sha256": "e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6",
+      "license": "MIT AND Apache-2.0",
+      "license_file": "LICENSE",
+      "license_sha256": "63ce4443e916b27424700d7fe970003add9f54944daf732f2dbcc1d8caf1bbad",
+      "dependency": "direct main",
+      "license_note": "Code du package MIT ; LICENSE inclut aussi la notice Apache-2.0 ExoPlayer (Android). Fichier de licence complet redistribué."
+    },
+    {
+      "package": "just_audio_platform_interface",
+      "version": "4.6.0",
+      "archive": "https://pub.dev/api/archives/just_audio_platform_interface-4.6.0.tar.gz",
+      "archive_sha256": "2532c8d6702528824445921c5ff10548b518b13f808c2e34c2fd54793b999a6a",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4",
+      "dependency": "direct dev"
+    },
+    {
+      "package": "just_audio_web",
+      "version": "0.4.16",
+      "archive": "https://pub.dev/api/archives/just_audio_web-0.4.16.tar.gz",
+      "archive_sha256": "6ba8a2a7e87d57d32f0f7b42856ade3d6a9fbe0f1a11fabae0a4f00bb73f0663",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4",
+      "dependency": "transitive"
+    },
+    {
+      "package": "just_audio_windows",
+      "version": "0.2.3",
+      "archive": "https://pub.dev/api/archives/just_audio_windows-0.2.3.tar.gz",
+      "archive_sha256": "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "5ce607ae5defa5246b2886d696c1b495e8c099fd728421c8ac1bc627b0105d4d",
+      "dependency": "direct main"
+    },
+    {
+      "package": "objective_c",
+      "version": "9.6.2",
+      "archive": "https://pub.dev/api/archives/objective_c-9.6.2.tar.gz",
+      "archive_sha256": "5c80c2ad6e2c0397de5db38c6d653e69616a3397e13aa7633bf39eb668f2041b",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c",
+      "dependency": "transitive"
+    },
+    {
+      "package": "path_provider",
+      "version": "2.1.6",
+      "archive": "https://pub.dev/api/archives/path_provider-2.1.6.tar.gz",
+      "archive_sha256": "a7f4874f987173da295a61c181b8ee71dab59b332a486b391babf26a1b884825",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+      "dependency": "transitive"
+    },
+    {
+      "package": "path_provider_android",
+      "version": "2.2.23",
+      "archive": "https://pub.dev/api/archives/path_provider_android-2.2.23.tar.gz",
+      "archive_sha256": "149441ca6e4f38193b2e004c0ca6376a3d11f51fa5a77552d8bd4d2b0c0912ba",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+      "dependency": "direct main"
+    },
+    {
+      "package": "path_provider_foundation",
+      "version": "2.6.0",
+      "archive": "https://pub.dev/api/archives/path_provider_foundation-2.6.0.tar.gz",
+      "archive_sha256": "2a376b7d6392d80cd3705782d2caa734ca4727776db0b6ec36ef3f1855197699",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+      "dependency": "transitive"
+    },
+    {
+      "package": "path_provider_linux",
+      "version": "2.2.2",
+      "archive": "https://pub.dev/api/archives/path_provider_linux-2.2.2.tar.gz",
+      "archive_sha256": "58c2005f147315b11e9b4a7bc889cd5203e250cba8e3f012dae259b4972b5c16",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+      "dependency": "transitive"
+    },
+    {
+      "package": "path_provider_platform_interface",
+      "version": "2.1.3",
+      "archive": "https://pub.dev/api/archives/path_provider_platform_interface-2.1.3.tar.gz",
+      "archive_sha256": "484838772624c3a4b94f1e44a3e19897fee738f2d5c4ce448443b0417f7c9dda",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d",
+      "dependency": "transitive"
+    },
+    {
+      "package": "path_provider_windows",
+      "version": "2.3.0",
+      "archive": "https://pub.dev/api/archives/path_provider_windows-2.3.0.tar.gz",
+      "archive_sha256": "bd6f00dbd873bfb70d0761682da2b3a2c2fccc2b9e84c495821639601d81afe7",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+      "dependency": "transitive"
+    },
+    {
+      "package": "rxdart",
+      "version": "0.28.0",
+      "archive": "https://pub.dev/api/archives/rxdart-0.28.0.tar.gz",
+      "archive_sha256": "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962",
+      "license": "Apache-2.0",
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "dependency": "transitive"
+    },
+    {
+      "package": "synchronized",
+      "version": "3.5.0",
+      "archive": "https://pub.dev/api/archives/synchronized-3.5.0.tar.gz",
+      "archive_sha256": "b3d516dbd3757ff2a458735e4f6cbac9ff261f576f6e87bcb17feabb39e657c5",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "6d07c6bb60afb906049d507e19fcc4c6b59e35c0dd0f8a7302e87b3fb0576900",
+      "dependency": "transitive"
+    },
+    {
+      "package": "uuid",
+      "version": "4.6.0",
+      "archive": "https://pub.dev/api/archives/uuid-4.6.0.tar.gz",
+      "archive_sha256": "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd",
+      "license": "MIT",
+      "license_file": "LICENSE",
+      "license_sha256": "ad3e5523e51004e94ba9ce728805b1b4242dbccdb65e62b523800e35a8a7cfdc",
+      "dependency": "transitive"
+    },
+    {
+      "package": "xdg_directories",
+      "version": "1.1.0",
+      "archive": "https://pub.dev/api/archives/xdg_directories-1.1.0.tar.gz",
+      "archive_sha256": "7a3f37b05d989967cdddcbb571f1ea834867ae2faa29725fd085180e0883aa15",
+      "license": "BSD-3-Clause",
+      "license_file": "LICENSE",
+      "license_sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9",
+      "dependency": "transitive"
+    }
+  ]
+}

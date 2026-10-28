@@ -105,8 +105,9 @@
   non associés et tous (non associés en tête). Ouverture du
   dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.
 
-- Lot 5 : AudioPort natif MCI Windows / MediaPlayer Android, aucune dépendance
-  binaire audio redistribuée. Schéma de travail v5 ; seed livré v4 conservé.
+- Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3,
+  WinRT MediaPlayer), NativeAudioPort/MediaPlayer Android conservé en pause.
+  MCI retiré. Plugin Windows dans le bundle, licences natives/packages inventoriées. Schéma de travail v5 ; seed livré v4 conservé.
   Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
   Mise en pause/sauvegarde en arrière-plan Android, SAF et droits persistants.
   Ne pas annoncer une recette physique Android sans appareil réel.
@@ -120,3 +121,10 @@
   et remplissage dynamique de la ligne ; flèches gauche/droite ±10 s, titre lecteur
   cliquable. Auto-suivant actif par défaut ; aléatoire inactif par défaut, enchaînant
   au hasard lorsqu’activé. Ordre et candidats de la liste affichée, MP3 disponibles.
+
+- Décision du 28 octobre : adopter just_audio + just_audio_windows pour Windows.
+  Ne pas attendre la fin du Future AudioPlayer.play() pour libérer les commandes ;
+  capturer erreurs tardives et fin explicitement. AudioPort.dispose() doit permettre
+  une réouverture (unload puis lecture). Préserver l’interface et le suivi communs.
+  path_provider_android 2.2.23 épinglé pour éviter la chaîne JNI sur Windows.
+  Ne pas prétendre une latence <200 ms sans mesure sur appareil et MP3 réels.

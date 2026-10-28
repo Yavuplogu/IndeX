@@ -1,11 +1,11 @@
 [
   {
-    "component": "Windows MCI / winmm / mpegvideo",
-    "api": "Windows 10/11 SDK",
-    "usage": "Adaptateur local Unicode, bibliothèque système winmm.lib",
-    "redistributed_binary": false,
-    "license": "API système Windows ; pas de codec tiers redistribué",
-    "risk": "Lecture MP3/VBR, seek, durées et sortie audio à éprouver sur Windows"
+    "component": "just_audio + just_audio_windows / WinRT MediaPlayer",
+    "version": "0.10.6 / 0.2.3",
+    "usage": "Adaptateur Windows JustAudioPort ; ancien moteur MCI retiré",
+    "redistributed_binary": "just_audio_windows_plugin.dll compilé par Flutter ; API audio WinRT du système",
+    "license": "MIT (packages) ; framework système Windows non redistribué",
+    "risk": "Compilation Windows, durées MP3/VBR et latence réelle à mesurer ; voir just-audio-dependances.json"
   },
   {
     "component": "Android MediaPlayer / AudioManager / SAF",
@@ -49,5 +49,12 @@
     "sha256": "810d3773df7e0d6c4394e4e244b264c8b30e0b05a0acf542d065fd78a6b65c2f",
     "license": "GPL-2.0 avec Classpath Exception",
     "usage": "Construction locale seulement ; non redistribué"
+  },
+  {
+    "component": "path_provider_android",
+    "version": "2.2.23",
+    "license": "BSD-3-Clause",
+    "usage": "Contrainte compatible avec path_provider 2.1.6, évite JNI transitif sur le build Windows ; moteur Android inchangé",
+    "risk": "Retester la chaîne Android lors de sa reprise ; ne pas lever ce pin sans revue native"
   }
 ]
