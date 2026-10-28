@@ -455,3 +455,34 @@ fiche hors résultats après checkpoint, précédent/suivant aléatoires déterm
 temps visible pendant glissement et hors zone, erreurs de lecteur/bannière et
 alerte de sauvegarde sélectionnables. Vérification visuelle Windows de cette
 révision UI à réaliser dans le prochain build ; pas de nouvel essai natif ici.
+
+
+## Correction de la réécoute et du statut conservé — 28 octobre 2026
+
+Le signalement utilisateur concernait une relance depuis la fiche encore ouverte,
+après fin et démarrage automatique du suivant. Le test de régression a reproduit
+le statut Écouté conservé, avec et sans changement de fiche, avec et sans
+succession automatique. La position repartait à zéro mais le checkpoint conservait
+volontairement tout statut Écouté : une relance nécessite donc un reset explicite,
+sans modifier cette protection générale des checkpoints.
+
+AppModel consulte désormais le suivi SQLite courant plutôt que la position d’un
+objet de fiche ancien. Pour un épisode Écouté, Playback exécute la réinitialisation
+après sauvegarde de la piste quittée et ouverture/positionnement réussis, avant le
+premier checkpoint de la nouvelle lecture. Cela évite que l’ancien checkpoint
+réintroduise Écouté, notamment pour une relance sur la même piste. Le favori est
+préservé ; un échec d’ouverture conserve le statut et la date de fin enregistrés.
+La reprise d’un épisode inachevé reste active. Lecture après fin sans enchaînement
+emprunte le même parcours. Aucun changement de moteur, de MP3 ni de schéma SQLite.
+
+Les quatre variantes du test échouaient avant correction sur le statut encore
+Écouté ; elles vérifient ensuite position zéro, statut, favori, progression après
+relance et reprise depuis le dernier checkpoint même avec une ancienne fiche.
+Un autre test couvre l’échec d’ouverture sans effacement du suivi.
+
+Validation : `bash tools/lot4/check.sh` réussi, soit 188 tests du cœur, 38 tests
+Flutter et 4 tests du compteur de versions ; analyses sans anomalie et formatage
+conforme. Les variantes sans enchaînement vérifient aussi une deuxième fin puis
+la relance via Lecture du lecteur. Ces tests utilisent un moteur simulé ; la
+reproduction visuelle sur Windows reste à confirmer au prochain build. Le numéro
+mineur sera réservé par le mécanisme habituel, sans changement de majeur.

@@ -397,3 +397,20 @@ retrait décrits dans la révision précédente.
   et de validation de dossiers, contenu des fenêtres d’alerte dont Sauvegarde
   impossible. Sélection et copie standard Flutter, diagnostics déjà sélectionnables
   conservés. Les onglets de fiche s’adaptent à une largeur compacte sans débordement.
+
+
+## Réécoute d’un épisode terminé — 28 octobre 2026
+
+Un clic sur Écouter pour un épisode déjà Écouté démarre une nouvelle écoute à
+zéro : statut Non écouté initialement, puis En cours dès la progression réelle,
+remplissage progressif de la ligne et nouvelle validation de fin habituelle.
+Le favori est conservé. Cette règle vaut aussi lorsque la fiche reste ouverte
+après le démarrage automatique du suivant, ainsi qu’après navigation entre fiches.
+Le bouton Lecture du lecteur applique la même règle après la fin sans enchaînement.
+
+Le suivi persistant fait autorité, même si l’objet de fiche est ancien. La remise
+à zéro intervient après le dernier checkpoint de la piste quittée et après
+ouverture/positionnement réussis de la nouvelle lecture, avant son premier
+checkpoint. Une ouverture échouée ne doit pas effacer le statut Écouté existant.
+Une écoute inachevée conserve sa reprise, selon le réglage utilisateur ; pause,
+Arrêt et changement manuel de statut conservent leurs comportements respectifs.

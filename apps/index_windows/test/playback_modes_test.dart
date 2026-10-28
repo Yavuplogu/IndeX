@@ -117,6 +117,147 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
+  for (final autoNext in [true, false]) {
+    for (final changeDetail in [false, true]) {
+      test(
+        'Réécoute terminée : auto-suivant=$autoNext, changement de fiche=$changeDetail',
+        () async {
+          final root = Directory.systemTemp.createTempSync('index-replay-');
+          final audio = FakeAudio();
+          final model = AppModel(
+            portableDirectory: root,
+            audioPort: audio,
+            pollAudio: false,
+          );
+          try {
+            await model.configure(
+              '${root.path}/user',
+              Directory('../../MP3_Files').absolute.path,
+              false,
+            );
+            if (!autoNext) model.toggleAutoNext();
+            final queue = model.visible.where((e) => e.audioAvailable).toList();
+            final original = queue.first;
+            model.select(original);
+            model.favorite(original);
+            await model.playEpisode(original);
+            await model.playback.seek(100000);
+            for (var i = 101; i <= 120; i++) {
+              audio.value = AudioSnapshot(
+                i * 1000,
+                120000,
+                i < 120,
+                ended: i == 120,
+              );
+              await model.playback.poll();
+            }
+            expect(model.selected!.id, original.id);
+            expect(model.selected!.status, 'ECOUTE');
+            expect(
+              model.playingEpisode!.id,
+              autoNext ? queue[1].id : original.id,
+            );
+            if (changeDetail) {
+              model.select(
+                model.catalog.firstWhere((e) => e.id == queue[1].id),
+              );
+              model.select(
+                model.catalog.firstWhere((e) => e.id == original.id),
+              );
+            }
+            final detail = model.selected!;
+            await model.playEpisode(detail);
+            expect(model.playback.error, isEmpty);
+            expect(model.playback.state.position, 0);
+            expect(model.playback.state.playing, isTrue);
+            expect(model.selected!.status, 'NON_ECOUTE');
+            expect(model.progress(model.selected!), 0);
+            expect(model.selected!.favorite, isTrue);
+            expect(
+              model.session!.listeningState(original.id)!['completed_at'],
+              isNull,
+            );
+            for (var i = 1; i <= 6; i++) {
+              audio.value = AudioSnapshot(i * 1000, 120000, true);
+              await model.playback.poll();
+            }
+            expect(model.selected!.status, 'EN_COURS');
+            expect(model.progress(model.selected!), closeTo(.05, .001));
+            // Une ancienne fiche ne doit pas remplacer la position durable récente.
+            final savedPosition = model.session!.listeningState(
+              original.id,
+            )!['position_ms'];
+            await model.playEpisode(detail);
+            expect(model.playback.state.position, savedPosition);
+            expect(model.selected!.status, 'EN_COURS');
+            if (!autoNext) {
+              await model.playback.seek(100000);
+              for (var i = 101; i <= 120; i++) {
+                audio.value = AudioSnapshot(
+                  i * 1000,
+                  120000,
+                  i < 120,
+                  ended: i == 120,
+                );
+                await model.playback.poll();
+              }
+              expect(model.selected!.status, 'ECOUTE');
+              await model.playToggle();
+              expect(model.playback.state.position, 0);
+              expect(model.playback.state.playing, isTrue);
+              expect(model.selected!.status, 'NON_ECOUTE');
+              expect(model.selected!.favorite, isTrue);
+            }
+          } finally {
+            await model.release();
+            model.dispose();
+            root.deleteSync(recursive: true);
+          }
+        },
+      );
+    }
+  }
+
+  test(
+    'Une ouverture audio échouée conserve le statut Écouté et le favori',
+    () async {
+      final root = Directory.systemTemp.createTempSync('index-replay-failed-');
+      final audio = FakeAudio();
+      final model = AppModel(
+        portableDirectory: root,
+        audioPort: audio,
+        pollAudio: false,
+      );
+      try {
+        await model.configure(
+          '${root.path}/user',
+          Directory('../../MP3_Files').absolute.path,
+          false,
+        );
+        final episode = model.visible.firstWhere((e) => e.audioAvailable);
+        model.select(episode);
+        model.favorite(episode);
+        await model.listened(episode);
+        final completedAt = model.session!.listeningState(
+          episode.id,
+        )!['completed_at'];
+        audio.fail = true;
+        await model.playEpisode(model.selected!);
+        expect(model.playback.error, isNotEmpty);
+        expect(model.selected!.status, 'ECOUTE');
+        expect(model.selected!.favorite, isTrue);
+        expect(
+          model.session!.listeningState(episode.id)!['completed_at'],
+          completedAt,
+        );
+      } finally {
+        await model.release();
+        model.dispose();
+        root.deleteSync(recursive: true);
+      }
+    },
+  );
+
   testWidgets(
     'Seek : cible maintenue pendant la réponse native et horodatage au survol',
     (tester) async {

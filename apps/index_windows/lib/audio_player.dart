@@ -145,7 +145,12 @@ final class Playback extends ChangeNotifier {
     }
   }
 
-  Future<void> start(String id, String ref, int resume) {
+  Future<void> start(
+    String id,
+    String ref,
+    int resume, {
+    void Function()? resetProgress,
+  }) {
     final recovering = error.isNotEmpty;
     return _command(() async {
       await _waitPoll();
@@ -168,6 +173,9 @@ final class Playback extends ChangeNotifier {
       );
       await port.seek(position);
       await port.volume(level);
+      // Après le dernier checkpoint de l'ancienne lecture et seulement si
+      // l'ouverture a réussi, avant le premier checkpoint de la nouvelle.
+      resetProgress?.call();
       state = AudioSnapshot(position, initial.duration, false);
       guard.discontinuity(position);
       _savedAt = position;

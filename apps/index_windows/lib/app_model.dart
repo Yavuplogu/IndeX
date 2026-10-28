@@ -148,20 +148,34 @@ final class AppModel extends ChangeNotifier {
       )
       .firstOrNull;
   Future<void> playEpisode(DesktopEpisode episode) async {
-    if (busy || !episode.audioAvailable || episode.audioRef == null) return;
-    final duration =
-        session!.listeningState(episode.id)?['duration_ms'] as int?;
-    final atEnd = duration != null && episode.positionMs >= duration - 1000;
+    if (busy ||
+        playback.busy ||
+        !episode.audioAvailable ||
+        episode.audioRef == null)
+      return;
+    // Une fiche peut dater d'avant les derniers checkpoints : la base fait foi.
+    final saved = session!.listeningState(episode.id);
+    final duration = saved?['duration_ms'] as int?;
+    final position = saved?['position_ms'] as int? ?? 0;
+    final heard = saved?['listening_status'] == 'ECOUTE';
+    final atEnd = duration != null && position >= duration - 1000;
     await playback.start(
       episode.id,
       episode.audioRef!,
-      resumePlayback && !atEnd ? episode.positionMs : 0,
+      resumePlayback && !atEnd && !heard ? position : 0,
+      resetProgress: heard
+          ? () => session!.listened(episode.id, false, resetConfirmed: true)
+          : null,
     );
   }
 
   Future<void> playToggle() async {
     if (playback.episodeId != null) {
-      if (playback.state.ended) await playback.seek(0);
+      if (playback.state.ended) {
+        final episode = playingEpisode;
+        if (episode != null) await playEpisode(episode);
+        return;
+      }
       await playback.toggle();
       return;
     }
