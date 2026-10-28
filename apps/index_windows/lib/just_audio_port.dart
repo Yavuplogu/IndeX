@@ -1,8 +1,22 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:just_audio/just_audio.dart';
 
 import 'audio_player.dart';
+
+Future<void> verifyLocalAudioFile(Uri uri) async {
+  final file = File.fromUri(uri);
+  if (!await file.exists()) {
+    throw FileSystemException(
+      'Le MP3 associé est introuvable ou inaccessible. Relancez l’analyse du dossier.',
+      file.path,
+    );
+  }
+  // Vérifier les droits sans lire ni copier le contenu du MP3.
+  final handle = await file.open(mode: FileMode.read);
+  await handle.close();
+}
 
 /// Windows : WinRT MediaPlayer par just_audio_windows, enregistré par Flutter.
 final class JustAudioPort implements AudioPort {
@@ -10,20 +24,29 @@ final class JustAudioPort implements AudioPort {
     this.openTimeout = const Duration(seconds: 20),
     this.disposeTimeout = const Duration(seconds: 3),
     this.onDiagnostic,
+    this.fileProbe = verifyLocalAudioFile,
   });
   final Duration openTimeout, disposeTimeout;
+  final Future<void> Function(Uri) fileProbe;
   final void Function(Map<String, Object?> event)? onDiagnostic;
   AudioPlayer? _player;
   StreamSubscription<PlayerException>? _errors;
   StreamSubscription<PlayerState>? _states;
   Object? _failure;
 
-  void _log(String event, {String? source, Object? error, PlayerState? state}) {
+  void _log(
+    String event, {
+    String? source,
+    Object? error,
+    PlayerState? state,
+    Uri? reference,
+  }) {
     try {
       onDiagnostic?.call({
         'at': DateTime.now().toUtc().toIso8601String(),
         'event': event,
         if (source != null) 'file': source,
+        if (reference != null) 'path': File.fromUri(reference).path,
         if (error != null) 'error': error.toString(),
         if (state != null) 'state': state.processingState.name,
         if (state != null) 'playing': state.playing,
@@ -49,7 +72,15 @@ final class JustAudioPort implements AudioPort {
     }
     await dispose();
     final source = uri.pathSegments.last;
-    _log('open', source: source);
+    _log('open', source: source, reference: uri);
+    final watch = Stopwatch()..start();
+    try {
+      await fileProbe(uri).timeout(openTimeout);
+      _log('file_access_ok', source: source);
+    } catch (error) {
+      _log('file_access_failed', source: source, error: error);
+      rethrow;
+    }
     final player = AudioPlayer(
       handleInterruptions: false,
       handleAudioSessionActivation: false,
@@ -83,7 +114,9 @@ final class JustAudioPort implements AudioPort {
         }(),
         failed.future.then<void>((error) => throw error),
       ]).timeout(
-        openTimeout,
+        openTimeout - watch.elapsed > Duration.zero
+            ? openTimeout - watch.elapsed
+            : Duration.zero,
         onTimeout: () {
           throw TimeoutException(
             'Windows n’a pas confirmé l’ouverture du MP3.',

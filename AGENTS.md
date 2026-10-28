@@ -105,7 +105,7 @@
   non associés et tous (non associés en tête). Ouverture du
   dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.
 
-- Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.1,
+- Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.2,
   WinRT MediaPlayer), NativeAudioPort/MediaPlayer Android conservé en pause.
   MCI retiré. Plugin Windows dans le bundle, licences natives/packages inventoriées. Schéma de travail v5 ; seed livré v4 conservé.
   Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
@@ -138,3 +138,10 @@
   rotation 512 Kio ; aucun envoi réseau. Timeout interne d’ouverture 20 s avec
   destruction du lecteur (nettoyage borné), erreurs natives remontées immédiatement.
   Ne pas annoncer les huit lectures WinRT validées sur la seule base de FFmpeg/Linux.
+
+- Suivi du refus "system cannot find the file specified" : index.2 ouvre les MP3
+  via un chemin Unicode exact et un flux système aléatoire en lecture seule, pas
+  via le gestionnaire WinRT file://. Probe Dart présence/lecture avant démarrage,
+  même budget d’ouverture ; journal file_access_ok/failed et chemin décodé.
+  Décodage URI une seule fois : ne pas normaliser les noms ni transformer '+'
+  en espace. Aucune conversion/copie/cache des MP3. Recette WinRT toujours requise.

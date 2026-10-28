@@ -289,7 +289,7 @@ packages:
       path: "../../third_party/just_audio_windows"
       relative: true
     source: path
-    version: "0.2.3+index.1"
+    version: "0.2.3+index.2"
   leak_tracker:
     dependency: transitive
     description:

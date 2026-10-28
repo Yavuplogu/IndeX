@@ -1,4 +1,5 @@
 #pragma comment(lib, "windowsapp")
+#pragma comment(lib, "shcore.lib")
 
 #include <chrono>
 #include <optional>
@@ -9,6 +10,10 @@
 
 // This must be included before many other Windows headers.
 #include <windows.h>
+#include <shcore.h>
+#include <winrt/Windows.Storage.Streams.h>
+#include <winrt/Windows.Storage.h>
+#include "file_uri.hpp"
 
 #include <flutter/event_channel.h>
 #include <flutter/event_stream_handler_functions.h>
@@ -579,6 +584,18 @@ public:
       const std::string* type = std::get_if<std::string>(ValueOrNull(source, "type"));
       if (type->compare("progressive") == 0 || type->compare("dash") == 0 || type->compare("hls") == 0) {
           const auto* uri = std::get_if<std::string>(ValueOrNull(source, "uri"));
+          if (IndexIsFileUri(*uri)) {
+              const auto path = TO_WIDESTRING(IndexWindowsPathFromFileUri(*uri));
+              if (path.empty()) throw std::invalid_argument("Chemin Unicode invalide.");
+              // Ouvrir le nom NTFS exact, sans le gestionnaire de fichiers URI WinRT.
+              // Flux aléatoire en lecture seule : aucune copie ni conversion audio.
+              winrt::Windows::Storage::Streams::IRandomAccessStream stream{nullptr};
+              winrt::check_hresult(CreateRandomAccessStreamOnFile(
+                  path.c_str(), static_cast<DWORD>(winrt::Windows::Storage::FileAccessMode::Read),
+                  winrt::guid_of<winrt::Windows::Storage::Streams::IRandomAccessStream>(),
+                  winrt::put_abi(stream)));
+              return MediaSource::CreateFromStream(stream, L"audio/mpeg");
+          }
           return MediaSource::CreateFromUri(
               Uri(TO_WIDESTRING(EncodeSpacesInUri(*uri)))
           );

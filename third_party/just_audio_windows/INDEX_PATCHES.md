@@ -1,4 +1,4 @@
-# Correctifs IndeX — 0.2.3+index.1
+# Correctifs IndeX — 0.2.3+index.2
 
 Copie de just_audio_windows 0.2.3, sous MIT (LICENSE original conservé).
 `UPSTREAM.json` décrit l’archive et les empreintes originales. Ne pas modifier
@@ -39,3 +39,24 @@ Contrôle C++ portable : depuis la racine IndeX,
 `g++ -std=c++17 -pthread -Wall -Wextra -Werror tools/lot5/test_audio_state.cpp -o /tmp/index-audio-state-test`
 puis `/tmp/index-audio-state-test`. Ceci valide la classification d’état et la file entre threads, pas le
 plugin Windows complet ni le décodage WinRT.
+
+
+## index.2 — accès exact aux MP3 locaux
+
+Signalement : `(1001) sourceNotSupportedError: The system cannot find the file specified`
+pour trois fichiers malgré le correctif de notifications. Cette erreur ne prouve
+pas un défaut d’encodage MP3. Les URI file ne passent plus par CreateFromUri :
+`file_uri.hpp` extrait le chemin absolu, décode les octets UTF-8 exactement une
+fois, préserve accents NFC/NFD, espaces, `%`, `+`, parenthèses et chemins UNC.
+Le chemin est converti en UTF-16, ouvert par `CreateRandomAccessStreamOnFile` en
+`Windows.Storage.FileAccessMode::Read`, puis transmis à
+`MediaSource::CreateFromStream(..., L"audio/mpeg")`. Shcore.lib est une API système
+Windows (pas de binaire tiers supplémentaire). Aucun chargement complet en RAM,
+aucune copie, écriture ou conversion du MP3. Le flux permet les seeks.
+
+Les URL non file gardent leur chemin upstream (l’application IndeX les refuse).
+La voie locale de ce fork est prévue pour les MP3, seul format proposé par IndeX.
+La source MediaSource conserve la référence du flux ; elle est libérée avec le lecteur.
+Le test C++ portable couvre aussi le décodage des chemins, caractères spéciaux,
+NFD, UNC et erreurs de pourcentage/NUL. La lecture par flux WinRT reste à valider
+sur Windows ; ce test n’en fait pas la preuve.

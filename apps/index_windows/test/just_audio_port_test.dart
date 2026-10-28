@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +32,7 @@ void main() {
   });
 
   test('WinRT adapter : lecture non bloquante, seek actif sans redémarrage et fin explicite', () async {
-    final port = JustAudioPort();
+    final port = JustAudioPort(fileProbe: (_) async {});
     final playback = Playback(port, (_, _, _, _) {}, autoPoll: false);
     await playback
         .start('a', 'file:///C:/Mes%20MP3/%C3%89pisode.mp3', 4000)
@@ -61,7 +62,7 @@ void main() {
   test(
     'Erreurs asynchrones remontées, pause et réouverture après libération',
     () async {
-      final port = JustAudioPort();
+      final port = JustAudioPort(fileProbe: (_) async {});
       final playback = Playback(port, (_, _, _, _) {}, autoPoll: false);
       await playback.start('a', 'file:///C:/a.mp3', 0);
       platform.last!.emit(error: 500);
@@ -88,6 +89,7 @@ void main() {
     platform.loading = true;
     final journal = <Map<String, Object?>>[];
     final port = JustAudioPort(
+      fileProbe: (_) async {},
       openTimeout: const Duration(milliseconds: 50),
       disposeTimeout: const Duration(seconds: 1),
       onDiagnostic: journal.add,
@@ -117,7 +119,10 @@ void main() {
   test('Erreur native pendant loading : remontée immédiate sans attendre le timeout', () async {
     platform.loading = true;
     platform.openError = true;
-    final port = JustAudioPort(openTimeout: const Duration(seconds: 2));
+    final port = JustAudioPort(
+      fileProbe: (_) async {},
+      openTimeout: const Duration(seconds: 2),
+    );
     await expectLater(
       port.open('file:///C:/Haiti.mp3').timeout(const Duration(seconds: 1)),
       throwsA(isA<PlayerException>().having((e) => e.code, 'code', 1001)),
@@ -126,8 +131,48 @@ void main() {
     await port.dispose();
   });
 
+  test(
+    'Chemin local absent : erreur explicite avant tout moteur Windows',
+    () async {
+      final root = Directory.systemTemp.createTempSync(
+        'index-audio-file-access-',
+      );
+      addTearDown(() => root.deleteSync(recursive: true));
+      final port = JustAudioPort(fileProbe: verifyLocalAudioFile);
+      final missing = File('${root.path}/Rhodésie (1 sur 2).mp3');
+      await expectLater(
+        port.open(missing.uri.toString()),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(platform.last, isNull);
+      await port.dispose();
+    },
+  );
+
+  test(
+    'Fichier Unicode lisible transmis sans changer ses octets ou sa référence',
+    () async {
+      final root = Directory.systemTemp.createTempSync(
+        'index-audio-exact-path-',
+      );
+      addTearDown(() => root.deleteSync(recursive: true));
+      final file = File('${root.path}/Haïti (2 sur 2) %20 + #.mp3')
+        ..writeAsBytesSync([1, 2, 3]);
+      final events = <Map<String, Object?>>[];
+      final port = JustAudioPort(
+        fileProbe: verifyLocalAudioFile,
+        onDiagnostic: events.add,
+      );
+      await port.open(file.uri.toString());
+      expect(platform.last!.uri, file.uri.toString());
+      expect(file.readAsBytesSync(), [1, 2, 3]);
+      expect(events.any((event) => event['event'] == 'file_access_ok'), isTrue);
+      await port.dispose();
+    },
+  );
+
   test('Source distante refusée, échec de chargement récupérable et play rejeté capturé', () async {
-    final port = JustAudioPort();
+    final port = JustAudioPort(fileProbe: (_) async {});
     await expectLater(
       port.open('https://example.invalid/a.mp3'),
       throwsArgumentError,

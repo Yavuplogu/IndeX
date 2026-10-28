@@ -383,3 +383,47 @@ pendant loading sans attendre le timeout. Test C++ portable compilé par
 erreurs conservées, arrêt et événement tardif ignoré réussis. Formatage et contrôle
 diff conformes. Le code Win32/WinRT complet n’a pas été compilé/exécuté ici ;
 recette des huit MP3 sous Windows restant obligatoire avant qualification.
+
+
+## Refus des trois MP3 après index.1 — accès aux fichiers locaux
+
+Retour utilisateur : plus de blocage prolongé, mais les mêmes fichiers refusés
+avec `(1001) sourceNotSupportedError: The system cannot find the file specified`.
+Ce message situe le problème rapporté dans l’accès au fichier ; il ne démontre
+pas une incompatibilité de décodage. Les noms fournis sont NFC dans le dépôt ;
+les trois échecs ont accents et parenthèses, mais cette corrélation ne prouve pas
+à elle seule une cause. Aucune modification des noms, tags ou octets audio.
+
+Correctif `just_audio_windows` **0.2.3+index.2** : les sources file sont ouvertes
+via un chemin Windows Unicode exact et `CreateRandomAccessStreamOnFile`, puis
+`MediaSource::CreateFromStream` en audio/mpeg. Ce chemin évite l’interprétation
+file:// par CreateFromUri. Le helper décode le pourcentage une seule fois et
+conserve ponctuation, accents, NFC/NFD et UNC ; il refuse NUL, échappements
+invalides, URI relatives ou avec query/fragment. Un `%20` littéral dans un nom
+reste `%20` après décodage de `%2520`. Le mode d’accès est l’enum WinRT
+FileAccessMode.Read (pas les flags STGM), signature vérifiée dans la documentation
+SDK. API Shcore du système : aucun installateur ni nouveau moteur/codec.
+Flux lisible/seekable, sans copie complète en RAM ou sur disque et sans remuxage.
+
+JustAudioPort vérifie d’abord via Dart que le chemin associé existe et s’ouvre
+en lecture seule. Un échec indique de relancer l’analyse au lieu de le présenter
+comme une erreur de décodeur. Le probe partage le budget de 20 s avec le moteur
+(pas deux timeouts cumulés). Journal enrichi avec chemin décodé à l’ouverture,
+`file_access_ok` ou `file_access_failed`, puis l’éventuelle erreur du moteur.
+Cela permet de distinguer un lien absent/périmé d’un échec après accès réussi.
+
+Tests portables C++ : chemins des trois noms concernés, accents/parenthèses,
+NFD, UNC, `%`, `#`, `+`, échappements malformés et NUL, plus la file de notifications
+et les états de fin. Deux tests Flutter ajoutés : fichier absent refusé avant
+création du moteur, fichier Unicode avec caractères spéciaux transmis tel quel
+sans modifier ses octets (backend simulé). Les tests antérieurs de moteur utilisent
+explicitement un probe simulé pour leurs URI synthétiques. Le parcours Windows
+natif des huit vrais MP3 est conservé et reste à exécuter ; pas de qualification
+WinRT sur la foi des tests Linux.
+
+Contrôles de index.2 : analyse Flutter sans anomalie et **33 tests Flutter réussis**.
+Classification/file de notifications et nouveaux cas de chemins compilés/exécutés
+avec g++ C++17 sans avertissement ; formatage/diff conformes. Les huit empreintes
+MP3 de référence restent identiques. La compilation de Shcore/WinRT et la lecture
+des huit vrais fichiers sur Windows ne sont pas exécutées ici. Le numéro mineur
+applicatif sera réservé automatiquement au prochain build, majeur 5 conservé.

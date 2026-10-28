@@ -73,7 +73,7 @@ Le numéro de l’archive varie à chaque build. Remplacer `0.5.01` dans l’exe
 par la version produite. Voir [la politique de version](../../tools/versioning/README.md).
 
 
-Lecteur Windows : `just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.1 (WinRT
+Lecteur Windows : `just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.2 (WinRT
 MediaPlayer), sans ancien moteur MCI. Le plugin DLL est inclus dans `application/`.
 Les licences sont copiées dans `documentation/licences/`, y compris les notices
 complètes transitives. `docs/lot5/just-audio-dependances.json` conserve versions,
