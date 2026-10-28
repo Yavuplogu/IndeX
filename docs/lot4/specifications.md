@@ -432,3 +432,14 @@ Arrêt et changement manuel de statut conservent leurs comportements respectifs.
   fin sans lecture ne suffit pas. Sans signal de fin, conserver la validation
   anticipée après dix secondes continues dans la zone de fin. Une durée inconnue
   ne déclenche pas de validation automatique.
+
+
+## Avance clavier atteignant le terme — 28 octobre 2026
+
+La flèche droite (+10 s) pendant la lecture peut atteindre ou dépasser le terme.
+Dans ce cas, la position est bornée à la durée et le statut passe à Écouté lorsque
+le moteur confirme la fin, avant l’éventuel passage au suivant. Aucun besoin de
+laisser s’écouler les dernières secondes après cette avance. Cette exception
+complète la règle précédente : elle concerne l’avance relative en lecture, avec
+une durée connue. Un simple positionnement absolu à 100 %, une avance en pause
+ou un recul ne valide pas une écoute. Un autre seek annule la demande en attente.

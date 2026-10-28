@@ -4,6 +4,40 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  test('Avance clavier au terme : fin confirmée requise, pause et nouveau seek exclus', () async {
+    final native = FakeAudio();
+    final p = Playback(native, (_, _, _, _) {}, autoPoll: false);
+    try {
+      await p.start('a', 'local-a', 117000);
+      await p.skip(10000);
+      expect(p.guard.completed, isFalse);
+      native.value = const AudioSnapshot(120000, 120000, false, ended: true);
+      await p.poll();
+      expect(p.guard.completed, isTrue);
+      // En pause, un raccourci au terme ne constitue pas une écoute.
+      await p.start('a', 'local-a', 117000);
+      await p.toggle();
+      await p.skip(10000);
+      native.value = const AudioSnapshot(120000, 120000, false, ended: true);
+      await p.poll();
+      expect(p.guard.completed, isFalse);
+      // Une autre manipulation annule la demande de fin précédente.
+      await p.start('a', 'local-a', 117000);
+      await p.skip(10000);
+      await p.seek(120000);
+      native.value = const AudioSnapshot(120000, 120000, false, ended: true);
+      await p.poll();
+      expect(p.guard.completed, isFalse);
+      // Un recul ne valide pas non plus une fin.
+      await p.start('a', 'local-a', 117000);
+      await p.skip(-10000);
+      expect(p.state.position, 107000);
+      expect(p.guard.completed, isFalse);
+    } finally {
+      await p.release();
+      p.dispose();
+    }
+  });
   test('Fin réelle après seek court : validée ; seek seul à 100 % et durée inconnue exclus', () {
     final guard = ListeningGuard()..discontinuity(117000);
     guard.observe(const AudioSnapshot(118000, 120000, true));

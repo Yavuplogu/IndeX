@@ -68,14 +68,16 @@ final class NativeAudioPort implements AudioPort {
   Future<void> dispose() => channel.invokeMethod<void>('release');
 }
 
-/// Dix secondes en zone de fin, ou fin moteur après progression réelle post-seek.
+/// Dix secondes en zone de fin, ou fin moteur après progression/avance relative.
 final class ListeningGuard {
   int? _last;
+  bool _finishOnEnd = false;
   int nearEndMs = 0;
   bool progressed = false, completed = false;
-  void discontinuity(int position) {
+  void discontinuity(int position, {bool finishOnEnd = false}) {
     _last = position;
     nearEndMs = 0;
+    _finishOnEnd = finishOnEnd;
   }
 
   void observe(AudioSnapshot state) {
@@ -85,11 +87,13 @@ final class ListeningGuard {
         state.duration > 0 &&
         (state.position >= state.duration * .95 ||
             state.duration - state.position <= 60000);
-    // Un seek seul (même à 100 %) n'est pas une écoute. Une vraie fin après
-    // progression continue est valide même s'il restait moins de dix secondes.
+    // Un seek absolu seul ne valide rien. La fin moteur après progression ou
+    // avance relative au terme reste valide à moins de dix secondes de la fin.
     if (state.ended &&
         near &&
-        ((delta > 0 && delta <= 2000) || (delta == 0 && nearEndMs > 0))) {
+        (_finishOnEnd ||
+            (delta > 0 && delta <= 2000) ||
+            (delta == 0 && nearEndMs > 0))) {
       progressed = true;
       completed = true;
     }
@@ -306,21 +310,34 @@ final class Playback extends ChangeNotifier {
     });
   }
 
-  Future<void> seek(int position) => _command(() async {
-    if (episodeId == null) return;
-    await _waitPoll();
-    final playing = state.playing;
-    final target = position.clamp(
-      0,
-      state.duration > 0 ? state.duration : 2147483647,
-    );
-    await port.seek(target);
-    if (playing) await port.play();
-    state = AudioSnapshot(target, state.duration, playing);
-    guard.discontinuity(target);
-    _endedHandled = false;
-    flush(playing ? 'playing' : 'paused');
-  });
+  /// Avance/recul relatif : atteindre le terme en lecture demande une fin réelle.
+  Future<void> skip(int delta) =>
+      _seek(state.position + delta, finishAtEnd: delta > 0);
+
+  Future<void> seek(int position) => _seek(position);
+
+  Future<void> _seek(int position, {bool finishAtEnd = false}) =>
+      _command(() async {
+        if (episodeId == null) return;
+        await _waitPoll();
+        final playing = state.playing;
+        final target = position.clamp(
+          0,
+          state.duration > 0 ? state.duration : 2147483647,
+        );
+        final finishOnEnd =
+            finishAtEnd &&
+            playing &&
+            state.duration > 0 &&
+            state.position < state.duration &&
+            target == state.duration;
+        await port.seek(target);
+        if (playing) await port.play();
+        state = AudioSnapshot(target, state.duration, playing);
+        guard.discontinuity(target, finishOnEnd: finishOnEnd);
+        _endedHandled = false;
+        flush(playing ? 'playing' : 'paused');
+      });
   Future<void> setVolume(double value) => _command(() async {
     level = value.clamp(0, 1);
     if (episodeId != null) await port.volume(level);

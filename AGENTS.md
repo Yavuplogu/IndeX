@@ -163,3 +163,8 @@
   Une fin moteur après progression post-seek valide Écouté même à moins de 10 s
   du terme ; seek seul à 100 % et durée inconnue exclus. Voir les dernières
   sections des spécifications Lot 4 et du bilan Lot 5.
+
+- Complément fin clavier : flèches via Playback.skip(delta). Une avance pendant
+  la lecture atteignant une durée connue demande une validation à réception du
+  vrai signal ended, même sans progression après le saut ; pas avant. Seek absolu,
+  pause et recul exclus ; nouveau seek annule la demande. Voir bilan Lot 5.

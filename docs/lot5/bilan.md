@@ -518,3 +518,29 @@ Validation : `bash tools/lot4/check.sh` réussi : 188 tests du cœur, 44 tests F
 Les tests audio utilisent un moteur simulé : recette Windows réelle à confirmer
 au prochain build. Aucun build distribuable lancé ici ; le prochain mineur reste
 attribué par le compteur habituel, majeur 5 conservé.
+
+
+## Fin atteinte par avance clavier — 28 octobre 2026
+
+Le retour Windows confirme la fin naturelle après seek court, mais révèle un cas
+supplémentaire : la flèche droite place directement à la durée, puis le snapshot
+final ne contient plus de progression après le seek. La garde anti-seek refuse
+alors de valider, laissant En cours à 100 %.
+
+Playback distingue désormais `skip(delta)` relatif du `seek(position)` absolu.
+Les flèches gauche/droite appellent skip. Pour une avance pendant la lecture,
+d’une position avant la fin jusqu’à une durée connue, la garde mémorise une demande
+de fin. Seul le signal ended du moteur valide alors Écouté, sauvegardé avant
+l’enchaînement. La commande n’anticipe pas ce signal. Pause, recul et seek absolu
+restent exclus ; toute nouvelle discontinuité annule la demande. Les autres règles
+de fin et de progression continue sont conservées. Aucun changement de moteur,
+de schéma SQLite, de dépendance ou de MP3.
+
+Tests : variantes avec/sans clavier et avec/sans auto-suivant, statut durable et
+absence de validation avant la fin moteur ; exclusions en pause, après nouveau
+seek et après recul. Les tests UI existants exercent aussi les raccourcis ±10 s.
+
+Validation : `bash tools/lot4/check.sh` réussi : 188 tests du cœur, 47 tests Flutter
+et 4 tests de versionnement ; analyses sans anomalie, formatage et diff conformes.
+Les tests audio utilisent un moteur simulé. Le cas clavier doit encore être
+confirmé sur Windows au prochain build, dont le mineur sera réservé automatiquement.

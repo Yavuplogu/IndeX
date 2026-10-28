@@ -14,55 +14,75 @@ import 'support/fake_audio.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   for (final autoNext in [true, false]) {
-    test(
-      'Seek à trois secondes du terme : statut durable Écouté, auto-suivant=$autoNext',
-      () async {
-        final root = Directory.systemTemp.createTempSync('index-seek-end-');
-        final audio = FakeAudio();
-        final model = AppModel(
-          portableDirectory: root,
-          audioPort: audio,
-          pollAudio: false,
-        );
-        try {
-          await model.configure(
-            '${root.path}/user',
-            Directory('../../MP3_Files').absolute.path,
-            false,
+    for (final keyboard in [false, true]) {
+      test(
+        'Seek à trois secondes du terme : Écouté, auto-suivant=$autoNext, clavier=$keyboard',
+        () async {
+          final root = Directory.systemTemp.createTempSync('index-seek-end-');
+          final audio = FakeAudio();
+          final model = AppModel(
+            portableDirectory: root,
+            audioPort: audio,
+            pollAudio: false,
           );
-          if (!autoNext) model.toggleAutoNext();
-          final queue = model.visible.where((e) => e.audioAvailable).toList();
-          final episode = queue.first;
-          model.select(episode);
-          await model.playEpisode(episode);
-          await model.playback.seek(117000);
-          for (var i = 118; i <= 120; i++) {
-            audio.value = AudioSnapshot(
-              i * 1000,
-              120000,
-              i < 120,
-              ended: i == 120,
+          try {
+            await model.configure(
+              '${root.path}/user',
+              Directory('../../MP3_Files').absolute.path,
+              false,
             );
-            await model.playback.poll();
+            if (!autoNext) model.toggleAutoNext();
+            final queue = model.visible.where((e) => e.audioAvailable).toList();
+            final episode = queue.first;
+            model.select(episode);
+            await model.playEpisode(episode);
+            await model.playback.seek(117000);
+            if (keyboard) {
+              audio.value = const AudioSnapshot(118000, 120000, true);
+              await model.playback.poll();
+              await model.playback.skip(10000);
+              expect(model.selected!.status, 'EN_COURS');
+              expect(model.playback.state.position, 120000);
+              audio.value = const AudioSnapshot(
+                120000,
+                120000,
+                false,
+                ended: true,
+              );
+              await model.playback.poll();
+            } else {
+              for (var i = 118; i <= 120; i++) {
+                audio.value = AudioSnapshot(
+                  i * 1000,
+                  120000,
+                  i < 120,
+                  ended: i == 120,
+                );
+                await model.playback.poll();
+              }
+            }
+            expect(model.selected!.status, 'ECOUTE');
+            expect(
+              model.session!.listeningState(episode.id)!['listening_status'],
+              'ECOUTE',
+            );
+            expect(
+              model.session!.listeningState(episode.id)!['completed_at'],
+              isNotNull,
+            );
+            expect(
+              model.playingEpisode!.id,
+              autoNext ? queue[1].id : episode.id,
+            );
+            expect(model.playback.state.playing, autoNext);
+          } finally {
+            await model.release();
+            model.dispose();
+            root.deleteSync(recursive: true);
           }
-          expect(model.selected!.status, 'ECOUTE');
-          expect(
-            model.session!.listeningState(episode.id)!['listening_status'],
-            'ECOUTE',
-          );
-          expect(
-            model.session!.listeningState(episode.id)!['completed_at'],
-            isNotNull,
-          );
-          expect(model.playingEpisode!.id, autoNext ? queue[1].id : episode.id);
-          expect(model.playback.state.playing, autoNext);
-        } finally {
-          await model.release();
-          model.dispose();
-          root.deleteSync(recursive: true);
-        }
-      },
-    );
+        },
+      );
+    }
   }
   test('Arrêt et statut manuel : remise à zéro durable, favori préservé ; modes persistants et fin unique', () async {
     final root = Directory.systemTemp.createTempSync('index-modes-');

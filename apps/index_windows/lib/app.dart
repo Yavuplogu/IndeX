@@ -691,7 +691,7 @@ class _LibraryPageState extends State<LibraryPage> {
             : 0;
         if (delta == 0 || m.playback.episodeId == null || m.playback.busy)
           return KeyEventResult.ignored;
-        unawaited(m.playback.seek(m.playback.state.position + delta));
+        unawaited(m.playback.skip(delta));
         return KeyEventResult.handled;
       },
       child: Column(
