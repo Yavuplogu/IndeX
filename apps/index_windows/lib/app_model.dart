@@ -84,13 +84,34 @@ final class AppModel extends ChangeNotifier {
     dataPath = this.defaultDataDirectory.absolute.path;
     playback =
         Playback(
-            audioPort ?? (android ? const NativeAudioPort() : JustAudioPort()),
+            audioPort ??
+                (android
+                    ? const NativeAudioPort()
+                    : JustAudioPort(onDiagnostic: _audioDiagnostic)),
             _saveAudio,
             autoPoll: pollAudio,
           )
           ..addListener(changed)
           ..onEnded = _audioEnded;
   }
+  void _audioDiagnostic(Map<String, Object?> event) {
+    final directory = session?.dataDirectory;
+    if (directory == null) return;
+    final logs = Directory('${directory.path}/logs')
+      ..createSync(recursive: true);
+    final file = File('${logs.path}/lecteur-audio.log');
+    if (file.existsSync() && file.lengthSync() > 512 * 1024) {
+      final previous = File('${logs.path}/lecteur-audio-precedent.log');
+      if (previous.existsSync()) previous.deleteSync();
+      file.renameSync(previous.path);
+    }
+    file.writeAsStringSync(
+      '${jsonEncode(event)}\n',
+      mode: FileMode.append,
+      flush: true,
+    );
+  }
+
   final bool android;
   static const androidChannel = MethodChannel('index/android');
   late final Playback playback;

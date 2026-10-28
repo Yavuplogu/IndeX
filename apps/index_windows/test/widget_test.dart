@@ -192,9 +192,9 @@ void main() {
       await tester.tap(find.text('Fichiers'));
       await tester.pumpAndSettle();
       expect(find.text('Catalogue : 716 épisodes'), findsOneWidget);
-      expect(find.text('Dossier MP3 : 6 fichiers'), findsOneWidget);
-      expect(find.text('Épisodes associés : 6'), findsOneWidget);
-      expect(find.text('Épisodes manquants : 710'), findsOneWidget);
+      expect(find.text('Dossier MP3 : 14 fichiers'), findsOneWidget);
+      expect(find.text('Épisodes associés : 14'), findsOneWidget);
+      expect(find.text('Épisodes manquants : 702'), findsOneWidget);
       final recursive = find.widgetWithText(
         CheckboxListTile,
         'Analyser aussi les sous-dossiers',
@@ -222,7 +222,7 @@ void main() {
       await tester.tap(find.text('Enlever'));
       await waitForCondition(tester, () => !model.busy, 'retrait du lien');
       await tester.pumpAndSettle();
-      expect(model.availableAudioCount, 5);
+      expect(model.availableAudioCount, 13);
       final reassociate = find.widgetWithText(OutlinedButton, 'Associer…');
       expect(reassociate, findsOneWidget);
       expect(
@@ -245,9 +245,9 @@ void main() {
         Theme.of(tester.element(reason)).colorScheme.primary,
       );
       for (final entry in {
-        'associated': 5,
+        'associated': 13,
         'unassociated': 1,
-        'all': 6,
+        'all': 14,
       }.entries) {
         await tester.tap(find.byKey(ValueKey('audio-files-${entry.key}')));
         await tester.pumpAndSettle();

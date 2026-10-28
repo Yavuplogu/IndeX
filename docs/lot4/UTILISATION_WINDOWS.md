@@ -201,3 +201,11 @@ Le lecteur Windows utilise désormais WinRT MediaPlayer via just_audio. Les
 bibliothèques nécessaires accompagnent l’exécutable dans `application/` ; aucune
 installation de lecteur externe n’est demandée. La réactivité des déplacements
 dépend aussi du MP3 et de son emplacement ; elle reste à vérifier sur vos fichiers.
+
+
+En cas de blocage audio, le journal **`logs/lecteur-audio.log`** dans votre dossier
+de données contient le nom du fichier, les états du moteur et les erreurs
+Windows. Il est local, sans envoi automatique ; un journal précédent est conservé
+lorsque sa taille dépasse 512 Kio. Une ouverture non confirmée est annulée :
+l’application doit permettre de choisir un autre épisode. Ce diagnostic n’altère
+ni vos MP3 ni leurs tags et ne remplace pas les sauvegardes du suivi.

@@ -73,10 +73,19 @@ Le numéro de l’archive varie à chaque build. Remplacer `0.5.01` dans l’exe
 par la version produite. Voir [la politique de version](../../tools/versioning/README.md).
 
 
-Lecteur Windows : `just_audio` 0.10.6 + `just_audio_windows` 0.2.3 (WinRT
+Lecteur Windows : `just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.1 (WinRT
 MediaPlayer), sans ancien moteur MCI. Le plugin DLL est inclus dans `application/`.
 Les licences sont copiées dans `documentation/licences/`, y compris les notices
 complètes transitives. `docs/lot5/just-audio-dependances.json` conserve versions,
 licences et empreintes des nouvelles dépendances. Pas de dépendance Java dans
 le bundle Windows ; path_provider_android est contraint à 2.2.23 pour éviter JNI.
 La recette audio réelle se lance sur Windows avec `tools/lot5/check_windows_audio.ps1`.
+
+
+Le plugin Windows corrigé est versionné dans `third_party/just_audio_windows`
+(source MIT/provenance conservées). Voir `INDEX_PATCHES.md`. Il ne doit pas être
+remplacé par le package 0.2.3 non corrigé sans réexécuter la recette MP3_Bugs.
+Le journal local est dans `<données utilisateur>/logs/lecteur-audio.log`, JSONL
+avec rotation à 512 Kio (un précédent conservé), aucun envoi. En cas d’échec,
+conserver ce journal et préciser quel MP3 est concerné. La commande audio native
+existante teste maintenant aussi les huit MP3_Bugs, en lecture seule.

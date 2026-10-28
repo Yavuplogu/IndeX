@@ -14,7 +14,8 @@ dependencies:
   file_selector: 1.1.0
   window_manager: 0.5.2
   just_audio: 0.10.6
-  just_audio_windows: 0.2.3
+  just_audio_windows:
+    path: ../../third_party/just_audio_windows
   # Évite JNI transitif sur Windows ; version compatible avec path_provider 2.1.6.
   path_provider_android: 2.2.23
 dev_dependencies:

@@ -84,6 +84,9 @@ void main() {
         );
         const fixture = String.fromEnvironment('INDEX_TEST_MP3_DIR');
         expect(fixture, isNotEmpty);
+        // Ce scénario historique couvre les six fixtures racine ; les huit
+        // MP3_Bugs sont exercés séparément ci-dessous en recette audio.
+        model.setRecursive(false);
         await tester.runAsync(() => model.scan(fixture));
         expect(model.error, isEmpty);
         expect(model.catalog.where((e) => e.audioAvailable), hasLength(6));
@@ -129,6 +132,37 @@ void main() {
           expect(model.playback.error, isEmpty);
           expect(model.playback.state.position, greaterThan(500));
           audioPosition = model.playback.state.position;
+          final bugs =
+              Directory('$fixture/MP3_Bugs')
+                  .listSync()
+                  .whereType<File>()
+                  .where((f) => f.path.toLowerCase().endsWith('.mp3'))
+                  .toList()
+                ..sort((a, b) => a.path.compareTo(b.path));
+          expect(bugs, hasLength(8));
+          for (final file in bugs) {
+            final probe = JustAudioPort(
+              onDiagnostic: (event) => debugPrint(event.toString()),
+            );
+            try {
+              await tester.runAsync(
+                () => probe.open(file.absolute.uri.toString()),
+              );
+              await tester.runAsync(() => probe.volume(0));
+              await tester.runAsync(probe.play);
+              await tester.runAsync(
+                () => Future<void>.delayed(const Duration(milliseconds: 1200)),
+              );
+              var snapshot = await tester.runAsync(probe.snapshot);
+              expect(snapshot!.duration, greaterThan(0), reason: file.path);
+              expect(snapshot.position, greaterThan(0), reason: file.path);
+              await tester.runAsync(() => probe.seek(10000));
+              snapshot = await tester.runAsync(probe.snapshot);
+              expect(snapshot!.ended, isFalse, reason: file.path);
+            } finally {
+              await tester.runAsync(probe.dispose);
+            }
+          }
         }
         await tester.runAsync(() => windowManager.close());
         await tester.runAsync(

@@ -55,13 +55,15 @@
     },
     {
       "package": "just_audio_windows",
-      "version": "0.2.3",
-      "archive": "https://pub.dev/api/archives/just_audio_windows-0.2.3.tar.gz",
-      "archive_sha256": "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318",
+      "version": "0.2.3+index.1",
       "license": "MIT",
       "license_file": "LICENSE",
       "license_sha256": "5ce607ae5defa5246b2886d696c1b495e8c099fd728421c8ac1bc627b0105d4d",
-      "dependency": "direct main"
+      "dependency": "direct main",
+      "upstream_archive": "https://pub.dev/api/archives/just_audio_windows-0.2.3.tar.gz",
+      "upstream_archive_sha256": "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318",
+      "source": "third_party/just_audio_windows",
+      "patches": "third_party/just_audio_windows/INDEX_PATCHES.md"
     },
     {
       "package": "objective_c",

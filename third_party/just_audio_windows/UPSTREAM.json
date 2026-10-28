@@ -1,0 +1,17 @@
+{
+  "upstream": "https://pub.dev/api/archives/just_audio_windows-0.2.3.tar.gz",
+  "version": "0.2.3",
+  "license": "MIT",
+  "files_sha256": {
+    "LICENSE": "5ce607ae5defa5246b2886d696c1b495e8c099fd728421c8ac1bc627b0105d4d",
+    "pubspec.yaml": "c78375452a469231eef8ef3b203de732f5f1399b1a28cfe3e5a86f39d5ee6e5b",
+    "windows/CMakeLists.txt": "931796ade3a2a04e40d91e82b4006e783a25e9d214f6e076a1aed5a371cc2643",
+    "windows/include/just_audio_windows/just_audio_windows_plugin.h": "e17c3d4c702506e282afa73f6e55b79f2f5645f1fde6d90a72ac301f5759fc55",
+    "windows/just_audio_windows_plugin.cpp": "a8a94a3cc5ecd6282e824e525f2fda27d35627b363044e6689905ddb1ea8863b",
+    "windows/player.hpp": "a22138e22ad9dd836c71e795030b7b33b49e95cb5df80c054d73af0c1839780f",
+    "windows/test/uri_utils_test.cpp": "d88248d41a7f163351fc601ba2cc9eda5e315a2ae38cad6a057513cf535107a6",
+    "windows/uri_utils.hpp": "ede56fe5bd70fd14cc727f1d1554ed1d536e824d3b0a5cd9e34b429eb2aa3dbe",
+    "windows/url_code.hpp": "4ede4a732259a29b15460c8506dcb3a7b2042339ef5ebb538c88a78297e233dc"
+  },
+  "archive_sha256": "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318"
+}

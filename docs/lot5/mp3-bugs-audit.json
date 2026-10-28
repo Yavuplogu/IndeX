@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-28",
+  "dataset_commit": "f13f098",
+  "scope": "Audit Linux ; signalement Windows utilisateur conservé, aucune lecture WinRT validée ici.",
+  "mp3_unchanged": true,
+  "files": [
+    {
+      "file": "1997-01-18 Noël Field.mp3",
+      "sha256": "b9d124671b695ebb3b3ab037d5a8931108d73a50c70373aefa1d7e0de2258e77",
+      "bytes": 73890174,
+      "windows_user_report": "ok",
+      "id3v2_present": true,
+      "id3v1_present": false,
+      "duration_seconds": 2309.063,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "48000",
+          "channels": 2,
+          "bit_rate": "256000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    },
+    {
+      "file": "2003-09-06 Haïti (2 sur 2) _ Jean-Bertrand Aristide.mp3",
+      "sha256": "27914a226af2293606ea285942ae4ebf19269da5bbf51e5bd0709f764784c7df",
+      "bytes": 14021197,
+      "windows_user_report": "timeout",
+      "id3v2_present": false,
+      "id3v1_present": true,
+      "duration_seconds": 1752.649625,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 1,
+          "bit_rate": "64000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    },
+    {
+      "file": "2004-11-13 Le Tchad (1 sur 2).mp3",
+      "sha256": "ed392ed3dd1108764aecbb3b9cbb71c189dd52b1fbe7262b0b6c93e7cf059c35",
+      "bytes": 27476719,
+      "windows_user_report": "ok",
+      "id3v2_present": true,
+      "id3v1_present": false,
+      "duration_seconds": 1717.28975,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 2,
+          "bit_rate": "128000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    },
+    {
+      "file": "2006-04-01 Jacques Foccart (1 sur 2).mp3",
+      "sha256": "9017037abaaa04fe3bfd855df7f6beac6e56338ab4b101c28883d450cfeeede7",
+      "bytes": 36783459,
+      "windows_user_report": "ok",
+      "id3v2_present": true,
+      "id3v1_present": false,
+      "duration_seconds": 2297.49551,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 2,
+          "bit_rate": "128000"
+        },
+        {
+          "codec_name": "mjpeg",
+          "sample_rate": null,
+          "channels": null,
+          "bit_rate": null
+        }
+      ],
+      "probe_warnings": "",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": ""
+    },
+    {
+      "file": "2006-05-06 Mexico, octobre 1968 _ le massacre de Tlatelolco.mp3",
+      "sha256": "0641348204eaa3be20535cef995f4d0c02ee7f20f2c1842131a8015957d6f759",
+      "bytes": 37410647,
+      "windows_user_report": "ok",
+      "id3v2_present": true,
+      "id3v1_present": false,
+      "duration_seconds": 2336.705306,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "44100",
+          "channels": 2,
+          "bit_rate": "128000"
+        },
+        {
+          "codec_name": "mjpeg",
+          "sample_rate": null,
+          "channels": null,
+          "bit_rate": null
+        }
+      ],
+      "probe_warnings": "",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": ""
+    },
+    {
+      "file": "2007-04-28 Le trésor du Parti communiste soviétique (2 sur 2).mp3",
+      "sha256": "2a1e3421601778b3784dff747a52ab087f1a2f22fef2870ef92d0cac29345f18",
+      "bytes": 10231688,
+      "windows_user_report": "timeout",
+      "id3v2_present": false,
+      "id3v1_present": true,
+      "duration_seconds": 2046.3376,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 2,
+          "bit_rate": "40000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate\n[json @ 0x…] 1 invalid UTF-8 sequence(s) found in string 'Le tr�sor du parti communiste2', replaced with '�'",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    },
+    {
+      "file": "2007-10-20 Le Zimbabwe _ la Rhodésie du Sud (1 sur 2).mp3",
+      "sha256": "4179460f1a34b9db4cc552280fc98f9d79c3d059782a3add2fb22b89c70d4f9d",
+      "bytes": 9702444,
+      "windows_user_report": "timeout",
+      "id3v2_present": true,
+      "id3v1_present": true,
+      "duration_seconds": 1939.6696,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 2,
+          "bit_rate": "40000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    },
+    {
+      "file": "2008-01-12 Les Moudjahiddin du Peuple.mp3",
+      "sha256": "2114a6dcbf3bd93f7e56ba5d60002419c1848525349c5fe760e6313ccd65571e",
+      "bytes": 9285428,
+      "windows_user_report": "ok",
+      "id3v2_present": false,
+      "id3v1_present": true,
+      "duration_seconds": 1857.0856,
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 2,
+          "bit_rate": "40000"
+        }
+      ],
+      "probe_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate",
+      "linux_ffmpeg_decode_exit_code": 0,
+      "decode_warnings": "[mp3 @ 0x…] Estimating duration from bitrate, this may be inaccurate"
+    }
+  ]
+}

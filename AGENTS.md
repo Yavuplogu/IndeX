@@ -105,7 +105,7 @@
   non associés et tous (non associés en tête). Ouverture du
   dossier par canal natif ShellExecuteW, sans ligne de commande Explorer.
 
-- Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3,
+- Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.1,
   WinRT MediaPlayer), NativeAudioPort/MediaPlayer Android conservé en pause.
   MCI retiré. Plugin Windows dans le bundle, licences natives/packages inventoriées. Schéma de travail v5 ; seed livré v4 conservé.
   Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
@@ -128,3 +128,13 @@
   une réouverture (unload puis lecture). Préserver l’interface et le suivi communs.
   path_provider_android 2.2.23 épinglé pour éviter la chaîne JNI sur Windows.
   Ne pas prétendre une latence <200 ms sans mesure sur appareil et MP3 réels.
+
+- Régression MP3_Bugs du 28 octobre : plugin Windows corrigé localement dans
+  third_party/just_audio_windows (MIT/provenance conservées), pas dans le cache pub.
+  Voir INDEX_PATCHES.md. Les huit fichiers sont des fixtures en lecture seule,
+  jamais embarquées. Six fixtures racine + huit imbriquées = 14 fichiers au scan
+  récursif de test ; les scénarios historiques non récursifs gardent six fichiers.
+  Journal audio local logs/lecteur-audio.log dans les données utilisateur,
+  rotation 512 Kio ; aucun envoi réseau. Timeout interne d’ouverture 20 s avec
+  destruction du lecteur (nettoyage borné), erreurs natives remontées immédiatement.
+  Ne pas annoncer les huit lectures WinRT validées sur la seule base de FFmpeg/Linux.

@@ -5,11 +5,35 @@ import 'package:just_audio/just_audio.dart';
 import 'audio_player.dart';
 
 /// Windows : WinRT MediaPlayer par just_audio_windows, enregistré par Flutter.
-/// Création paresseuse : la consultation sans MP3 ne démarre aucun moteur audio.
 final class JustAudioPort implements AudioPort {
+  JustAudioPort({
+    this.openTimeout = const Duration(seconds: 20),
+    this.disposeTimeout = const Duration(seconds: 3),
+    this.onDiagnostic,
+  });
+  final Duration openTimeout, disposeTimeout;
+  final void Function(Map<String, Object?> event)? onDiagnostic;
   AudioPlayer? _player;
   StreamSubscription<PlayerException>? _errors;
+  StreamSubscription<PlayerState>? _states;
   Object? _failure;
+
+  void _log(String event, {String? source, Object? error, PlayerState? state}) {
+    try {
+      onDiagnostic?.call({
+        'at': DateTime.now().toUtc().toIso8601String(),
+        'event': event,
+        if (source != null) 'file': source,
+        if (error != null) 'error': error.toString(),
+        if (state != null) 'state': state.processingState.name,
+        if (state != null) 'playing': state.playing,
+        if (state != null) 'duration_ms': _player?.duration?.inMilliseconds,
+        if (state != null) 'position_ms': _player?.position.inMilliseconds,
+      });
+    } catch (_) {
+      // Un journal indisponible ne remplace pas le suivi SQLite et ne bloque pas l'audio.
+    }
+  }
 
   AudioPlayer get _opened {
     final player = _player;
@@ -24,20 +48,59 @@ final class JustAudioPort implements AudioPort {
       throw ArgumentError('Référence de fichier audio local requise.');
     }
     await dispose();
+    final source = uri.pathSegments.last;
+    _log('open', source: source);
     final player = AudioPlayer(
       handleInterruptions: false,
       handleAudioSessionActivation: false,
     );
+    final failed = Completer<Object>();
     _player = player;
     _failure = null;
-    _errors = player.errorStream.listen((error) {
-      if (identical(_player, player)) _failure = error;
+    void recordFailure(Object error) {
+      if (!identical(_player, player)) return;
+      _failure = error;
+      _log('native_error', source: source, error: error);
+      if (!failed.isCompleted) failed.complete(error);
+    }
+
+    _errors = player.errorStream.listen(recordFailure, onError: recordFailure);
+    _states = player.playerStateStream.listen((state) {
+      if (identical(_player, player))
+        _log('state', source: source, state: state);
     });
     try {
-      await player.setAudioSource(AudioSource.uri(uri));
+      // Une erreur native doit débloquer l'ouverture même si le backend reste loading.
+      await Future.any<void>([
+        () async {
+          await player.setAudioSource(AudioSource.uri(uri));
+          // Un événement idle précoce ne signifie pas que le fichier est prêt.
+          await player.processingStateStream.firstWhere(
+            (state) =>
+                state == ProcessingState.ready ||
+                state == ProcessingState.completed,
+          );
+        }(),
+        failed.future.then<void>((error) => throw error),
+      ]).timeout(
+        openTimeout,
+        onTimeout: () {
+          throw TimeoutException(
+            'Windows n’a pas confirmé l’ouverture du MP3.',
+            openTimeout,
+          );
+        },
+      );
       _checkError();
-    } catch (_) {
-      await dispose();
+      _log('opened', source: source);
+    } catch (error) {
+      _log('open_failed', source: source, error: error);
+      // Future.timeout ne détruit pas sa source : annuler réellement le lecteur.
+      try {
+        await dispose();
+      } catch (cleanup) {
+        _log('cleanup_failed', source: source, error: cleanup);
+      }
       rethrow;
     }
   }
@@ -51,25 +114,24 @@ final class JustAudioPort implements AudioPort {
   Future<void> play() async {
     _checkError();
     final player = _opened;
-    // play() reste en attente jusqu'à pause/fin : ne pas bloquer Playback.busy.
-    // Les erreurs tardives sont conservées et relevées au prochain snapshot.
+    // Le Future reste en attente jusqu'à pause/fin : ne pas bloquer les commandes.
     unawaited(
       player.play().catchError((Object error) {
-        if (identical(_player, player)) _failure = error;
+        if (identical(_player, player)) {
+          _failure = error;
+          _log('play_failed', error: error);
+        }
       }),
     );
   }
 
   @override
-  Future<void> pause() async {
-    await _opened.pause();
-  }
+  Future<void> pause() => _opened.pause();
 
   @override
   Future<void> seek(int milliseconds) async {
     _checkError();
     if (milliseconds < 0) throw ArgumentError('Position négative.');
-    // just_audio conserve la lecture active pendant le déplacement.
     await _opened
         .seek(Duration(milliseconds: milliseconds))
         .timeout(const Duration(seconds: 15));
@@ -98,9 +160,14 @@ final class JustAudioPort implements AudioPort {
   Future<void> dispose() async {
     final player = _player;
     _player = null;
-    await _errors?.cancel();
+    final cleanup = <Future<void>>[
+      if (_errors != null) _errors!.cancel(),
+      if (_states != null) _states!.cancel(),
+      if (player != null) player.dispose(),
+    ];
     _errors = null;
+    _states = null;
     _failure = null;
-    await player?.dispose();
+    await Future.wait<void>(cleanup).timeout(disposeTimeout);
   }
 }

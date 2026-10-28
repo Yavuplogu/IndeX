@@ -179,8 +179,8 @@ void main() {
         Directory('../../MP3_Files').absolute.path,
         false,
       );
-      expect(model!.availableAudioCount, 6);
-      expect(model!.missingAudioCount, 710);
+      expect(model!.availableAudioCount, 14);
+      expect(model!.missingAudioCount, 702);
       expect(model!.episodeCountLabel, '716 / 716 épisodes');
       model!.search('Masque');
       expect(model!.visible.length, lessThan(716));
@@ -278,7 +278,7 @@ void main() {
       model = AppModel(portableDirectory: portable);
       await model!.configure(data.path, mp3, false);
       expect(model!.error, isEmpty);
-      expect(model!.catalog.where((e) => e.audioAvailable), hasLength(6));
+      expect(model!.catalog.where((e) => e.audioAvailable), hasLength(14));
       await model!.closeSafely();
       model!.dispose();
       model = AppModel(portableDirectory: portable);
@@ -296,7 +296,7 @@ void main() {
       expect(model!.opening, isFalse);
       expect(model!.error, isEmpty);
       expect(model!.needsSetup, isFalse);
-      expect(model!.report!['count'], 6);
+      expect(model!.report!['count'], 14);
       await model!.scan('${root.path}/disparu');
       expect(model!.audioState, AudioFolderState.unavailable);
       expect(model!.folderLabel, contains('inaccessible'));

@@ -1,8 +1,8 @@
 [
   {
     "component": "just_audio + just_audio_windows / WinRT MediaPlayer",
-    "version": "0.10.6 / 0.2.3",
-    "usage": "Adaptateur Windows JustAudioPort ; ancien moteur MCI retiré",
+    "version": "0.10.6 / 0.2.3+index.1",
+    "usage": "JustAudioPort ; plugin Windows local corrigé (notifications d’ouverture, erreurs et durée inconnue), provenance MIT conservée",
     "redistributed_binary": "just_audio_windows_plugin.dll compilé par Flutter ; API audio WinRT du système",
     "license": "MIT (packages) ; framework système Windows non redistribué",
     "risk": "Compilation Windows, durées MP3/VBR et latence réelle à mesurer ; voir just-audio-dependances.json"

@@ -316,3 +316,70 @@ analyse Flutter conforme. Syntaxe du packaging PowerShell vérifiée ;
 `git diff --check` sans erreur. Aucun benchmark audible ni build Windows natif
 exécuté ici. Le mineur sera réservé automatiquement par le prochain build CI,
 sans changer le majeur 5. Aucun commit/push automatique.
+
+
+## Régression MP3_Bugs — signalement utilisateur du 28 octobre 2026
+
+`main` récupéré et intégré en avance rapide jusqu’à **f13f098** : huit MP3 sous
+`MP3_Files/MP3_Bugs`. Le signalement indique cinq lectures OK et trois timeouts
+(Haïti, trésor du PC soviétique, Zimbabwe). Audit en lecture seule : les huit
+se décodent intégralement avec FFmpeg, sans erreur de décodage. Les fréquences,
+canaux et tags ne permettent pas d’isoler une caractéristique exclusive aux trois
+échecs ; Moudjahiddin, qui fonctionne, partage le profil MPEG/16 kHz/stéréo/40 kbit/s
+de deux échecs. Cela ne prouve pas que WinRT accepte les huit sources.
+Rapport reproductible, empreintes et signalement : `mp3-bugs-audit.json` ; commande
+`python3 tools/lot5/audit_mp3_bugs.py --decode --output docs/lot5/mp3-bugs-audit.json`.
+Les octets/tags/noms des MP3 sont inchangés, pas de mise à jour du seed nécessaire.
+
+Défauts identifiés dans le chemin d’intégration (pas de reproduction WinRT sur Linux) :
+
+- Le plugin 0.2.3 émettait MediaFailed/ItemFailed comme erreurs EventChannel,
+  ignorées par l’abonnement natif de just_audio 0.10.6 : un chargement pouvait
+  rester loading jusqu’à notre timeout, sans erreur réelle affichée.
+- Événements envoyés depuis les callbacks WinRT vers Flutter sans transfert
+  explicite au thread UI ; notifications avant abonnement perdues, seules les
+  transitions PlaybackStateChanged écoutées, pas MediaOpened/durée.
+- Durée encore inconnue : position=durée=0 interprétée à tort comme completed.
+- Le timeout de Playback n’annulait pas à lui seul le Future/moteur sous-jacent.
+
+Correctif local MIT `third_party/just_audio_windows` **0.2.3+index.1**, à partir
+de l’archive officielle avec provenance/empreintes conservées. Notifications
+réacheminées au thread UI via une file faible/protégée et le délégué de fenêtre,
+notifications d’ouverture et de durée ajoutées, dernier événement rejoué,
+erreurs converties dans le protocole d’état reconnu par just_audio. Une erreur
+est émise sans interroger une session WinRT déjà défaillante. Fin seulement pour
+une durée strictement positive. Lecteurs libérés à la destruction du plugin avant
+COM. Détail dans `third_party/just_audio_windows/INDEX_PATCHES.md`.
+
+JustAudioPort attend un état prêt et arbitre chargement/erreur ; timeout interne
+20 s puis destruction effective, nettoyage borné à 3 s, avant la limite externe
+30 s. Les événements tardifs d’un lecteur détaché ne modifient pas le suivant.
+Nouvelle piste possible après un échec sans perte du favori/suivi. Journal local
+`<données>/logs/lecteur-audio.log` : noms de fichiers, états, position/durée connue,
+erreur et résultat de l’ouverture, rotation 512 Kio avec un précédent, sans réseau.
+Un échec d’écriture du journal ne bloque pas le suivi ou la lecture.
+
+Recette Windows étendue dans la cible audio existante : les six fixtures racine
+restent scannées sans récursivité dans le scénario historique, puis les huit
+MP3_Bugs doivent chacun s’ouvrir, progresser et accepter un seek. Les tests des
+compteurs récursifs tiennent désormais compte de **14** fichiers (716 épisodes,
+702 manquants), et 13 associations après retrait d’une, sans modifier les fixtures.
+Les autres scénarios non récursifs restent à six fichiers. Aucun MP3 embarqué.
+Android reste en pause, aucune dépendance audio Android remplacée.
+
+Limite : ces correctifs résolvent des défauts identifiés de notification et de
+nettoyage, mais la cause précise du refus éventuel de chacun des trois MP3 reste
+à confirmer sur Windows. Ne pas déclarer les huit lectures WinRT validées sur la
+base du décodage FFmpeg. Si un fichier est réellement refusé par le décodeur
+Windows, son erreur native doit désormais apparaître et figurer dans le journal.
+
+Contrôles exécutés : audit FFmpeg intégral des huit fichiers, codes de sortie 0
+et empreintes avant/après identiques ; 188 tests Dart et quatre tests du compteur
+réussis. Suite Flutter corrigée pour les nouvelles fixtures : 31 tests réussis,
+analyse sans anomalie, dont ouverture bloquée annulée/réouverture et erreur native
+pendant loading sans attendre le timeout. Test C++ portable compilé par
+`g++ -std=c++17 -pthread -Wall -Wextra -Werror tools/lot5/test_audio_state.cpp`
+(exécutable dans /tmp) : états/durée nulle, durée 64 bits, notifications concurrentes,
+erreurs conservées, arrêt et événement tardif ignoré réussis. Formatage et contrôle
+diff conformes. Le code Win32/WinRT complet n’a pas été compilé/exécuté ici ;
+recette des huit MP3 sous Windows restant obligatoire avant qualification.

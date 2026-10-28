@@ -84,6 +84,48 @@ void main() {
     },
   );
 
+  test('Ouverture bloquée : timeout annule le moteur, journalise et permet une autre piste', () async {
+    platform.loading = true;
+    final journal = <Map<String, Object?>>[];
+    final port = JustAudioPort(
+      openTimeout: const Duration(milliseconds: 50),
+      disposeTimeout: const Duration(seconds: 1),
+      onDiagnostic: journal.add,
+    );
+    final playback = Playback(port, (_, _, _, _) {}, autoPoll: false);
+    await playback
+        .start('bad', 'file:///C:/Zimbabwe.mp3', 0)
+        .timeout(const Duration(seconds: 2));
+    expect(playback.busy, isFalse);
+    expect(playback.episodeId, isNull);
+    expect(playback.error, contains('Windows n’a pas confirmé'));
+    expect(platform.players, isEmpty);
+    expect(
+      journal.any(
+        (e) => e['event'] == 'open_failed' && e['file'] == 'Zimbabwe.mp3',
+      ),
+      isTrue,
+    );
+    platform.loading = false;
+    await playback.start('good', 'file:///C:/Foccart.mp3', 0);
+    expect(playback.error, isEmpty);
+    expect(playback.state.playing, isTrue);
+    await playback.release();
+    playback.dispose();
+  });
+
+  test('Erreur native pendant loading : remontée immédiate sans attendre le timeout', () async {
+    platform.loading = true;
+    platform.openError = true;
+    final port = JustAudioPort(openTimeout: const Duration(seconds: 2));
+    await expectLater(
+      port.open('file:///C:/Haiti.mp3').timeout(const Duration(seconds: 1)),
+      throwsA(isA<PlayerException>().having((e) => e.code, 'code', 1001)),
+    );
+    expect(platform.players, isEmpty);
+    await port.dispose();
+  });
+
   test('Source distante refusée, échec de chargement récupérable et play rejeté capturé', () async {
     final port = JustAudioPort();
     await expectLater(
@@ -123,11 +165,11 @@ void main() {
 
 class TestAudioPlatform extends JustAudioPlatform {
   TestPlayer? last;
-  bool failLoad = false;
+  bool failLoad = false, loading = false, openError = false;
   final players = <String, TestPlayer>{};
   @override
   Future<AudioPlayerPlatform> init(InitRequest request) async {
-    final player = TestPlayer(request.id, failLoad);
+    final player = TestPlayer(request.id, failLoad, loading, openError);
     players[request.id] = last = player;
     return player;
   }
@@ -142,8 +184,8 @@ class TestAudioPlatform extends JustAudioPlatform {
 }
 
 class TestPlayer extends AudioPlayerPlatform {
-  TestPlayer(super.id, this.failLoad);
-  final bool failLoad;
+  TestPlayer(super.id, this.failLoad, this.loading, this.openError);
+  final bool failLoad, loading, openError;
   final events = StreamController<PlaybackEventMessage>.broadcast();
   Duration position = Duration.zero;
   Completer<PlayResponse>? pendingPlay;
@@ -178,6 +220,15 @@ class TestPlayer extends AudioPlayerPlatform {
     if (failLoad) throw PlatformException(code: '404', message: 'absent');
     final list = request.audioSourceMessage as ConcatenatingAudioSourceMessage;
     uri = (list.children.first as UriAudioSourceMessage).uri;
+    if (loading) {
+      emit(state: ProcessingStateMessage.loading);
+      if (openError)
+        Timer.run(() {
+          if (!events.isClosed)
+            emit(state: ProcessingStateMessage.loading, error: 1001);
+        });
+      return LoadResponse(duration: null);
+    }
     emit(position: request.initialPosition ?? Duration.zero);
     return LoadResponse(duration: const Duration(seconds: 120));
   }
