@@ -18,6 +18,44 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  testWidgets('Recherche restaurée visible et case de reprise à gauche', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final root = Directory.systemTemp.createTempSync('index-list-view-widget-');
+    final model = AppModel(portableDirectory: root, audioPort: FakeAudio());
+    try {
+      await tester.runAsync(
+        () => model.configure('${root.path}/user', '', true),
+      );
+      model.search('Yougo');
+      await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+      await tester.pumpAndSettle();
+      final searchField = find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == 'Yougo',
+      );
+      expect(searchField, findsOneWidget);
+      await tester.tap(find.text('Paramètres'));
+      await tester.pumpAndSettle();
+      final resume = find.widgetWithText(
+        CheckboxListTile,
+        'Reprendre à la dernière position sauvegardée',
+      );
+      expect(
+        tester.widget<CheckboxListTile>(resume).controlAffinity,
+        ListTileControlAffinity.leading,
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.runAsync(model.release);
+      model.dispose();
+      root.deleteSync(recursive: true);
+    }
+  });
   testWidgets(
     'Lecteur indépendant de la fiche, progression durable et mise en page téléphone',
     (tester) async {

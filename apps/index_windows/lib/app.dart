@@ -618,7 +618,13 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  final search = TextEditingController();
+  late final TextEditingController search;
+  @override
+  void initState() {
+    super.initState();
+    search = TextEditingController(text: m.query);
+  }
+
   Timer? debounce;
   final listFocus = FocusNode(debugLabel: 'Liste des épisodes');
   final listScroll = ScrollController();
@@ -909,9 +915,11 @@ class _LibraryPageState extends State<LibraryPage> {
                       ),
                       onChanged: (value) {
                         debounce?.cancel();
+                        // Conserver aussi une saisie suivie d'une fermeture immédiate.
+                        m.search(value, refresh: false);
                         debounce = Timer(
                           const Duration(milliseconds: 250),
-                          () => m.search(value),
+                          m.reload,
                         );
                       },
                     ),
@@ -2088,6 +2096,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ], c),
                           group('Lecture et reprise', [
                             CheckboxListTile(
+                              controlAffinity: ListTileControlAffinity.leading,
                               contentPadding: EdgeInsets.zero,
                               title: const Text(
                                 'Reprendre à la dernière position sauvegardée',

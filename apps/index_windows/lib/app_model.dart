@@ -388,6 +388,7 @@ final class AppModel extends ChangeNotifier {
     dataPath = session!.dataDirectory.path;
     mp3Path = session!.setting('mp3_directory') ?? '';
     dark = session!.setting('theme') == 'dark';
+    _restoreListing();
     if (mp3Path.isEmpty)
       audioState = AudioFolderState.unconfigured;
     else
@@ -550,8 +551,57 @@ final class AppModel extends ChangeNotifier {
         dataPath = session!.dataDirectory.path;
         reload();
       });
+  void _restoreListing() {
+    final raw = session!.setting('library_view');
+    if (raw == null) return;
+    try {
+      final data = jsonDecode(raw);
+      if (data is! Map || data['version'] != 1) return;
+      query = data['query'] is String ? data['query'] as String : '';
+      sort =
+          CatalogSort.values
+              .where((value) => value.name == data['sort'])
+              .firstOrNull ??
+          CatalogSort.dateNew;
+      const statuses = ['Tous', 'NON_ECOUTE', 'EN_COURS', 'ECOUTE'];
+      status = statuses.contains(data['status'])
+          ? data['status'] as String
+          : 'Tous';
+      favoritesOnly = data['favorites_only'] == true;
+      final names = data['fields'];
+      if (names is List) {
+        final restored = SearchField.values
+            .where((field) => names.contains(field.name))
+            .toSet();
+        if (names.isEmpty || restored.isNotEmpty) fields = restored;
+      }
+    } on FormatException {
+      // Un ancien réglage illisible ne bloque pas l'ouverture du catalogue.
+    }
+  }
+
+  void _saveListing() {
+    if (session == null) return;
+    final value = jsonEncode({
+      'version': 1,
+      'query': query,
+      'sort': sort.name,
+      'status': status,
+      'favorites_only': favoritesOnly,
+      'fields': [
+        for (final field in SearchField.values)
+          if (fields.contains(field)) field.name,
+      ],
+    });
+    // Les checkpoints audio rechargent aussi la liste : pas d'écriture inutile.
+    if (session!.setting('library_view') != value) {
+      session!.setSetting('library_view', value);
+    }
+  }
+
   void reload() {
     if (session == null) return;
+    _saveListing();
     catalog = session!.episodes();
     queryError = '';
     try {
@@ -612,12 +662,16 @@ final class AppModel extends ChangeNotifier {
     changed();
   }
 
-  void search(String value) {
+  void search(String value, {bool refresh = true}) {
     _independentDetailId = null;
     if (query.isEmpty && value.isNotEmpty) sort = CatalogSort.relevance;
     if (value.isEmpty) sort = CatalogSort.dateNew;
     query = value;
-    reload();
+    if (refresh) {
+      reload();
+    } else {
+      _saveListing();
+    }
   }
 
   void selectRelative(int delta) {

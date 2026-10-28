@@ -486,3 +486,35 @@ conforme. Les variantes sans enchaînement vérifient aussi une deuxième fin pu
 la relance via Lecture du lecteur. Ces tests utilisent un moteur simulé ; la
 reproduction visuelle sur Windows reste à confirmer au prochain build. Le numéro
 mineur sera réservé par le mécanisme habituel, sans changement de majeur.
+
+
+## Réglages de liste persistants et fin après seek — 28 octobre 2026
+
+La vue de liste conserve recherche, champs, tri, statut et Favoris dans un réglage
+JSON local versionné `library_view`, au sein de `local_settings` existante. Il est
+restauré avant le premier chargement des résultats. L’écriture n’a lieu que si le
+réglage change, pour éviter une écriture supplémentaire à chaque checkpoint audio.
+Les valeurs inconnues reviennent aux choix par défaut ; un JSON illisible ne
+bloque pas l’ouverture. Le champ de recherche reprend la valeur du modèle à sa
+création. La temporisation d’affichage de 250 ms reste en place, mais la saisie est
+durable immédiatement. Aucun changement de schéma, de seed ou de dépendance.
+
+La case Reprendre à la dernière position sauvegardée utilise l’affinité à gauche.
+La garde de fin accepte désormais une vraie fin du moteur après progression
+continue depuis le dernier seek, même lorsque moins de dix secondes restaient.
+Un simple seek à 100 %, une discontinuité sans progression ou une durée inconnue
+ne valent toujours pas validation. Un événement de fin à position identique au
+dernier échantillon est accepté si une progression dans la zone de fin a déjà été
+observée depuis le seek. La validation anticipée sur dix secondes est conservée.
+Cette règle remplace l’obligation antérieure des dix secondes lors d’une fin réelle.
+
+Tests ajoutés : fermeture/réouverture avec filtres combinés et retrait de ceux-ci,
+saisie avant temporisation, réglage illisible, texte de recherche visible, case à
+gauche, gardes de fin (fin réelle, position finale répétée, seek seul, durée inconnue)
+et suivi SQLite après seek à trois secondes de la fin, avec/sans auto-suivant.
+
+Validation : `bash tools/lot4/check.sh` réussi : 188 tests du cœur, 44 tests Flutter,
+4 tests de versionnement ; analyses sans anomalie, formatage et diff conformes.
+Les tests audio utilisent un moteur simulé : recette Windows réelle à confirmer
+au prochain build. Aucun build distribuable lancé ici ; le prochain mineur reste
+attribué par le compteur habituel, majeur 5 conservé.

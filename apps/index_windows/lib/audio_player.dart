@@ -68,7 +68,7 @@ final class NativeAudioPort implements AudioPort {
   Future<void> dispose() => channel.invokeMethod<void>('release');
 }
 
-/// Garde anti-seek : dix secondes réellement jouées en zone de fin.
+/// Dix secondes en zone de fin, ou fin moteur après progression réelle post-seek.
 final class ListeningGuard {
   int? _last;
   int nearEndMs = 0;
@@ -81,6 +81,18 @@ final class ListeningGuard {
   void observe(AudioSnapshot state) {
     final delta = _last == null ? 0 : state.position - _last!;
     _last = state.position;
+    final near =
+        state.duration > 0 &&
+        (state.position >= state.duration * .95 ||
+            state.duration - state.position <= 60000);
+    // Un seek seul (même à 100 %) n'est pas une écoute. Une vraie fin après
+    // progression continue est valide même s'il restait moins de dix secondes.
+    if (state.ended &&
+        near &&
+        ((delta > 0 && delta <= 2000) || (delta == 0 && nearEndMs > 0))) {
+      progressed = true;
+      completed = true;
+    }
     if (!state.playing && !state.ended) {
       nearEndMs = 0;
       return;
@@ -90,10 +102,6 @@ final class ListeningGuard {
       return;
     }
     progressed = true;
-    final near =
-        state.duration > 0 &&
-        (state.position >= state.duration * .95 ||
-            state.duration - state.position <= 60000);
     nearEndMs = near ? nearEndMs + delta : 0;
     if (nearEndMs >= 10000) completed = true;
   }

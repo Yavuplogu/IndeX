@@ -4,6 +4,32 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  test('Fin réelle après seek court : validée ; seek seul à 100 % et durée inconnue exclus', () {
+    final guard = ListeningGuard()..discontinuity(117000);
+    guard.observe(const AudioSnapshot(118000, 120000, true));
+    guard.observe(const AudioSnapshot(119000, 120000, true));
+    expect(guard.completed, isFalse);
+    guard.observe(const AudioSnapshot(120000, 120000, false, ended: true));
+    expect(guard.completed, isTrue);
+    final duplicateEnd = ListeningGuard()..discontinuity(118000);
+    duplicateEnd.observe(const AudioSnapshot(119900, 120000, true));
+    duplicateEnd.observe(
+      const AudioSnapshot(119900, 120000, false, ended: true),
+    );
+    expect(duplicateEnd.completed, isTrue);
+    final seekOnly = ListeningGuard()..discontinuity(120000);
+    seekOnly.observe(const AudioSnapshot(120000, 120000, false, ended: true));
+    expect(seekOnly.completed, isFalse);
+    // Une progression antérieure au dernier seek ne vaut pas preuve de fin.
+    guard.completed = false;
+    guard.discontinuity(120000);
+    guard.observe(const AudioSnapshot(120000, 120000, false, ended: true));
+    expect(guard.completed, isFalse);
+    final unknown = ListeningGuard()..discontinuity(117000);
+    unknown.observe(const AudioSnapshot(118000, 0, true));
+    unknown.observe(const AudioSnapshot(119000, 0, false, ended: true));
+    expect(unknown.completed, isFalse);
+  });
   test('Fin : seek seul sans validation, dix secondes continues, durée inconnue et pause', () {
     final guard = ListeningGuard();
     guard.discontinuity(115000);

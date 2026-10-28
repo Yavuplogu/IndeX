@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:index_core/index_core.dart';
 import 'package:index_windows/app_model.dart';
 
 void main() {
@@ -16,6 +17,73 @@ void main() {
     await model?.release();
     model?.dispose();
     root.deleteSync(recursive: true);
+  });
+  test(
+    'Réouverture : recherche, champs, tri, statut et Favoris restaurés',
+    () async {
+      model = AppModel(portableDirectory: portable);
+      await model!.configure(data.path, '', true);
+      model!.search('guerre');
+      final episode = model!.visible.first;
+      model!.favorite(episode);
+      await model!.listened(episode);
+      model!.fields = {SearchField.title, SearchField.description};
+      model!.sort = CatalogSort.titleZA;
+      model!.status = 'ECOUTE';
+      model!.favoritesOnly = true;
+      model!.reload();
+      final ids = model!.visible.map((e) => e.id).toList();
+      expect(ids, contains(episode.id));
+      final setting = model!.session!.setting('library_view');
+      model!.reload();
+      expect(model!.session!.setting('library_view'), setting);
+      await model!.closeSafely();
+      model!.dispose();
+      model = AppModel(portableDirectory: portable);
+      await model!.boot();
+      expect(model!.error, isEmpty);
+      expect(model!.query, 'guerre');
+      expect(model!.fields, {SearchField.title, SearchField.description});
+      expect(model!.sort, CatalogSort.titleZA);
+      expect(model!.status, 'ECOUTE');
+      expect(model!.favoritesOnly, isTrue);
+      expect(model!.visible.map((e) => e.id), ids);
+      // La saisie est durable même avant expiration du délai de recherche UI.
+      model!.search('Yougo', refresh: false);
+      await model!.closeSafely();
+      model!.dispose();
+      model = AppModel(portableDirectory: portable);
+      await model!.boot();
+      expect(model!.query, 'Yougo');
+      model!.search('');
+      model!.fields = Set.of(SearchField.values);
+      model!.status = 'Tous';
+      model!.favoritesOnly = false;
+      model!.reload();
+      await model!.closeSafely();
+      model!.dispose();
+      model = AppModel(portableDirectory: portable);
+      await model!.boot();
+      expect(model!.query, isEmpty);
+      expect(model!.sort, CatalogSort.dateNew);
+      expect(model!.status, 'Tous');
+      expect(model!.favoritesOnly, isFalse);
+      expect(model!.visible, hasLength(716));
+    },
+  );
+
+  test('Réglage de liste illisible : ouverture possible avec les valeurs par défaut', () async {
+    model = AppModel(portableDirectory: portable);
+    await model!.configure(data.path, '', true);
+    model!.session!.setSetting('library_view', '{invalide');
+    await model!.closeSafely();
+    model!.dispose();
+    model = AppModel(portableDirectory: portable);
+    await model!.boot();
+    expect(model!.error, isEmpty);
+    expect(model!.query, isEmpty);
+    expect(model!.sort, CatalogSort.dateNew);
+    expect(model!.visible, hasLength(716));
   });
   test(
     'Premier démarrage : dossier user proposé vide, autre emplacement conservé',

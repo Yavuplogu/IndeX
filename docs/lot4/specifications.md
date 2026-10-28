@@ -414,3 +414,21 @@ ouverture/positionnement réussis de la nouvelle lecture, avant son premier
 checkpoint. Une ouverture échouée ne doit pas effacer le statut Écouté existant.
 Une écoute inachevée conserve sa reprise, selon le réglage utilisateur ; pause,
 Arrêt et changement manuel de statut conservent leurs comportements respectifs.
+
+
+## Conservation des filtres et fin après déplacement — 28 octobre 2026
+
+- À la réouverture, restaurer les réglages de la liste : recherche saisie, champs
+  Titre/Résumé/Sources/Musiques cochés, ordre de tri, filtre de statut et vue Favoris.
+  Ils sont conservés dans les réglages du profil utilisateur ; effacer un filtre
+  conserve aussi son retrait. Le champ de recherche affiche le texte restauré.
+  La saisie est enregistrée immédiatement, même si la fermeture précède le délai
+  de rafraîchissement des résultats. Aucun démarrage automatique de l’audio.
+- Dans Paramètres → Lecture et reprise, placer la case de reprise à gauche du texte.
+- Après un déplacement à quelques secondes du terme, la fin signalée par le moteur
+  valide Écouté si une progression réelle a eu lieu depuis le déplacement. Le statut
+  est sauvegardé avant l’éventuel enchaînement ; la ligne est entièrement colorée
+  comme Écouté, sans rester En cours à 100 %. Le simple placement du curseur à la
+  fin sans lecture ne suffit pas. Sans signal de fin, conserver la validation
+  anticipée après dix secondes continues dans la zone de fin. Une durée inconnue
+  ne déclenche pas de validation automatique.

@@ -108,7 +108,8 @@
 - Lot 5 : JustAudioPort Windows (`just_audio` 0.10.6 + `just_audio_windows` 0.2.3+index.2,
   WinRT MediaPlayer), NativeAudioPort/MediaPlayer Android conservé en pause.
   MCI retiré. Plugin Windows dans le bundle, licences natives/packages inventoriées. Schéma de travail v5 ; seed livré v4 conservé.
-  Checkpoints toutes les 5 s et aux transitions, garde de fin 10 s sans seek.
+  Checkpoints toutes les 5 s et aux transitions ; validation anticipée après 10 s
+  en zone de fin, ou fin moteur après progression réelle depuis le dernier seek.
   Mise en pause/sauvegarde en arrière-plan Android, SAF et droits persistants.
   Ne pas annoncer une recette physique Android sans appareil réel.
 
@@ -154,3 +155,11 @@
   Messages d’erreur/alertes/validation sélectionnables (SelectableText). Voir la
   dernière section de docs/lot4/specifications.md. Retour utilisateur : audio
   Windows et seeks quasi instantanés fonctionnels sur le build précédent.
+
+- Révision du 28 octobre : persister recherche/champs/tri/statut/Favoris dans
+  local_settings.library_view, restaurer avant reload et dans le champ de saisie.
+  Pas d’écriture si les critères sont inchangés ; une saisie est durable avant
+  expiration des 250 ms de temporisation. Case Lecture et reprise à gauche.
+  Une fin moteur après progression post-seek valide Écouté même à moins de 10 s
+  du terme ; seek seul à 100 % et durée inconnue exclus. Voir les dernières
+  sections des spécifications Lot 4 et du bilan Lot 5.
