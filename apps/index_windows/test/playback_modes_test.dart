@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -19,6 +20,7 @@ void main() {
       portableDirectory: root,
       audioPort: audio,
       pollAudio: false,
+      audioRandom: FirstChoiceRandom(),
     );
     await model.configure(
       '${root.path}/user',
@@ -38,6 +40,15 @@ void main() {
     }
     expect(model.progress(model.playingEpisode!), closeTo(5 / 120, .001));
     expect(model.playingEpisode!.status, 'EN_COURS');
+    model.search('zzzzabsent123456789');
+    expect(model.visible, isEmpty);
+    model.select(model.playingEpisode!, keepOutsideList: true);
+    audio.value = const AudioSnapshot(10000, 120000, true);
+    await model.playback.poll(); // Un checkpoint rafraîchit le catalogue.
+    expect(model.selected!.id, episode.id);
+    expect(model.visible, isEmpty);
+    expect(model.query, 'zzzzabsent123456789');
+    model.search('');
     await model.stopAudio();
     expect(model.playback.state.position, 0);
     expect(model.playback.state.playing, isFalse);
@@ -75,6 +86,14 @@ void main() {
     await model.toggleShuffle();
     expect(model.shuffle, isTrue);
     expect(model.playingEpisode!.id, isNot(stoppedId));
+    expect(model.playingEpisode!.id, queue[0].id);
+    await model.nextAudio(-1);
+    expect(
+      model.playingEpisode!.id,
+      queue[1].id,
+    ); // Ni précédent séquentiel ni boucle.
+    await model.nextAudio(1);
+    expect(model.playingEpisode!.id, queue[0].id); // Ni suivant séquentiel.
     final randomId = model.playingEpisode!.id;
     audio.value = const AudioSnapshot(120000, 120000, false, ended: true);
     await model.playback.poll();
@@ -125,16 +144,30 @@ void main() {
       await mouse.moveTo(middle + const Offset(1, 0));
       await tester.pump();
       expect(find.text('1:00'), findsOneWidget);
-      await tester.tapAt(middle);
+      await mouse.down(middle);
+      await tester.pump();
+      expect(
+        find.text(playbackTime(tester.widget<Slider>(slider).value.round())),
+        findsOneWidget,
+      );
+      await mouse.moveTo(middle + const Offset(45, 0));
       await tester.pump();
       final preview = tester.widget<Slider>(slider).value;
-      expect(preview, closeTo(60000, 1000));
+      expect(preview, greaterThan(60000));
+      expect(find.text(playbackTime(preview.round())), findsOneWidget);
+      // Même en quittant verticalement la barre, le temps reste visible tant que
+      // le bouton est enfoncé et suit la cible du glissement.
+      await mouse.moveTo(middle + const Offset(45, 80));
+      await tester.pump();
+      expect(find.text(playbackTime(preview.round())), findsOneWidget);
+      await mouse.up();
+      await tester.pump();
       expect(p.state.position, 10000);
       audio.gate!.complete();
       await tester.pump();
       await tester.pump();
-      expect(p.state.position, closeTo(60000, 1000));
-      expect(tester.widget<Slider>(slider).value, preview);
+      expect(p.state.position, closeTo(preview, 1));
+      expect(tester.widget<Slider>(slider).value, closeTo(preview, 1));
       await mouse.removePointer();
       await tester.pumpWidget(const SizedBox());
       await p.release();
@@ -164,4 +197,13 @@ class DelayedSeek implements AudioPort {
   Future<AudioSnapshot> snapshot() => delegate.snapshot();
   @override
   Future<void> dispose() => delegate.dispose();
+}
+
+class FirstChoiceRandom implements math.Random {
+  @override
+  int nextInt(int max) => 0;
+  @override
+  bool nextBool() => false;
+  @override
+  double nextDouble() => 0;
 }

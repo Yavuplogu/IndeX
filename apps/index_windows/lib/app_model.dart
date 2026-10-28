@@ -78,8 +78,10 @@ final class AppModel extends ChangeNotifier {
     Directory? defaultDataDirectory,
     AudioPort? audioPort,
     bool pollAudio = true,
+    Random? audioRandom,
     this.android = false,
-  }) : defaultDataDirectory =
+  }) : _audioRandom = audioRandom ?? Random(),
+       defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
     playback =
@@ -113,6 +115,7 @@ final class AppModel extends ChangeNotifier {
   }
 
   final bool android;
+  final Random _audioRandom;
   static const androidChannel = MethodChannel('index/android');
   late final Playback playback;
   void _saveAudio(
@@ -194,6 +197,8 @@ final class AppModel extends ChangeNotifier {
     bool random = false,
     bool automatic = false,
   }) async {
+    // Les commandes manuelles respectent aussi le mode aléatoire actif.
+    final useRandom = random || shuffle;
     // Ordre de la liste courante, avec les mêmes tris et filtres.
     final queue = visible.where((e) => e.audioAvailable).toList();
     if (queue.isEmpty) return;
@@ -201,10 +206,10 @@ final class AppModel extends ChangeNotifier {
     final alternatives = queue
         .where((e) => e.id != playback.episodeId)
         .toList();
-    if (automatic && !random && current == queue.length - 1) return;
-    if (random && alternatives.isEmpty && current >= 0) return;
-    final episode = random && alternatives.isNotEmpty
-        ? alternatives[Random().nextInt(alternatives.length)]
+    if (automatic && !useRandom && current == queue.length - 1) return;
+    if (useRandom && alternatives.isEmpty && current >= 0) return;
+    final episode = useRandom && alternatives.isNotEmpty
+        ? alternatives[_audioRandom.nextInt(alternatives.length)]
         : queue[current < 0 ? 0 : (current + delta) % queue.length];
     await playEpisode(episode);
   }
@@ -256,6 +261,7 @@ final class AppModel extends ChangeNotifier {
   Set<SearchField> fields = Set.of(SearchField.values);
   List<DesktopEpisode> catalog = [], visible = [];
   DesktopEpisode? selected;
+  String? _independentDetailId;
   Map<String, Object?>? report;
   Future<void>? _work;
   bool _disposed = false;
@@ -582,16 +588,18 @@ final class AppModel extends ChangeNotifier {
     if (sort != CatalogSort.relevance) visible.sort(compare);
     final previousId = selected?.id;
     final matches = visible.where((e) => e.id == previousId);
+    final independent = _independentDetailId == previousId
+        ? catalog.where((e) => e.id == previousId).firstOrNull
+        : null;
     selected = matches.isNotEmpty
         ? matches.first
-        : visible.isNotEmpty
-        ? visible.first
-        : null;
+        : independent ?? (visible.isNotEmpty ? visible.first : null);
 
     changed();
   }
 
   void search(String value) {
+    _independentDetailId = null;
     if (query.isEmpty && value.isNotEmpty) sort = CatalogSort.relevance;
     if (value.isEmpty) sort = CatalogSort.dateNew;
     query = value;
@@ -639,7 +647,8 @@ final class AppModel extends ChangeNotifier {
     return file;
   }
 
-  void select(DesktopEpisode e) {
+  void select(DesktopEpisode e, {bool keepOutsideList = false}) {
+    _independentDetailId = keepOutsideList ? e.id : null;
     selected = e;
     changed();
   }

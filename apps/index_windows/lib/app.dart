@@ -166,7 +166,7 @@ class _IndeXAppState extends State<IndeXApp>
         context: navigator.currentContext!,
         builder: (context) => AlertDialog(
           title: const Text('Sauvegarde impossible'),
-          content: Text(
+          content: SelectableText(
             'La fenêtre reste ouverte. Vos données ne sont pas annoncées comme sauvegardées.\n\n$e',
           ),
           actions: [
@@ -502,6 +502,11 @@ class FolderField extends StatelessWidget {
           controller: controller,
           enabled: enabled,
           validator: validator,
+          errorBuilder: (context, error) => SelectableText(
+            error,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
+          ),
           decoration: InputDecoration(labelText: label),
         ),
       ),
@@ -690,7 +695,7 @@ class _LibraryPageState extends State<LibraryPage> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
               color: c.background,
-              child: Text(
+              child: SelectableText(
                 m.folderLabel,
                 style: TextStyle(
                   fontSize: 12,
@@ -800,6 +805,42 @@ class _LibraryPageState extends State<LibraryPage> {
         ],
       ),
     );
+  }
+
+  void openPlayerEpisode(DesktopEpisode episode) {
+    m.select(episode, keepOutsideList: true);
+    // Quand la fiche n'est pas visible, l'ouvrir sans quitter la vue courante.
+    if (m.filesView || MediaQuery.sizeOf(context).width < 950) {
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (context) => Dialog(
+            child: SizedBox(
+              width: 650,
+              height: 650,
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Fermer'),
+                    ),
+                  ),
+                  Expanded(
+                    child: EpisodeDetail(
+                      model: m,
+                      onRelated: related,
+                      pickDirectory: widget.pickDirectory,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   void related(DesktopEpisode episode) {
@@ -965,7 +1006,7 @@ class _LibraryPageState extends State<LibraryPage> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
+            SelectableText(
               m.queryError.isNotEmpty ? m.queryError : m.episodeCountLabel,
               style: TextStyle(
                 fontSize: 11,
@@ -1175,13 +1216,21 @@ class _LibraryPageState extends State<LibraryPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (p.error.isNotEmpty)
-            Text(p.error, style: TextStyle(color: c.alert, fontSize: 12)),
+            SelectableText(
+              p.error,
+              style: TextStyle(color: c.alert, fontSize: 12),
+            ),
           Row(
             children: [
               Expanded(
                 child: InkWell(
                   key: const ValueKey('player-episode-title'),
-                  onTap: episode == null ? null : () => related(episode),
+                  mouseCursor: episode == null
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.click,
+                  onTap: episode == null
+                      ? null
+                      : () => openPlayerEpisode(episode),
                   child: Text.rich(
                     TextSpan(
                       children: [
@@ -1368,7 +1417,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Marquer comme non écouté ?'),
-              content: const Text(
+              content: const SelectableText(
                 'La progression sera remise à zéro. Le favori et le lien audio seront conservés.',
               ),
               actions: [
@@ -1391,7 +1440,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Marquer comme écouté ?'),
-              content: const Text(
+              content: const SelectableText(
                 'La lecture de cet épisode sera arrêtée et sa progression remise à zéro. Le favori est conservé.',
               ),
               actions: [
@@ -1634,19 +1683,24 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                           key: const ValueKey('episode-detail-tabs'),
                           children: [
                             for (var i = 0; i < 3; i++)
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: tab == i
-                                      ? c.accent
-                                      : c.muted,
-                                ),
-                                onPressed: () => setState(() => tab = i),
-                                child: Text(
-                                  ['Résumé', 'Sources', 'Musiques'][i],
-                                  style: TextStyle(
-                                    fontWeight: tab == i
-                                        ? FontWeight.bold
-                                        : null,
+                              Flexible(
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: tab == i
+                                        ? c.accent
+                                        : c.muted,
+                                  ),
+                                  onPressed: () => setState(() => tab = i),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      ['Résumé', 'Sources', 'Musiques'][i],
+                                      style: TextStyle(
+                                        fontWeight: tab == i
+                                            ? FontWeight.bold
+                                            : null,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1863,7 +1917,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Copier les données vers ce dossier ?'),
-        content: Text(
+        content: SelectableText(
           'Destination : $value\n\nLe dossier doit être vide. La base, les sauvegardes et les exports seront copiés et contrôlés. L’ancien dossier restera intact.',
         ),
         actions: [
@@ -1919,7 +1973,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(title),
-        content: Text(text),
+        content: SelectableText(text),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1967,7 +2021,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (m.error.isNotEmpty)
-                            Text(m.error, style: TextStyle(color: c.alert)),
+                            SelectableText(
+                              m.error,
+                              style: TextStyle(color: c.alert),
+                            ),
                           group('Apparence', [
                             Wrap(
                               spacing: 12,
@@ -2149,7 +2206,7 @@ class ScanPage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmer cette association manuelle ?'),
-        content: Text(
+        content: SelectableText(
           '${decision['current_name']}\n→ ${selected.title} · ${dateLabel(selected.date)}\n\nCe choix sera conservé lors des prochains scans. Il ne constitue pas une confirmation ID3.',
         ),
         actions: [
@@ -2177,7 +2234,7 @@ class ScanPage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Enlever cette association ?'),
-        content: const Text(
+        content: const SelectableText(
           'Le favori et le suivi d’écoute de cet épisode (statut, progression et durée) seront supprimés. Le fichier MP3 est conservé. Il restera sans association lors des prochains scans ; utilisez Associer… pour rétablir le lien, sans restaurer les données supprimées.',
         ),
         actions: [
@@ -2288,7 +2345,7 @@ class ScanPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(model.folderLabel),
+                  SelectableText(model.folderLabel),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 18,
@@ -2415,6 +2472,7 @@ class ScanPage extends StatelessWidget {
                 }.entries)
                   ChoiceChip(
                     key: ValueKey('audio-files-${entry.key.name}'),
+                    mouseCursor: SystemMouseCursors.click,
                     backgroundColor: c.controls,
                     selectedColor: c.controls,
                     surfaceTintColor: Colors.transparent,
@@ -2649,16 +2707,20 @@ class PlayerSeekBar extends StatefulWidget {
 class _PlayerSeekBarState extends State<PlayerSeekBar> {
   double? preview, hover;
   int? hoverTime;
-  bool committing = false;
+  bool committing = false, dragging = false, hovering = false;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final p = widget.playback;
       final duration = p.state.duration > 0 ? p.state.duration.toDouble() : 1.0;
       return MouseRegion(
+        onEnter: (_) => setState(() => hovering = true),
         onExit: (_) => setState(() {
-          hover = null;
-          hoverTime = null;
+          hovering = false;
+          if (!dragging) {
+            hover = null;
+            hoverTime = null;
+          }
         }),
         onHover: (event) {
           if (p.state.duration <= 0) return;
@@ -2667,8 +2729,11 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                       (constraints.maxWidth - 24).clamp(1, double.infinity))
                   .clamp(0.0, 1.0);
           setState(() {
-            hover = event.localPosition.dx;
-            hoverTime = (fraction * duration).round();
+            hovering = true;
+            if (!dragging) {
+              hover = event.localPosition.dx;
+              hoverTime = (fraction * duration).round();
+            }
           });
         },
         child: Stack(
@@ -2681,14 +2746,30 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                   .clamp(0, duration)
                   .toDouble(),
               max: duration,
+              onChangeStart: widget.enabled && !committing
+                  ? (v) => setState(() {
+                      dragging = true;
+                      hoverTime = v.round();
+                      hover = 12 + (constraints.maxWidth - 24) * v / duration;
+                    })
+                  : null,
               onChanged: widget.enabled && !committing
-                  ? (v) => setState(() => preview = v)
+                  ? (v) => setState(() {
+                      preview = v;
+                      hoverTime = v.round();
+                      hover = 12 + (constraints.maxWidth - 24) * v / duration;
+                    })
                   : null,
               onChangeEnd: widget.enabled && !committing
                   ? (v) async {
                       setState(() {
                         preview = v;
                         committing = true;
+                        dragging = false;
+                        if (!hovering) {
+                          hover = null;
+                          hoverTime = null;
+                        }
                       });
                       await p.seek(v.round());
                       if (mounted)

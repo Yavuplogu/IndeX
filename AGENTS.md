@@ -145,3 +145,12 @@
   même budget d’ouverture ; journal file_access_ok/failed et chemin décodé.
   Décodage URI une seule fois : ne pas normaliser les noms ni transformer '+'
   en espace. Aucune conversion/copie/cache des MP3. Recette WinRT toujours requise.
+
+- UX lecteur du 28 octobre : titre main/cliquable vers fiche sans changer listing,
+  filtres/tri/recherche/scroll. select(..., keepOutsideList:true) conserve la fiche
+  hors résultats aux checkpoints ; select classique et nouvelle recherche libèrent
+  cette sélection. Mode aléatoire appliqué aussi à précédent/suivant manuels.
+  Horodatage maintenu pendant le glissement ; filtres fichiers avec curseur main.
+  Messages d’erreur/alertes/validation sélectionnables (SelectableText). Voir la
+  dernière section de docs/lot4/specifications.md. Retour utilisateur : audio
+  Windows et seeks quasi instantanés fonctionnels sur le build précédent.

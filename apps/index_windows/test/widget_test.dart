@@ -66,9 +66,24 @@ void main() {
         model.session!.listeningState(episode.id)!['listening_status'],
         'EN_COURS',
       );
+      model.search('guerre');
+      model.sort = CatalogSort.titleAZ;
+      model.reload();
+      await tester.pumpAndSettle();
+      final beforeIds = model.visible.map((e) => e.id).toList();
+      final controller = tester
+          .widget<ListView>(find.byKey(const ValueKey('episode-list')))
+          .controller!;
+      controller.jumpTo(150.0.clamp(0.0, controller.position.maxScrollExtent));
+      await tester.pump();
+      final offset = controller.offset;
       await tester.tap(find.byKey(const ValueKey('player-episode-title')));
       await tester.pumpAndSettle();
       expect(model.selected!.id, episode.id);
+      expect(model.query, 'guerre');
+      expect(model.sort, CatalogSort.titleAZ);
+      expect(model.visible.map((e) => e.id), beforeIds);
+      expect(controller.offset, offset);
       expect(find.text('En cours (4 %)'), findsOneWidget);
       Focus.of(tester.element(find.byKey(const ValueKey('episode-list'))))
           .requestFocus();
@@ -85,7 +100,29 @@ void main() {
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
       expect(model.playingEpisode!.status, 'EN_COURS');
+      model.playback.error = 'Erreur audio sélectionnable';
+      model.error = 'Erreur principale sélectionnable';
+      model.changed();
+      await tester.pumpAndSettle();
+      expect(
+        find.widgetWithText(SelectableText, 'Erreur audio sélectionnable'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(SelectableText, 'Erreur principale sélectionnable'),
+        findsOneWidget,
+      );
+      model.playback.error = '';
+      model.error = '';
+      model.changed();
       tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('player-episode-title')));
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(EpisodeDetail), findsOneWidget);
+      expect(model.query, 'guerre');
+      await tester.tap(find.text('Fermer'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -808,6 +845,13 @@ void main() {
       await waitForWidget(tester, find.text('Sauvegarde impossible'));
       await tester.pumpAndSettle();
       expect(find.text('Sauvegarde impossible'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(SelectableText),
+        ),
+        findsOneWidget,
+      );
       expect(window.destroyed, 0);
       expect(window.closeRequested, isFalse);
       await tester.tap(find.text('Annuler'));

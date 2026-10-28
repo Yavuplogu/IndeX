@@ -376,3 +376,24 @@ retrait décrits dans la révision précédente.
   Un retrait ou une association actualise immédiatement le résultat du filtre.
   Le filtre concerne la liste du dernier scan ; compteurs et diagnostics globaux
   ne sont pas filtrés. Prévoir un message si aucun résultat.
+
+
+## Ajustements du lecteur et copie des erreurs — 28 octobre 2026
+
+- Titre du lecteur : pointeur main, ouverture de la fiche sans réinitialiser la
+  recherche, les champs, les filtres, le tri ou la position de défilement de la liste.
+  La fiche peut rester celle d’un épisode hors résultats ; un checkpoint ne doit
+  pas la remplacer par le premier résultat. Une nouvelle sélection dans la liste
+  ou une nouvelle recherche reprend le parcours habituel. Si la fiche n’est pas
+  affichée (vue Fichiers ou compacte), ouvrir un dialogue sans quitter cette vue.
+- En mode aléatoire, les commandes manuelles Épisode précédent/Épisode suivant
+  tirent elles aussi un autre épisode au hasard parmi les disponibles de la liste,
+  sans répétition immédiate. Hors aléatoire, ordre séquentiel conservé.
+- Pendant un clic-glissé du curseur, l’horodatage reste visible et suit la cible,
+  même si le pointeur quitte verticalement la barre avant relâchement. La cible
+  reste affichée pendant l’acquittement du seek, sans retour à l’ancienne position.
+- Boutons de filtres Fichiers et associations : pointeur main, thèmes clair/sombre.
+- Erreurs copiables : lecteur, bannière principale, Paramètres, erreurs de recherche
+  et de validation de dossiers, contenu des fenêtres d’alerte dont Sauvegarde
+  impossible. Sélection et copie standard Flutter, diagnostics déjà sélectionnables
+  conservés. Les onglets de fiche s’adaptent à une largeur compacte sans débordement.

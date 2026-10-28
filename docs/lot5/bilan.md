@@ -427,3 +427,31 @@ avec g++ C++17 sans avertissement ; formatage/diff conformes. Les huit empreinte
 MP3 de référence restent identiques. La compilation de Shcore/WinRT et la lecture
 des huit vrais fichiers sur Windows ne sont pas exécutées ici. Le numéro mineur
 applicatif sera réservé automatiquement au prochain build, majeur 5 conservé.
+
+
+## Recette utilisateur et interactions du lecteur — 28 octobre 2026
+
+Retour utilisateur après le build avec ouverture par flux local : plus de bug
+Audio apparent et sauts quasi instantanés. Ce retour valide les essais effectués
+sur sa machine Windows ; il est distinct des contrôles Linux et n’engage pas Android.
+
+Nouvelle révision UI : titre du lecteur avec curseur main, ouverture de fiche
+indépendante des résultats et du défilement de la liste. La sélection hors résultats
+est conservée lors des rechargements/checkpoints et réinitialisée par nouvelle
+recherche ou sélection explicite. En vue Fichiers/compacte, un dialogue de fiche
+préserve la vue sous-jacente ; onglets adaptés pour éviter un débordement horizontal.
+Précédent/suivant respectent désormais le mode aléatoire (tirage testable et sans
+répétition immédiate). L’horodatage suit le glissement et reste visible jusqu’au
+relâchement, même lors d’une sortie de la zone. Filtres de fichiers avec curseur main.
+
+Les erreurs lecteur, Paramètres, recherche, validation de dossiers et contenus des
+dialogues utilisent SelectableText ; la bannière et les diagnostics étaient déjà
+sélectionnables. Pas de modification du moteur WinRT, des MP3, du suivi persistant
+ou des règles de versionnement. Le prochain build réserve son mineur automatiquement.
+
+Validation : analyse Flutter sans anomalie, 33 tests Flutter réussis. Scénarios
+étendus : conservation recherche/tri/identités/scroll après clic titre, fiche compacte,
+fiche hors résultats après checkpoint, précédent/suivant aléatoires déterministes,
+temps visible pendant glissement et hors zone, erreurs de lecteur/bannière et
+alerte de sauvegarde sélectionnables. Vérification visuelle Windows de cette
+révision UI à réaliser dans le prochain build ; pas de nouvel essai natif ici.
