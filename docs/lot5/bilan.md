@@ -570,3 +570,31 @@ Test À propos également réussi avec une version injectée via dart-define (va
 de test uniquement, sans réservation). Syntaxe PowerShell du packaging vérifiée
 avec le parseur PowerShell 7.5.4. Aucun build Windows lancé sous Linux : présentation
 et numéro du prochain exécutable à confirmer lors de la recette Windows.
+
+
+## Textes et identité de À propos — 29 octobre 2026
+
+Correction Rendez-vous avec X dans le Brand et les textes UI. À propos utilise
+Brand comme en-tête du premier cadre ; GitHub renommé Voir sur GitHub et placé
+avant la version sur une même ligne. Récit, signature et cinq descriptions repris
+du texte utilisateur, avec emphases demandées. Le cadre Fonctions prévues disparaît ;
+la mention d’export/import est accompagnée d’une précision de non-disponibilité
+actuelle, sans engager le Lot 5 ter.
+
+Le contact ouvre uniquement l’URI fixe mailto:index.en9nr@passinbox.com via
+ShellExecuteW sur demande utilisateur (canal Windows existant), sans lancement de
+commande ni destinataire arbitraire, sans envoi automatique. Une erreur/plateforme
+non implémentée ouvre une alerte avec adresse sélectionnable. GitHub reste factice.
+Aucune dépendance ajoutée. Les échanges éventuels du logiciel de messagerie sont
+extérieurs à IndeX ; aucune transmission automatique n’est introduite.
+
+Le test À propos couvre maintenant la réutilisation de Brand, ordre et alignement
+GitHub/version, retrait du cadre, clic contact via canal simulé, défilement jusqu’au
+dernier cadre et conservation de la liste, en clair/sombre et en format compact.
+
+Validation : cœur 188 tests et compteur 4 tests réussis lors de la vérification
+commune ; après correction d’un alignement GitHub/version en fenêtre compacte,
+analyse Flutter sans anomalie et totalité des 48 tests Flutter réussie. Formatage
+et diff conformes. Le lien mailto est simulé dans le test : compilation du runner
+et ouverture réelle du logiciel de messagerie à confirmer au prochain build
+Windows. Aucun build distribuable lancé ici.

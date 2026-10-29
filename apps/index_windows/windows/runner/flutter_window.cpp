@@ -33,6 +33,17 @@ bool FlutterWindow::OnCreate() {
   folder_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "openContactEmail") {
+          const auto opened = reinterpret_cast<INT_PTR>(ShellExecuteW(
+              GetHandle(), L"open", L"mailto:index.en9nr@passinbox.com",
+              nullptr, nullptr, SW_SHOWNORMAL));
+          if (opened <= 32) {
+            result->Error("mail_unavailable", "Impossible d'ouvrir la messagerie.");
+          } else {
+            result->Success();
+          }
+          return;
+        }
         if (call.method_name() != "openDirectory") {
           result->NotImplemented();
           return;

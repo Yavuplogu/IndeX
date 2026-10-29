@@ -465,3 +465,26 @@ La construction portable transmet la version publique réservée via INDEX_VERSI
 à Flutter. Le panneau reprend ainsi le même numéro, avec mineur sur au moins deux
 chiffres, que l’archive. Hors construction de distribution, afficher Développement
 plutôt qu’un numéro de build fictif. Aucun nouveau package requis.
+
+
+## Révision éditoriale de À propos — 29 octobre 2026
+
+Employer « Rendez-vous avec X » dans le sous-titre de marque et les textes de
+l’application. Le premier cadre de À propos réutilise le même widget Brand que
+la barre latérale, avec mêmes couleurs, police et sous-titre. Sur la ligne suivante,
+placer Voir sur GitHub en premier puis la version du build. Le lien GitHub reste
+factice, sans navigateur/réseau ; son libellé ne contient plus « lien factice ».
+
+Ajouter dans ce cadre le récit personnel fourni par l’utilisateur (création de
+l’utilitaire hors ligne, Patrick Pesnot, essais avec l’IA), le contact et la signature
+« Bonne écoute, K. ». Le contact index.en9nr@passinbox.com ouvre le gestionnaire
+Windows mailto sur clic explicite, sans envoi automatique. En cas d’absence de
+messagerie, une alerte sélectionnable permet de copier l’adresse.
+
+Reprendre les nouveaux textes des cinq cadres : catalogue de 716 émissions/420 h,
+recherche/fiches, associations/lecteur, suivi, stockage local. Les chiffres et le
+récit sont ceux fournis par l’utilisateur. Mettre en gras Fichiers, les deux noms
+MP3 d’exemple et les états Non écouté/En cours/Écouté. Supprimer le cadre Fonctions
+prévues. Le paragraphe utilisateur sur le transfert est suivi d’une précision
+courte : l’export/import JSON du Lot 5 ter reste non livré. Aucun changement de
+règle d’association, d’audio ou de disponibilité des futurs lots.

@@ -423,7 +423,7 @@ class _StartupPageState extends State<StartupPage> {
                 Text(
                   m.requireExisting && m.session == null
                       ? 'Retrouvez le dossier de vos données existantes. Aucune base vide ne remplacera votre suivi.'
-                      : 'IndeX permet de rechercher et consulter les épisodes de Rendez-Vous avec X, puis d’écouter vos MP3 personnels. Pour commencer, choisissez leur dossier ou précisez-le plus tard, puis vérifiez le dossier proposé pour vos favoris, votre suivi et vos sauvegardes. Le catalogue reste consultable sans MP3.',
+                      : 'IndeX permet de rechercher et consulter les épisodes de Rendez-vous avec X, puis d’écouter vos MP3 personnels. Pour commencer, choisissez leur dossier ou précisez-le plus tard, puis vérifiez le dossier proposé pour vos favoris, votre suivi et vos sauvegardes. Le catalogue reste consultable sans MP3.',
                 ),
                 const SizedBox(height: 22),
                 FolderField(
@@ -554,7 +554,7 @@ class Brand extends StatelessWidget {
       ),
       const SizedBox(height: 5),
       const Text(
-        'Recherche et écoute de Rendez-Vous avec X',
+        'Recherche et écoute de Rendez-vous avec X',
         style: TextStyle(fontSize: 12, height: 1.5),
       ),
     ],
@@ -1923,21 +1923,26 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
         ];
 }
 
-Widget panelGroup(String title, List<Widget> content, EditorialColors c) =>
-    Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Material(
-        color: c.controls,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: c.line),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+Widget panelGroup(
+  String title,
+  List<Widget> content,
+  EditorialColors c, {
+  Widget? heading,
+}) => Padding(
+  padding: const EdgeInsets.symmetric(vertical: 7),
+  child: Material(
+    color: c.controls,
+    shape: RoundedRectangleBorder(
+      side: BorderSide(color: c.line),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          heading ??
               Text(
                 title,
                 style: TextStyle(
@@ -1946,17 +1951,41 @@ Widget panelGroup(String title, List<Widget> content, EditorialColors c) =>
                   color: c.accent,
                 ),
               ),
-              const SizedBox(height: 12),
-              ...content,
-            ],
-          ),
-        ),
+          const SizedBox(height: 12),
+          ...content,
+        ],
       ),
-    );
+    ),
+  ),
+);
 
 class IndexAboutDialog extends StatelessWidget {
   const IndexAboutDialog({super.key, required this.model});
   final AppModel model;
+
+  Future<void> contact(BuildContext context) async {
+    try {
+      await const MethodChannel('index/local_folders')
+          .invokeMethod<void>('openContactEmail');
+    } catch (error) {
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Messagerie indisponible'),
+          content: SelectableText(
+            'Vous pouvez écrire à index.en9nr@passinbox.com.\n\n$error',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1992,68 +2021,144 @@ class IndexAboutDialog extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        panelGroup('IndeX', [
-                          const Text(
-                            'Recherche et écoute de Rendez-Vous avec X',
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Version : $applicationVersion',
-                            key: ValueKey('about-version'),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              key: const ValueKey('about-github'),
-                              icon: const Icon(Icons.code),
-                              label: const Text('GitHub · lien factice'),
-                              onPressed: () => ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Lien GitHub de démonstration : aucun site n’est ouvert.',
-                                      ),
+                        panelGroup(
+                          'IndeX',
+                          [
+                            Row(
+                              key: const ValueKey('about-links-version'),
+                              children: [
+                                Flexible(
+                                  child: TextButton.icon(
+                                    key: const ValueKey('about-github'),
+                                    icon: const Icon(Icons.code),
+                                    label: const FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text('Voir sur GitHub'),
+                                    ),
+                                    onPressed: () =>
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Lien GitHub de démonstration : aucun site n’est ouvert.',
+                                                ),
+                                              ),
+                                            ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Version : $applicationVersion',
+                                      key: ValueKey('about-version'),
                                     ),
                                   ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ], c),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'J’ai construit cet utilitaire à partir d’une interrogation : serait-il possible de disposer d’un outil entièrement hors ligne permettant de gérer et d’écouter ma collection d’épisodes de Rendez-vous avec X ?\n\n'
+                              'Cela faisait des années que l’idée me séduisait, en réalité depuis l’arrêt de l’émission en 2015. Puis, la mort de Patrick Pesnot en 2023 m’a remotivé et j’ai fait quelques tentatives, plutôt infructueuses, car je ne suis pas du tout développeur.\n\n'
+                              'Il y a quelque temps, j’ai eu l’idée d’utiliser l’IA en me disant : « Bon, à mon avis, ça va me prendre quelques mois et j’aurai probablement un résultat nébuleux, fonctionnant à moitié, puis je tenterai à nouveau ma chance dans dix ans. »\n\n'
+                              'Finalement, le développement n’a duré qu’une semaine, pour un résultat parfaitement fonctionnel. Certes, il y a eu beaucoup de va-et-vient, pas mal de versions différentes et quelques adaptations, mais tout le processus a été beaucoup plus rapide et intuitif que prévu. C’est à la fois fascinant et terrifiant pour l’avenir.\n\n'
+                              'Quoi qu’il en soit, voici un tour d’horizon des capacités de IndeX et si vous avez une question particulière, vous pouvez me contacter sur le mail',
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                key: const ValueKey('about-contact'),
+                                onPressed: () => unawaited(contact(context)),
+                                child: const Text('index.en9nr@passinbox.com'),
+                              ),
+                            ),
+                            const Text('Bonne écoute,\n\nK.'),
+                          ],
+                          c,
+                          heading: const Brand(key: ValueKey('about-brand')),
+                        ),
                         panelGroup(
                           'Une bibliothèque pour explorer les épisodes',
                           [
                             const Text(
-                              'IndeX rassemble le catalogue documentaire de Rendez-Vous avec X et permet de retrouver, consulter et écouter vos épisodes depuis une même interface. Le catalogue est intégré : aucun fichier CSV ou TXT externe n’est nécessaire pour le consulter.',
+                              'IndeX rassemble le catalogue documentaire de 716 émissions (soit 420 heures d’écoute) de Rendez-vous avec X et permet de retrouver, consulter et écouter vos épisodes depuis une même interface. Le catalogue est intégré à l’application : aucun fichier externe n’est nécessaire pour le consulter.',
                             ),
                           ],
                           c,
                         ),
                         panelGroup('Retrouver et comprendre', [
                           const Text(
-                            'Recherchez dès trois caractères dans les titres, résumés, sources et musiques, avec les champs de votre choix. Triez les épisodes par titre, date ou disponibilité MP3, filtrez leur état d’écoute et retrouvez vos favoris. Chaque fiche présente le résumé, les références et les musiques ; les épisodes connexes des sources ouvrent leur propre fiche.',
+                            'Une recherche dynamique permet de trouver n’importe quel sujet dans les titres, résumés, sources et musiques. Triez les épisodes par titre, date ou disponibilité MP3, filtrez leur état d’écoute et retrouvez vos favoris.\n\nChaque fiche présente le résumé, les références et les musiques. Si les références listent des épisodes connexes, il est possible d’accéder à leur fiche d’un simple clic.',
                           ),
                         ], c),
                         panelGroup('Écouter vos MP3', [
-                          const Text(
-                            'Choisissez votre dossier MP3 dans Fichiers et associations. IndeX rapproche les noms des fichiers du catalogue, affiche les disponibilités et propose un diagnostic ainsi que des associations manuelles. Le catalogue reste consultable sans MP3. L’analyse ne modifie pas vos fichiers.',
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Le lecteur intégré propose lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes avec les flèches du clavier. Activez la lecture aléatoire ou l’enchaînement de l’épisode suivant. Consulter une autre fiche ne change pas la lecture en cours.',
+                          const Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Choisissez votre dossier MP3 dans l’onglet ',
+                                ),
+                                TextSpan(
+                                  text: 'Fichiers',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: '. IndeX analyse le dossier et rapproche automatiquement les noms des fichiers du catalogue avec vos fichiers locaux, affiche un diagnostic complet et propose aussi des associations manuelles. L’analyse ne modifie pas vos fichiers MP3.\n\nAttention, l’association automatique en local fonctionne uniquement avec des noms type ',
+                                ),
+                                TextSpan(
+                                  text: '1997-01-04 La 5ème Colonne.mp3',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: ' ou son équivalent '),
+                                TextSpan(
+                                  text: 'mr_x_1997_01_04.mp3',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: '. Pourquoi uniquement ces deux modèles ? Car il s’agit des deux catalogues téléchargeables les plus répandus sur Internet. Aucun autre formatage de nom ne sera pris en compte par IndeX. Le catalogue reste consultable sans MP3.\n\nLe lecteur intégré propose lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes avec les flèches du clavier. Activez la lecture aléatoire ou l’enchaînement de l’épisode suivant. Consulter une autre fiche ne change pas la lecture en cours.',
+                                ),
+                              ],
+                            ),
                           ),
                         ], c),
                         panelGroup('Garder le fil de vos écoutes', [
-                          const Text(
-                            'La progression est sauvegardée régulièrement et peut être reprise à la prochaine écoute. Les états Non écouté, En cours et Écouté ainsi que le remplissage des lignes indiquent votre avancement. Vous pouvez aussi modifier le statut et marquer vos favoris. L’arrêt remet la progression à zéro ; relancer un épisode terminé commence une nouvelle écoute en conservant son favori.',
+                          const Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'La progression d’un épisode est sauvegardée régulièrement et peut être reprise à la prochaine écoute. Les états ',
+                                ),
+                                TextSpan(
+                                  text: 'Non écouté',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: ', '),
+                                TextSpan(
+                                  text: 'En cours',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: ' et '),
+                                TextSpan(
+                                  text: 'Écouté',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: ' ainsi que le remplissage des lignes indiquent votre avancement. Vous pouvez aussi modifier le statut et marquer vos favoris. L’arrêt remet la progression à zéro ; relancer un épisode terminé commence une nouvelle écoute en conservant son favori.',
+                                ),
+                              ],
+                            ),
                           ),
                         ], c),
                         panelGroup('Vos données restent chez vous', [
                           const Text(
-                            'IndeX fonctionne hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur. La version Windows est portable, sans installateur. Les thèmes clair et sombre se choisissent dans les Paramètres.',
+                            'IndeX fonctionne hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
                           ),
-                        ], c),
-                        panelGroup('Fonctions prévues', [
+                          const SizedBox(height: 8),
                           const Text(
-                            'Le renommage contrôlé des MP3 et le transfert manuel du suivi par export/import JSON sont prévus dans les lots suivants. Ils ne sont pas encore disponibles. La version Android est actuellement en pause pendant la finalisation de Windows.',
+                            'Le transfert par export/import JSON est prévu au Lot 5 ter et n’est pas encore disponible.',
                           ),
                         ], c),
                       ],

@@ -175,3 +175,10 @@
   disponible en latéral/compact, cadres communs aux Paramètres, version publique
   INDEX_VERSION fournie par le packaging, Développement hors distribution.
   GitHub factice : aucun navigateur/réseau ; fonctions futures identifiées.
+
+- Révision éditoriale À propos du 29 octobre : « Rendez-vous avec X » dans l’UI,
+  widget Brand commun au premier cadre et à la barre latérale. Voir sur GitHub
+  avant version, lien toujours factice ; récit utilisateur, contact et emphases.
+  Mailto fixe index.en9nr@passinbox.com sur clic explicite via canal Windows,
+  jamais d’envoi automatique. Retrait Fonctions prévues ; précision de non-livraison
+  du JSON conservée dans Vos données restent chez vous. Aucun lancement de Lot 5 ter.

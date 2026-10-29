@@ -19,11 +19,22 @@ import 'support/fake_audio.dart';
 
 void main() {
   testWidgets(
-    'À propos : version, lien factice, thèmes et vue compacte sans perte de liste',
+    'À propos : logo, liens, version, thèmes et vue compacte sans perte de liste',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      final contactCalls = <MethodCall>[];
+      const contactChannel = MethodChannel('index/local_folders');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(contactChannel, (call) async {
+            contactCalls.add(call);
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(contactChannel, null),
+      );
       final root = Directory.systemTemp.createTempSync('index-about-widget-');
       final model = AppModel(portableDirectory: root, audioPort: FakeAudio());
       try {
@@ -46,6 +57,23 @@ void main() {
             await tester.pumpAndSettle();
             final dialog = find.byType(IndexAboutDialog);
             expect(dialog, findsOneWidget);
+            expect(
+              find.descendant(of: dialog, matching: find.byType(Brand)),
+              findsOneWidget,
+            );
+            expect(find.text('Fonctions prévues'), findsNothing);
+            expect(find.text('Voir sur GitHub'), findsOneWidget);
+            final githubPosition = tester.getTopLeft(
+              find.byKey(const ValueKey('about-github')),
+            );
+            final versionPosition = tester.getTopLeft(
+              find.byKey(const ValueKey('about-version')),
+            );
+            expect(githubPosition.dx, lessThan(versionPosition.dx));
+            expect(
+              (githubPosition.dy - versionPosition.dy).abs(),
+              lessThan(24),
+            );
             expect(find.text('Version : $applicationVersion'), findsOneWidget);
             final material = tester.widget<Dialog>(
               find.descendant(of: dialog, matching: find.byType(Dialog)),
@@ -59,14 +87,23 @@ void main() {
               ),
               findsOneWidget,
             );
+            final contact = find.byKey(const ValueKey('about-contact'));
+            await tester.ensureVisible(contact);
+            await tester.pumpAndSettle();
+            await tester.tap(contact);
+            await tester.pumpAndSettle();
+            expect(contactCalls.last.method, 'openContactEmail');
+            expect(contactCalls.last.arguments, isNull);
             await tester.drag(
               find.byKey(const ValueKey('about-scroll')),
               const Offset(0, -3000),
             );
             await tester.pumpAndSettle();
-            await tester.ensureVisible(find.text('Fonctions prévues'));
+            await tester.ensureVisible(
+              find.text('Vos données restent chez vous'),
+            );
             expect(
-              find.text('Fonctions prévues').hitTestable(),
+              find.text('Vos données restent chez vous').hitTestable(),
               findsOneWidget,
             );
             expect(find.text('Fermer'), findsNWidgets(2));

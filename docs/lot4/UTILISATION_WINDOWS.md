@@ -213,6 +213,7 @@ ni vos MP3 ni leurs tags et ne remplace pas les sauvegardes du suivi.
 
 
 Le bouton **À propos**, dans la navigation, ouvre une présentation de l’application,
-de son principe et de ses fonctions. Le premier cadre affiche IndeX, la version
-du build et un lien GitHub actuellement factice (aucun site ouvert). Le panneau
+de son principe et de ses fonctions. Le premier cadre reprend le logo IndeX, le bouton Voir sur GitHub (actuellement
+factice, aucun site ouvert), la version du build et le mot de l’auteur. Le contact
+ouvre votre logiciel de messagerie, sans envoyer de message automatiquement. Le panneau
 est défilant, avec un bouton Fermer en haut et en bas, en clair comme en sombre.
