@@ -37,6 +37,10 @@ du catalogue, sans rappel. Le diagnostic s’ouvre dans un panneau flottant ;
 les associations peuvent être retirées après confirmation, avec suppression du
 favori et du suivi de l’épisode, sans toucher au MP3. L’ouverture du dossier utilise l’API Windows avec le chemin cible.
 
+Le panneau **À propos** présente la version du build et les fonctionnalités ;
+son lien GitHub reste factice pour le moment. Dans Paramètres, décochez
+**Scanner le dossier MP3 à chaque ouverture** pour désactiver le scan automatique.
+
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)
 - [Mode d'emploi Windows](docs/lot4/UTILISATION_WINDOWS.md)

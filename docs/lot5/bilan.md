@@ -544,3 +544,29 @@ Validation : `bash tools/lot4/check.sh` réussi : 188 tests du cœur, 47 tests F
 et 4 tests de versionnement ; analyses sans anomalie, formatage et diff conformes.
 Les tests audio utilisent un moteur simulé. Le cas clavier doit encore être
 confirmé sur Windows au prochain build, dont le mineur sera réservé automatiquement.
+
+
+## Panneau À propos et case de scan — 29 octobre 2026
+
+Clarification utilisateur : cochée = scanner ; valeur par défaut cochée. Seule
+l’interface inverse le booléen skip_startup_scan existant : les préférences de scan
+conservent leur effet après mise à jour, sans migration.
+
+À propos est disponible en navigation latérale/compacte, dans les deux thèmes.
+Il réutilise les cadres des Paramètres, avec identité/version/GitHub dans le premier
+cadre puis description structurée et défilante. Le lien factice affiche un message,
+sans ouverture de site. Les fonctions futures et la pause Android sont explicites.
+Le script de packaging Windows transmet la version publique réservée en dart-define
+INDEX_VERSION, sans nouvelle réservation ni modification de politique de version.
+Le lancement de développement affiche Développement. Aucune dépendance ajoutée.
+
+Tests UI : libellé/état par défaut et désactivation du scan, ouverture/fermeture de
+À propos sans perte de la recherche/liste, thèmes clair/sombre, fenêtre compacte,
+version, retour du lien factice et défilement jusqu’aux fonctions prévues.
+
+Validation : `bash tools/lot4/check.sh` réussi : 188 tests du cœur, 48 tests Flutter
+et 4 tests de versionnement ; analyses sans anomalie, formatage/diff conformes.
+Test À propos également réussi avec une version injectée via dart-define (valeur
+de test uniquement, sans réservation). Syntaxe PowerShell du packaging vérifiée
+avec le parseur PowerShell 7.5.4. Aucun build Windows lancé sous Linux : présentation
+et numéro du prochain exécutable à confirmer lors de la recette Windows.

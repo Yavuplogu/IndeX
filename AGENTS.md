@@ -168,3 +168,10 @@
   la lecture atteignant une durée connue demande une validation à réception du
   vrai signal ended, même sans progression après le saut ; pas avant. Seek absolu,
   pause et recul exclus ; nouveau seek annule la demande. Voir bilan Lot 5.
+
+- Révision du 29 octobre : case « Scanner le dossier MP3 à chaque ouverture »,
+  cochée = scanner, défaut cochée, clarification explicite utilisateur. Conserver
+  skip_startup_scan existant en inversant seulement sa présentation. À propos
+  disponible en latéral/compact, cadres communs aux Paramètres, version publique
+  INDEX_VERSION fournie par le packaging, Développement hors distribution.
+  GitHub factice : aucun navigateur/réseau ; fonctions futures identifiées.

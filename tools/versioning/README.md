@@ -57,3 +57,10 @@ par NUL (`mktree -z`). Le premier compteur Windows a pu créer le nom Git
 conserve sa valeur et écrit le nom canonique à la prochaine réservation. Aucun
 reset du compteur ni suppression de branche n’est nécessaire. Un compteur absent,
 ambigu ou invalide bloque la réservation plutôt que de réattribuer un numéro.
+
+
+Depuis le 29 octobre, le packaging Windows passe aussi
+`--dart-define=INDEX_VERSION=<version publique réservée>` à Flutter : À propos
+affiche le même numéro que l’archive, avec le mineur complété de zéros. Sans cette
+valeur (lancement de développement), le panneau affiche « Développement ».
+Cela ne réserve aucun numéro supplémentaire et n’ajoute aucune dépendance.

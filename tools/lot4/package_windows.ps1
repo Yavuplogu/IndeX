@@ -19,7 +19,7 @@ Push-Location $app
 try {
   & flutter pub get --enforce-lockfile
   if ($LASTEXITCODE -ne 0) { throw 'Résolution des dépendances échouée.' }
-  & flutter build windows --release "--build-name=$($version.build_name)" "--build-number=$($version.build_number)"
+  & flutter build windows --release "--build-name=$($version.build_name)" "--build-number=$($version.build_number)" "--dart-define=INDEX_VERSION=$($version.display)"
   if ($LASTEXITCODE -ne 0) { throw 'Build Windows échoué.' }
   $built = Join-Path $app 'build/windows/x64/runner/Release'
   if (-not (Test-Path (Join-Path $built 'just_audio_windows_plugin.dll'))) { throw 'Plugin audio WinRT absent du bundle.' }

@@ -443,3 +443,25 @@ laisser s’écouler les dernières secondes après cette avance. Cette exceptio
 complète la règle précédente : elle concerne l’avance relative en lecture, avec
 une durée connue. Un simple positionnement absolu à 100 %, une avance en pause
 ou un recul ne valide pas une écoute. Un autre seek annule la demande en attente.
+
+
+## Analyse au démarrage et À propos — 29 octobre 2026
+
+La case Analyse au démarrage porte le libellé « Scanner le dossier MP3 à chaque
+ouverture ». Cochée = scanner, décochée = ne pas scanner, suivant la clarification
+explicite de l’utilisateur. Elle est cochée par défaut ; les préférences existantes
+sont conservées en inversant uniquement la présentation de skip_startup_scan.
+
+Ajouter À propos dans la navigation latérale et dans la navigation compacte.
+Le panneau reprend dimensions, couleurs et cadres des Paramètres, avec contenu
+sélectionnable/défilant et boutons Fermer en haut et en bas. Premier cadre : IndeX,
+version publique réelle du build et bouton GitHub factice avec retour explicite,
+sans navigateur ni accès réseau. Présentation : catalogue intégré, recherche et
+filtres, fiches documentaires, associations MP3, lecteur, suivi/favoris, stockage
+local et portabilité Windows. Distinguer les fonctions prévues (renommage et JSON)
+et la pause Android des fonctions actuellement disponibles.
+
+La construction portable transmet la version publique réservée via INDEX_VERSION
+à Flutter. Le panneau reprend ainsi le même numéro, avec mineur sur au moins deux
+chiffres, que l’archive. Hors construction de distribution, afficher Développement
+plutôt qu’un numéro de build fictif. Aucun nouveau package requis.

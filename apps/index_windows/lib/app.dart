@@ -15,6 +15,11 @@ import 'document_text.dart';
 import 'episode_search.dart';
 import 'window_port.dart';
 
+const applicationVersion = String.fromEnvironment(
+  'INDEX_VERSION',
+  defaultValue: 'Développement',
+);
+
 typedef DirectoryPicker = Future<String?> Function();
 Future<String?> nativeDirectoryPicker() => Platform.isAndroid
     ? AppModel.androidChannel.invokeMethod<String>('pickTree')
@@ -668,6 +673,10 @@ class _LibraryPageState extends State<LibraryPage> {
     builder: (context) =>
         SettingsDialog(model: m, pickDirectory: widget.pickDirectory),
   );
+  Future<void> about() => showDialog<void>(
+    context: context,
+    builder: (context) => IndexAboutDialog(model: m),
+  );
   void section(bool files, bool favorites) {
     m.filesView = files;
     m.favoritesOnly = favorites;
@@ -753,6 +762,12 @@ class _LibraryPageState extends State<LibraryPage> {
                               false,
                               () => unawaited(settings()),
                             ),
+                            _nav(
+                              'À propos',
+                              Icons.info_outline,
+                              false,
+                              () => unawaited(about()),
+                            ),
                           ],
                         ),
                       ),
@@ -805,6 +820,10 @@ class _LibraryPageState extends State<LibraryPage> {
                 TextButton(
                   onPressed: () => unawaited(settings()),
                   child: const Text('Paramètres'),
+                ),
+                TextButton(
+                  onPressed: () => unawaited(about()),
+                  child: const Text('À propos'),
                 ),
               ],
             ),
@@ -1904,6 +1923,159 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
         ];
 }
 
+Widget panelGroup(String title, List<Widget> content, EditorialColors c) =>
+    Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Material(
+        color: c.controls,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: c.line),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: c.accent,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...content,
+            ],
+          ),
+        ),
+      ),
+    );
+
+class IndexAboutDialog extends StatelessWidget {
+  const IndexAboutDialog({super.key, required this.model});
+  final AppModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = EditorialColors(model.dark);
+    return Dialog(
+      backgroundColor: c.panel,
+      surfaceTintColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 650, maxHeight: 780),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'À propos',
+                      style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fermer'),
+                  ),
+                ],
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  key: const ValueKey('about-scroll'),
+                  child: SelectionArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        panelGroup('IndeX', [
+                          const Text(
+                            'Recherche et écoute de Rendez-Vous avec X',
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Version : $applicationVersion',
+                            key: ValueKey('about-version'),
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              key: const ValueKey('about-github'),
+                              icon: const Icon(Icons.code),
+                              label: const Text('GitHub · lien factice'),
+                              onPressed: () => ScaffoldMessenger.of(context)
+                                  .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Lien GitHub de démonstration : aucun site n’est ouvert.',
+                                      ),
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ], c),
+                        panelGroup(
+                          'Une bibliothèque pour explorer les épisodes',
+                          [
+                            const Text(
+                              'IndeX rassemble le catalogue documentaire de Rendez-Vous avec X et permet de retrouver, consulter et écouter vos épisodes depuis une même interface. Le catalogue est intégré : aucun fichier CSV ou TXT externe n’est nécessaire pour le consulter.',
+                            ),
+                          ],
+                          c,
+                        ),
+                        panelGroup('Retrouver et comprendre', [
+                          const Text(
+                            'Recherchez dès trois caractères dans les titres, résumés, sources et musiques, avec les champs de votre choix. Triez les épisodes par titre, date ou disponibilité MP3, filtrez leur état d’écoute et retrouvez vos favoris. Chaque fiche présente le résumé, les références et les musiques ; les épisodes connexes des sources ouvrent leur propre fiche.',
+                          ),
+                        ], c),
+                        panelGroup('Écouter vos MP3', [
+                          const Text(
+                            'Choisissez votre dossier MP3 dans Fichiers et associations. IndeX rapproche les noms des fichiers du catalogue, affiche les disponibilités et propose un diagnostic ainsi que des associations manuelles. Le catalogue reste consultable sans MP3. L’analyse ne modifie pas vos fichiers.',
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Le lecteur intégré propose lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes avec les flèches du clavier. Activez la lecture aléatoire ou l’enchaînement de l’épisode suivant. Consulter une autre fiche ne change pas la lecture en cours.',
+                          ),
+                        ], c),
+                        panelGroup('Garder le fil de vos écoutes', [
+                          const Text(
+                            'La progression est sauvegardée régulièrement et peut être reprise à la prochaine écoute. Les états Non écouté, En cours et Écouté ainsi que le remplissage des lignes indiquent votre avancement. Vous pouvez aussi modifier le statut et marquer vos favoris. L’arrêt remet la progression à zéro ; relancer un épisode terminé commence une nouvelle écoute en conservant son favori.',
+                          ),
+                        ], c),
+                        panelGroup('Vos données restent chez vous', [
+                          const Text(
+                            'IndeX fonctionne hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur. La version Windows est portable, sans installateur. Les thèmes clair et sombre se choisissent dans les Paramètres.',
+                          ),
+                        ], c),
+                        panelGroup('Fonctions prévues', [
+                          const Text(
+                            'Le renommage contrôlé des MP3 et le transfert manuel du suivi par export/import JSON sont prévus dans les lots suivants. Ils ne sont pas encore disponibles. La version Android est actuellement en pause pendant la finalisation de Windows.',
+                          ),
+                        ], c),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fermer'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsDialog extends StatefulWidget {
   const SettingsDialog({
     super.key,
@@ -1946,36 +2118,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
   }
 
-  Widget group(String title, List<Widget> content, EditorialColors c) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
-        child: Material(
-          color: c.controls,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(color: c.line),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: c.accent,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...content,
-              ],
-            ),
-          ),
-        ),
-      );
   void future(String title, String text) => unawaited(
     showDialog<void>(
       context: context,
@@ -2033,7 +2175,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               m.error,
                               style: TextStyle(color: c.alert),
                             ),
-                          group('Apparence', [
+                          panelGroup('Apparence', [
                             Wrap(
                               spacing: 12,
                               runSpacing: 8,
@@ -2080,7 +2222,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               ],
                             ),
                           ], c),
-                          group('Données utilisateur', [
+                          panelGroup('Données utilisateur', [
                             SelectableText(
                               m.dataPath,
                               style: const TextStyle(fontSize: 12),
@@ -2094,7 +2236,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 ),
                               ),
                           ], c),
-                          group('Lecture et reprise', [
+                          panelGroup('Lecture et reprise', [
                             CheckboxListTile(
                               controlAffinity: ListTileControlAffinity.leading,
                               contentPadding: EdgeInsets.zero,
@@ -2114,22 +2256,22 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               'La lecture en arrière-plan est mise en pause avec sauvegarde de la position.',
                             ),
                           ], c),
-                          group('Analyse au démarrage', [
+                          panelGroup('Analyse au démarrage', [
                             CheckboxListTile(
                               contentPadding: EdgeInsets.zero,
                               controlAffinity: ListTileControlAffinity.leading,
                               title: const Text(
-                                'Ne plus scanner le dossier MP3 à chaque ouverture',
+                                'Scanner le dossier MP3 à chaque ouverture',
                               ),
                               subtitle: const Text(
-                                'Les derniers résultats sont conservés. Relancez une analyse dans Fichiers et associations pour actualiser les disponibilités.',
+                                'Décochez pour conserver les derniers résultats sans analyse automatique. Vous pouvez toujours relancer une analyse dans Fichiers et associations.',
                               ),
-                              value: m.skipStartupScan,
+                              value: !m.skipStartupScan,
                               onChanged: (value) =>
-                                  m.setSkipStartupScan(value!),
+                                  m.setSkipStartupScan(!value!),
                             ),
                           ], c),
-                          group('Transfert du suivi', [
+                          panelGroup('Transfert du suivi', [
                             const Text(
                               'Transfert manuel des favoris, statuts et progressions entre Windows et Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé sera créé dans le dossier "exports" du dossier des données utilisateur.',
                               style: TextStyle(fontSize: 13, height: 1.6),
@@ -2158,7 +2300,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               ],
                             ),
                           ], c),
-                          group('Fichiers audio', [
+                          panelGroup('Fichiers audio', [
                             const Text(
                               'Une seule conversion sera proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
                               style: TextStyle(fontSize: 13, height: 1.6),

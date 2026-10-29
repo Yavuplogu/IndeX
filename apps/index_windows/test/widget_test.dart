@@ -18,6 +18,76 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  testWidgets(
+    'À propos : version, lien factice, thèmes et vue compacte sans perte de liste',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-about-widget-');
+      final model = AppModel(portableDirectory: root, audioPort: FakeAudio());
+      try {
+        await tester.runAsync(
+          () => model.configure('${root.path}/user', '', true),
+        );
+        model.search('Yougo');
+        final ids = model.visible.map((e) => e.id).toList();
+        for (final compact in [false, true]) {
+          tester.view.physicalSize = compact
+              ? const Size(480, 800)
+              : const Size(1440, 1000);
+          for (final dark in [false, true]) {
+            model.setTheme(dark);
+            await tester.pumpWidget(
+              IndeXApp(model: model, window: FakeWindow()),
+            );
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('À propos'));
+            await tester.pumpAndSettle();
+            final dialog = find.byType(IndexAboutDialog);
+            expect(dialog, findsOneWidget);
+            expect(find.text('Version : $applicationVersion'), findsOneWidget);
+            final material = tester.widget<Dialog>(
+              find.descendant(of: dialog, matching: find.byType(Dialog)),
+            );
+            expect(material.backgroundColor, EditorialColors(dark).panel);
+            await tester.tap(find.byKey(const ValueKey('about-github')));
+            await tester.pumpAndSettle();
+            expect(
+              find.text(
+                'Lien GitHub de démonstration : aucun site n’est ouvert.',
+              ),
+              findsOneWidget,
+            );
+            await tester.drag(
+              find.byKey(const ValueKey('about-scroll')),
+              const Offset(0, -3000),
+            );
+            await tester.pumpAndSettle();
+            await tester.ensureVisible(find.text('Fonctions prévues'));
+            expect(
+              find.text('Fonctions prévues').hitTestable(),
+              findsOneWidget,
+            );
+            expect(find.text('Fermer'), findsNWidgets(2));
+            await tester.tap(find.text('Fermer').first);
+            await tester.pumpAndSettle();
+            expect(find.byType(IndexAboutDialog), findsNothing);
+            expect(model.query, 'Yougo');
+            expect(model.visible.map((e) => e.id), ids);
+            expect(tester.takeException(), isNull);
+            ScaffoldMessenger.of(tester.element(find.byType(LibraryPage)))
+                .clearSnackBars();
+          }
+        }
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.runAsync(model.release);
+        model.dispose();
+        root.deleteSync(recursive: true);
+      }
+    },
+  );
   testWidgets('Recherche restaurée visible et case de reprise à gauche', (
     tester,
   ) async {
@@ -443,9 +513,9 @@ void main() {
       expect(find.text('Analyser aussi les sous-dossiers'), findsNothing);
       final skip = find.widgetWithText(
         CheckboxListTile,
-        'Ne plus scanner le dossier MP3 à chaque ouverture',
+        'Scanner le dossier MP3 à chaque ouverture',
       );
-      expect(tester.widget<CheckboxListTile>(skip).value, isFalse);
+      expect(tester.widget<CheckboxListTile>(skip).value, isTrue);
       await tester.tap(skip);
       await tester.pump();
       expect(model.skipStartupScan, isTrue);

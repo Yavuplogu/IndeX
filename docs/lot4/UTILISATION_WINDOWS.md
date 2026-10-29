@@ -25,8 +25,9 @@ Déplacer uniquement l'application ne déplace pas vos données ni vos MP3. Le d
 MP3 non configuré ne bloque pas les ouvertures suivantes : chargement animé puis bibliothèque.
 Les données et le thème se retrouvent dans Paramètres ; les MP3 et l’analyse des
 sous-dossiers dans Fichiers et associations. Dans Paramètres, la case
-« Ne plus scanner le dossier MP3 à chaque ouverture » est décochée par défaut.
-La cocher conserve les derniers résultats ; relancer un scan manuel pour les actualiser.
+« Scanner le dossier MP3 à chaque ouverture » est cochée par défaut.
+Décochez-la pour conserver les derniers résultats sans scan automatique.
+La recocher réactive le scan à chaque ouverture.
 
 ## Consulter et rechercher
 
@@ -209,3 +210,9 @@ Windows. Il est local, sans envoi automatique ; un journal précédent est conse
 lorsque sa taille dépasse 512 Kio. Une ouverture non confirmée est annulée :
 l’application doit permettre de choisir un autre épisode. Ce diagnostic n’altère
 ni vos MP3 ni leurs tags et ne remplace pas les sauvegardes du suivi.
+
+
+Le bouton **À propos**, dans la navigation, ouvre une présentation de l’application,
+de son principe et de ses fonctions. Le premier cadre affiche IndeX, la version
+du build et un lien GitHub actuellement factice (aucun site ouvert). Le panneau
+est défilant, avec un bouton Fermer en haut et en bas, en clair comme en sombre.
