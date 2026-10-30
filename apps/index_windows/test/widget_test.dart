@@ -25,7 +25,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final contactCalls = <MethodCall>[];
-      const contactChannel = MethodChannel('index/local_folders');
+      const contactChannel = SystemChannels.platform;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(contactChannel, (call) async {
             contactCalls.add(call);
@@ -92,8 +92,18 @@ void main() {
             await tester.pumpAndSettle();
             await tester.tap(contact);
             await tester.pumpAndSettle();
-            expect(contactCalls.last.method, 'openContactEmail');
-            expect(contactCalls.last.arguments, isNull);
+            expect(contactCalls.last.method, 'Clipboard.setData');
+            expect(contactCalls.last.arguments, {
+              'text': 'index.en9nr@passinbox.com',
+            });
+            expect(
+              find.text('Adresse mail copiée dans le presse-papiers.'),
+              findsOneWidget,
+            );
+            expect(
+              find.widgetWithText(OutlinedButton, 'Voir sur GitHub'),
+              findsOneWidget,
+            );
             await tester.drag(
               find.byKey(const ValueKey('about-scroll')),
               const Offset(0, -3000),

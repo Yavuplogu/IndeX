@@ -41,6 +41,10 @@ Le panneau **À propos** présente la version du build et les fonctionnalités ;
 son lien GitHub reste factice pour le moment. Dans Paramètres, décochez
 **Scanner le dossier MP3 à chaque ouverture** pour désactiver le scan automatique.
 
+Les données et MP3 situés dans IndeX suivent désormais le déplacement du dossier
+entier, application fermée. Ouvrir une fois la mise à jour avant déplacement pour
+convertir les anciens profils ; les dossiers extérieurs gardent leurs chemins.
+
 - [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
 - [Application Flutter Windows et construction portable](apps/index_windows/README.md)
 - [Mode d'emploi Windows](docs/lot4/UTILISATION_WINDOWS.md)

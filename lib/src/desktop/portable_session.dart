@@ -35,6 +35,32 @@ final class PortableSession {
   bool _closed = false;
   String get databasePath => '${dataDirectory.path}/index-utilisateur.sqlite';
 
+  static Directory _portableRoot(Directory portable) {
+    final directory = Directory(portable.resolveSymbolicLinksSync());
+    return directory.uri.pathSegments
+                .where((s) => s.isNotEmpty)
+                .last
+                .toLowerCase() ==
+            'application'
+        ? directory.parent
+        : directory;
+  }
+
+  static String? _relative(Directory root, Directory target) {
+    final base = root.absolute.uri.normalizePath();
+    final uri = target.absolute.uri.normalizePath();
+    final prefix = base.toString();
+    final value = uri.toString();
+    if (!(Platform.isWindows
+        ? value.toLowerCase().startsWith(prefix.toLowerCase())
+        : value.startsWith(prefix)))
+      return null;
+    final segments = uri.pathSegments
+        .where((s) => s.isNotEmpty)
+        .skip(base.pathSegments.where((s) => s.isNotEmpty).length);
+    return segments.isEmpty ? '.' : segments.join('/');
+  }
+
   static Directory? configuredDirectory(Directory portableDirectory) {
     final file = File('${portableDirectory.path}/index-portable.json');
     if (!file.existsSync()) return null;
@@ -42,11 +68,35 @@ final class PortableSession {
       throw const FormatException('Configuration portable excessive.');
     final value = jsonDecode(file.readAsStringSync());
     if (value is! Map<String, dynamic> ||
-        value['version'] != 1 ||
+        ![1, 2].contains(value['version']) ||
         value['data_directory'] is! String) {
       throw const FormatException('Configuration portable non reconnue.');
     }
     final path = value['data_directory'] as String;
+    if (value['version'] == 2 && value['relative'] == true) {
+      final segments = path.split('/');
+      if (path.isEmpty ||
+          path.contains('\\') ||
+          path.contains(':') ||
+          segments.any(
+            (s) => s.isEmpty || s == '..' || (s == '.' && path != '.'),
+          )) {
+        throw const FormatException('Chemin relatif de données invalide.');
+      }
+      final root = _portableRoot(portableDirectory);
+      final result = Directory('${root.path}/$path');
+      if (result.existsSync() &&
+          _relative(root, Directory(result.resolveSymbolicLinksSync())) ==
+              null) {
+        throw const FormatException(
+          'Le dossier relatif sort de la racine IndeX.',
+        );
+      }
+      return result;
+    }
+    if (value['version'] == 2 && value['relative'] != false) {
+      throw const FormatException('Type de chemin portable invalide.');
+    }
     if (!Directory(path).isAbsolute || path.trim().isEmpty)
       throw const FormatException('Chemin de données invalide.');
     return Directory(path);
@@ -64,7 +114,10 @@ final class PortableSession {
       throw const FormatException('Empreinte du catalogue intégré invalide.');
     }
     if (!dataDirectory.existsSync())
-      throw const FileSystemException('Dossier utilisateur introuvable.');
+      throw FileSystemException(
+        'Dossier utilisateur introuvable.',
+        dataDirectory.path,
+      );
     final data = Directory(dataDirectory.resolveSymbolicLinksSync());
     final database = File('${data.path}/index-utilisateur.sqlite');
     if (requireExisting && !database.existsSync())
@@ -91,6 +144,7 @@ final class PortableSession {
         }
       });
       store = CatalogStore.open(database.path);
+      _refreshPortablePaths(store, _portableRoot(portableDirectory));
       await _writePointer(portableDirectory, data);
       return PortableSession._(portableDirectory, data, store, lock);
     } catch (_) {
@@ -131,16 +185,109 @@ final class PortableSession {
   }
 
   static Future<void> _writePointer(Directory portable, Directory data) async {
+    final relative = _relative(_portableRoot(portable), data);
     final pending = File('${portable.path}/.index-portable-${_token()}.tmp');
     try {
       await pending.create(exclusive: true);
       await pending.writeAsString(
-        '${jsonEncode({'version': 1, 'data_directory': data.path})}\n',
+        '${jsonEncode({'version': 2, 'data_directory': relative ?? data.path, 'relative': relative != null})}\n',
         flush: true,
       );
       await pending.rename('${portable.path}/index-portable.json');
     } finally {
       if (await pending.exists()) await pending.delete();
+    }
+  }
+
+  /// Les références restent absolues pour le moteur audio ; leur racine est
+  /// réévaluée atomiquement avant toute lecture ou analyse du profil déplacé.
+  static void _refreshPortablePaths(CatalogStore store, Directory root) {
+    final db = store.database;
+    const key = 'portable_root_v1';
+    final rows = db.select('SELECT value FROM local_settings WHERE key=?', [
+      key,
+    ]);
+    final previous = rows.isEmpty ? null : rows.single['value'] as String;
+    if (previous == root.path) return;
+    final old = previous == null ? null : Directory(previous);
+    if (old != null && !old.isAbsolute) {
+      throw const FormatException('Ancienne racine portable invalide.');
+    }
+    String rebase(String value) {
+      if (old == null) return value;
+      for (final pair in [
+        (old.absolute.uri.toString(), root.absolute.uri.toString()),
+        (
+          '${old.path}${Platform.pathSeparator}',
+          '${root.path}${Platform.pathSeparator}',
+        ),
+      ]) {
+        final matches = Platform.isWindows
+            ? value.toLowerCase().startsWith(pair.$1.toLowerCase())
+            : value.startsWith(pair.$1);
+        if (matches) return '${pair.$2}${value.substring(pair.$1.length)}';
+      }
+      return value == old.path ? root.path : value;
+    }
+
+    Object? walk(Object? value) {
+      if (value is String) return rebase(value);
+      if (value is List) return value.map(walk).toList();
+      if (value is Map)
+        return value.map((key, item) => MapEntry(key, walk(item)));
+      return value;
+    }
+
+    db.execute('BEGIN IMMEDIATE');
+    try {
+      if (old != null) {
+        for (final table in [
+          ('local_audio_links', 'episode_id', ['audio_ref', 'evidence_json']),
+          ('audio_scan_runs', 'id', ['scope', 'summary_json']),
+          ('audio_scan_items', 'rowid', ['audio_ref', 'decision_json']),
+        ]) {
+          for (final row in db.select(
+            'SELECT ${table.$2} AS identity,${table.$3.join(',')} FROM ${table.$1}',
+          )) {
+            final values = <String>[];
+            for (final column in table.$3) {
+              final value = row[column] as String;
+              values.add(
+                column.endsWith('_json')
+                    ? jsonEncode(walk(jsonDecode(value)))
+                    : rebase(value),
+              );
+            }
+            db.execute(
+              'UPDATE ${table.$1} SET ${table.$3.map((c) => '$c=?').join(',')} WHERE ${table.$2}=?',
+              [...values, row['identity']],
+            );
+          }
+        }
+        for (final setting in ['mp3_directory', 'audio_unlinked_refs_v1']) {
+          final values = db.select(
+            'SELECT value FROM local_settings WHERE key=?',
+            [setting],
+          );
+          if (values.isEmpty) continue;
+          final value = values.single['value'] as String;
+          final updated = setting == 'mp3_directory'
+              ? rebase(value)
+              : jsonEncode(walk(jsonDecode(value)));
+          db.execute('UPDATE local_settings SET value=? WHERE key=?', [
+            updated,
+            setting,
+          ]);
+        }
+      }
+      db.execute(
+        'INSERT INTO local_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+        [key, root.path],
+      );
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
     }
   }
 

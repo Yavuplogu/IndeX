@@ -45,6 +45,7 @@ try {
   }
   $licences = Join-Path $documentation 'licences'
   New-Item -ItemType Directory -Force $licences | Out-Null
+  Copy-Item (Join-Path $app 'assets/icons/LICENSE-octicons.txt') (Join-Path $licences 'primer-octicons-LICENSE.txt')
   $config = Get-Content (Join-Path $app '.dart_tool/package_config.json') -Raw | ConvertFrom-Json
   foreach ($package in $config.packages) {
     $base = if ($package.rootUri -like 'file:*') { ([Uri]$package.rootUri).LocalPath } else { [IO.Path]::GetFullPath((Join-Path (Join-Path $app '.dart_tool') $package.rootUri)) }

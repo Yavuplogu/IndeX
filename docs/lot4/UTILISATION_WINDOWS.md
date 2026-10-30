@@ -215,5 +215,20 @@ ni vos MP3 ni leurs tags et ne remplace pas les sauvegardes du suivi.
 Le bouton **À propos**, dans la navigation, ouvre une présentation de l’application,
 de son principe et de ses fonctions. Le premier cadre reprend le logo IndeX, le bouton Voir sur GitHub (actuellement
 factice, aucun site ouvert), la version du build et le mot de l’auteur. Le contact
-ouvre votre logiciel de messagerie, sans envoyer de message automatiquement. Le panneau
+copie l’adresse mail dans le presse-papiers et affiche une confirmation. Le panneau
 est défilant, avec un bouton Fermer en haut et en bas, en clair comme en sombre.
+
+
+## Déplacer le dossier IndeX
+
+Fermer l’application avant de déplacer son dossier entier. Les données situées
+dans IndeX sont retrouvées par un chemin relatif ; les chemins MP3 internes,
+associations manuelles et exclusions suivent la nouvelle racine à l’ouverture,
+même si l’analyse automatique est désactivée. Les dossiers extérieurs gardent
+leur emplacement absolu. Déplacer seulement un sous-dossier n’est pas ce parcours.
+
+Un ancien profil doit être ouvert une fois avec cette mise à jour à son emplacement
+actuel pour convertir son pointeur absolu et mémoriser sa racine. S’il avait déjà
+été déplacé avant cette conversion, sélectionner son dossier de données existant
+(et réindiquer si nécessaire le dossier MP3) : aucune recherche approximative ni
+création d’un profil vide n’est faite à la place des données attendues.

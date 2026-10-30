@@ -598,3 +598,41 @@ analyse Flutter sans anomalie et totalité des 48 tests Flutter réussie. Format
 et diff conformes. Le lien mailto est simulé dans le test : compilation du runner
 et ouverture réelle du logiciel de messagerie à confirmer au prochain build
 Windows. Aucun build distribuable lancé ici.
+
+
+## Portabilité des chemins internes et presse-papiers — 30 octobre 2026
+
+Pointeur portable v2 relatif pour les données internes, absolu pour les externes ;
+v1 lu et converti à l’ouverture existante. Racine déterminée depuis application/
+ou le dossier portable en développement. La racine précédente est mémorisée dans
+local_settings.portable_root_v1. En cas de déplacement, réévaluation transactionnelle
+des références sous cette seule racine : liens, preuves/diagnostics de scans,
+mp3_directory et exclusions persistantes. Les références extérieures et tout le
+suivi restent intacts. Une contrainte d’unicité annule la transaction, sans effacer
+ni réattribuer les liens. Un dossier absent affiche son chemin et n’est jamais
+remplacé par un nouveau profil. Pas de migration de schéma ni changement du seed.
+
+Un ancien pointeur v1 déjà cassé sans racine mémorisée demande une relocalisation
+explicite ; impossible d’identifier sûrement un profil à partir du seul nom de
+son dossier. Ouvrir la mise à jour une fois avant un futur déplacement initialise
+les métadonnées nécessaires. Aucune modification des fichiers MP3, TXT ou CSV.
+
+Contact : suppression du canal natif mailto, Clipboard.setData et notification
+immédiate (même après le message GitHub). Phrase révisée, adresse centrée et espace.
+GitHub utilise une icône Octicons MIT locale et OutlinedButton ; source SVG, PNG
+transparent et licence/provenance conservés. Licence copiée dans documentation/
+licences lors du packaging. Conversion SVG→PNG avec CairoSVG comme outil local
+uniquement, aucune dépendance runtime supplémentaire, aucun téléchargement à l’usage.
+
+Tests : déplacement réel de la racine avec caractères accentués/#, réouverture sans
+scan, suivi/favori, association manuelle, exclusion conservée après rescan, chemins
+externes, conversion v1→v2, refus de chemin sortant, dossier manquant sans création,
+annulation d’un conflit unique. Test À propos adapté au presse-papiers et au bouton
+avec bordure, thèmes clair/sombre et format compact.
+
+Validation finale : `bash tools/lot4/check.sh` réussi : 193 tests du cœur, 48 tests
+Flutter et 4 tests de versionnement ; analyses sans anomalie, formatage/diff
+conformes. Parseur PowerShell 7.5.4 : packaging valide. Les déplacements réels de
+répertoires ont été testés sous Linux ; la recette Windows (autre emplacement ou
+disque, chemins et Explorateur) reste à confirmer au prochain build. Aucun build
+distribuable lancé ici. Le prochain mineur sera réservé automatiquement.

@@ -44,6 +44,221 @@ void main() {
     return s;
   }
 
+  test('Déplacement de toute la racine : suivi, liens manuels et exclusions conservés sans scan', () async {
+    final s = await start();
+    final entries = s.episodes();
+    final mp3 = Directory('${root.path}/MP3 été #')..createSync();
+    final auto = File('${mp3.path}/${entries[0].originalName}')
+      ..writeAsBytesSync([]);
+    final manual = File('${mp3.path}/choix manuel.mp3')..writeAsBytesSync([]);
+    final removed = File('${mp3.path}/${entries[2].originalName}')
+      ..writeAsBytesSync([]);
+    await s.scan(mp3.path);
+    s.store.recordManualLink(
+      entries[1].id,
+      manual.uri.toString(),
+      'choix manuel.mp3',
+    );
+    s.store.unlinkAudio(removed.uri.toString());
+    s.favorite(entries[0].id, true);
+    s.checkpoint(
+      entries[0].id,
+      positionMs: 42000,
+      durationMs: 120000,
+      progressed: true,
+      completed: false,
+      playbackStatus: 'paused',
+    );
+    s.setSetting('skip_startup_scan', 'true');
+    final oldRoot = root.path;
+    await s.closeSafely();
+    root = root.renameSync('$oldRoot-déplacé');
+    portable = Directory('${root.path}/application');
+    data = Directory('${root.path}/données utilisateur');
+    final configured = PortableSession.configuredDirectory(portable)!;
+    expect(FileSystemEntity.identicalSync(configured.path, data.path), isTrue);
+    final reopened = await start(existing: true);
+    final linked = reopened.episodes().firstWhere((e) => e.id == entries[0].id);
+    expect(
+      linked.audioRef,
+      File('${root.path}/MP3 été #/${auto.uri.pathSegments.last}').uri
+          .toString(),
+    );
+    expect(linked.audioAvailable, isTrue);
+    expect(linked.favorite, isTrue);
+    expect(linked.positionMs, 42000);
+    expect(linked.status, 'EN_COURS');
+    expect(
+      reopened.episodes().firstWhere((e) => e.id == entries[1].id).audioRef,
+      File('${root.path}/MP3 été #/choix manuel.mp3').uri.toString(),
+    );
+    expect(
+      reopened.store.unlinkedAudioReferences,
+      contains(
+        File('${root.path}/MP3 été #/${removed.uri.pathSegments.last}').uri
+            .toString(),
+      ),
+    );
+    expect(reopened.setting('mp3_directory'), '${root.path}/MP3 été #');
+    expect(reopened.setting('skip_startup_scan'), 'true');
+    expect(
+      reopened.store.database.select(
+        'SELECT manual FROM local_audio_links WHERE episode_id=?',
+        [entries[1].id],
+      ).single['manual'],
+      1,
+    );
+    await reopened.scan('${root.path}/MP3 été #');
+    expect(
+      reopened.episodes().firstWhere((e) => e.id == entries[2].id).audioRef,
+      isNull,
+    );
+    expect(
+      reopened
+          .episodes()
+          .firstWhere((e) => e.id == entries[1].id)
+          .audioAvailable,
+      isTrue,
+    );
+  });
+
+  test('Ancien pointeur absolu migré avant déplacement ; chemins relatifs sortants refusés', () async {
+    final s = await start();
+    await s.closeSafely();
+    final pointer = File('${portable.path}/index-portable.json');
+    pointer.writeAsStringSync(
+      jsonEncode({'version': 1, 'data_directory': data.path}),
+    );
+    expect(PortableSession.configuredDirectory(portable)!.path, data.path);
+    final reopened = await start(existing: true);
+    final value = jsonDecode(pointer.readAsStringSync()) as Map;
+    expect(value['version'], 2);
+    expect(value['relative'], isTrue);
+    expect(value['data_directory'], 'données utilisateur');
+    await reopened.closeSafely();
+    pointer.writeAsStringSync(
+      jsonEncode({
+        'version': 2,
+        'relative': true,
+        'data_directory': '../ailleurs',
+      }),
+    );
+    expect(
+      () => PortableSession.configuredDirectory(portable),
+      throwsFormatException,
+    );
+    pointer.writeAsStringSync(
+      jsonEncode({
+        'version': 2,
+        'relative': true,
+        'data_directory': '/ailleurs',
+      }),
+    );
+    expect(
+      () => PortableSession.configuredDirectory(portable),
+      throwsFormatException,
+    );
+  });
+
+  test(
+    'Données et MP3 extérieurs : chemins absolus inchangés après déplacement',
+    () async {
+      final external = Directory.systemTemp.createTempSync('index-externe-');
+      addTearDown(() => external.deleteSync(recursive: true));
+      final s = await start(folder: external);
+      s.setSetting('mp3_directory', external.path);
+      final entry = s.episodes().first;
+      final file = File('${external.path}/manuel.mp3')..writeAsBytesSync([]);
+      s.store.recordManualLink(entry.id, file.uri.toString(), 'manuel.mp3');
+      s.favorite(entry.id, true);
+      await s.closeSafely();
+      root = root.renameSync('${root.path}-déplacé');
+      portable = Directory('${root.path}/application');
+      expect(
+        PortableSession.configuredDirectory(portable)!.path,
+        external.path,
+      );
+      final reopened = await start(folder: external, existing: true);
+      expect(reopened.setting('mp3_directory'), external.path);
+      expect(
+        reopened.episodes().firstWhere((e) => e.id == entry.id).audioRef,
+        file.uri.toString(),
+      );
+      expect(
+        reopened.episodes().firstWhere((e) => e.id == entry.id).favorite,
+        isTrue,
+      );
+      await reopened.dispose();
+    },
+  );
+
+  test('Conflit de références après déplacement : transaction annulée sans perte de suivi', () async {
+    final s = await start();
+    final entries = s.episodes();
+    final oldRoot = root.path;
+    final destination = '$oldRoot-déplacé';
+    final before = File('$oldRoot/manuel.mp3').uri.toString();
+    final after = File('$destination/manuel.mp3').uri.toString();
+    s.store.recordManualLink(entries[0].id, before, 'manuel.mp3');
+    s.store.recordManualLink(entries[1].id, after, 'manuel.mp3');
+    s.favorite(entries[0].id, true);
+    await s.closeSafely();
+    root = root.renameSync(destination);
+    portable = Directory('${root.path}/application');
+    data = Directory('${root.path}/données utilisateur');
+    await expectLater(start(existing: true), throwsA(isA<SqliteException>()));
+    final db = sqlite3.open('${data.path}/index-utilisateur.sqlite');
+    try {
+      expect(
+        db
+            .select('SELECT audio_ref FROM local_audio_links')
+            .map((r) => r['audio_ref'])
+            .toSet(),
+        {before, after},
+      );
+      expect(
+        db
+            .select(
+              "SELECT value FROM local_settings WHERE key='portable_root_v1'",
+            )
+            .single['value'],
+        oldRoot,
+      );
+      expect(
+        db.select(
+          'SELECT is_favorite FROM user_episode_state WHERE episode_id=?',
+          [entries[0].id],
+        ).single['is_favorite'],
+        1,
+      );
+    } finally {
+      db.close();
+    }
+  });
+
+  test('Données relatives absentes : chemin explicite, aucun profil de remplacement', () async {
+    final s = await start();
+    await s.closeSafely();
+    final missing = Directory('${root.path}/absent');
+    File('${portable.path}/index-portable.json').writeAsStringSync(
+      jsonEncode({'version': 2, 'relative': true, 'data_directory': 'absent'}),
+    );
+    await expectLater(
+      start(
+        folder: PortableSession.configuredDirectory(portable),
+        existing: true,
+      ),
+      throwsA(
+        isA<FileSystemException>().having(
+          (e) => e.path,
+          'chemin',
+          missing.path,
+        ),
+      ),
+    );
+    expect(missing.existsSync(), isFalse);
+  });
+
   test('Migration utilisateur réelle v4 vers v5 conserve favori, statut et progression', () async {
     final copy = File('${data.path}/index-utilisateur.sqlite');
     await copy.writeAsBytes(seed);
@@ -174,7 +389,7 @@ void main() {
     final pointer = jsonDecode(
       await File('${portable.path}/index-portable.json').readAsString(),
     ) as Map;
-    expect(pointer.keys.toSet(), {'version', 'data_directory'});
+    expect(pointer.keys.toSet(), {'version', 'data_directory', 'relative'});
     expect(
       FileSystemEntity.identicalSync(
         PortableSession.configuredDirectory(portable)!.path,

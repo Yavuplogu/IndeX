@@ -1965,17 +1965,24 @@ class IndexAboutDialog extends StatelessWidget {
 
   Future<void> contact(BuildContext context) async {
     try {
-      await const MethodChannel('index/local_folders')
-          .invokeMethod<void>('openContactEmail');
+      await Clipboard.setData(
+        const ClipboardData(text: 'index.en9nr@passinbox.com'),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Adresse mail copiée dans le presse-papiers.'),
+          ),
+        );
     } catch (error) {
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Messagerie indisponible'),
-          content: SelectableText(
-            'Vous pouvez écrire à index.en9nr@passinbox.com.\n\n$error',
-          ),
+          title: const Text('Copie impossible'),
+          content: SelectableText('index.en9nr@passinbox.com\n\n$error'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -2028,9 +2035,16 @@ class IndexAboutDialog extends StatelessWidget {
                               key: const ValueKey('about-links-version'),
                               children: [
                                 Flexible(
-                                  child: TextButton.icon(
+                                  child: OutlinedButton.icon(
                                     key: const ValueKey('about-github'),
-                                    icon: const Icon(Icons.code),
+                                    icon: Image.asset(
+                                      'assets/icons/github-mark.png',
+                                      width: 20,
+                                      height: 20,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
                                     label: const FittedBox(
                                       fit: BoxFit.scaleDown,
                                       child: Text('Voir sur GitHub'),
@@ -2065,16 +2079,17 @@ class IndexAboutDialog extends StatelessWidget {
                               'Cela faisait des années que l’idée me séduisait, en réalité depuis l’arrêt de l’émission en 2015. Puis, la mort de Patrick Pesnot en 2023 m’a remotivé et j’ai fait quelques tentatives, plutôt infructueuses, car je ne suis pas du tout développeur.\n\n'
                               'Il y a quelque temps, j’ai eu l’idée d’utiliser l’IA en me disant : « Bon, à mon avis, ça va me prendre quelques mois et j’aurai probablement un résultat nébuleux, fonctionnant à moitié, puis je tenterai à nouveau ma chance dans dix ans. »\n\n'
                               'Finalement, le développement n’a duré qu’une semaine, pour un résultat parfaitement fonctionnel. Certes, il y a eu beaucoup de va-et-vient, pas mal de versions différentes et quelques adaptations, mais tout le processus a été beaucoup plus rapide et intuitif que prévu. C’est à la fois fascinant et terrifiant pour l’avenir.\n\n'
-                              'Quoi qu’il en soit, voici un tour d’horizon des capacités de IndeX et si vous avez une question particulière, vous pouvez me contacter sur le mail',
+                              'Quoi qu’il en soit, vous trouverez un peu plus bas un tour d’horizon des capacités de IndeX et si vous avez une question particulière, vous pouvez me contacter sur le mail :',
                             ),
                             Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: Alignment.center,
                               child: TextButton(
                                 key: const ValueKey('about-contact'),
                                 onPressed: () => unawaited(contact(context)),
                                 child: const Text('index.en9nr@passinbox.com'),
                               ),
                             ),
+                            const SizedBox(height: 16),
                             const Text('Bonne écoute,\n\nK.'),
                           ],
                           c,

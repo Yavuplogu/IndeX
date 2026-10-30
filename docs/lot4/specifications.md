@@ -488,3 +488,32 @@ MP3 d’exemple et les états Non écouté/En cours/Écouté. Supprimer le cadre
 prévues. Le paragraphe utilisateur sur le transfert est suivi d’une précision
 courte : l’export/import JSON du Lot 5 ter reste non livré. Aucun changement de
 règle d’association, d’audio ou de disponibilité des futurs lots.
+
+
+## Dossiers internes déplaçables et contact — 30 octobre 2026
+
+La racine portable Windows est le parent du dossier application ; hors ce layout,
+c’est le dossier portable lui-même. Le pointeur index-portable.json v2 enregistre
+les données internes relativement à cette racine ; les données externes restent
+absolues. Les pointeurs v1 sont reconnus et convertis après ouverture réussie du
+profil existant. Pas de profil vide de remplacement si le dossier attendu manque.
+Les chemins relatifs sortants et les liens de données qui sortent de la racine
+sont refusés. L’erreur de dossier absent affiche désormais le chemin concerné.
+
+Une racine mémorisée dans local_settings permet, avant scan/lecture, de réévaluer
+les références internes après déplacement : dossier MP3, liens automatiques et
+manuels, exclusions, références et diagnostics des scans. La mise à jour se fait
+dans une transaction ; collision = annulation, aucun écrasement de lien ou suivi.
+Les identités, favoris, progressions et fichiers MP3 ne sont pas modifiés. Les
+références extérieures restent inchangées. Les chemins de travail restent absolus
+pour le moteur ; leur racine est recalculée au démarrage. Aucune migration du
+schéma SQLite ni changement de seed. Application fermée pendant le déplacement.
+
+Pour un ancien profil sans racine mémorisée, ouvrir une fois la mise à jour avant
+le déplacement. Si son pointeur absolu est déjà périmé, relocaliser explicitement
+les données existantes ; ne pas choisir un autre profil par supposition.
+
+À propos : phrase d’introduction révisée, mail centré sur sa propre ligne et espace
+après. Clic = copie dans le presse-papiers avec confirmation, sans lien externe ni
+messagerie. GitHub reste factice, avec logo Primer Octicons MIT embarqué et bouton
+à bordure. Licence et provenance conservées, licence incluse dans la distribution.

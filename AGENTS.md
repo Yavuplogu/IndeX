@@ -182,3 +182,12 @@
   Mailto fixe index.en9nr@passinbox.com sur clic explicite via canal Windows,
   jamais d’envoi automatique. Retrait Fonctions prévues ; précision de non-livraison
   du JSON conservée dans Vos données restent chez vous. Aucun lancement de Lot 5 ter.
+
+- Révision du 30 octobre : pointeur portable v2 relatif à la racine IndeX pour les
+  données internes (parent de application/), externe absolu, v1 accepté/migré.
+  local_settings.portable_root_v1 permet la réévaluation transactionnelle des
+  références internes MP3/liens/exclusions/diagnostics avant scan ou lecture.
+  Collision = annulation ; suivi et fichiers intacts. Ancien pointeur déjà cassé
+  sans racine connue : relocalisation explicite, jamais de profil supposé/vide.
+  Contact À propos = copie presse-papiers/notifiée, mailto natif retiré. Logo GitHub
+  Octicons MIT embarqué dans bouton bordé, licence à distribuer.
