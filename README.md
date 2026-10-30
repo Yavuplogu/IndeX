@@ -6,7 +6,8 @@ chaque construction Windows distribuable. [Politique et compteur](tools/versioni
 [Lot 5 : architecture, contrôles et recette native restante](docs/lot5/bilan.md).
 
 Projet d'application documentaire et de lecture locale pour Windows et Android,
-en français et entièrement hors ligne à l'utilisation.
+en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
+MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
 **État : Lot 5 en cours — priorité à la finalisation Windows ; Android en pause.**
 Décision du 27 octobre 2026 : conserver le socle partagé et tous les objectifs
@@ -36,6 +37,11 @@ dossier MP3 dans l’Explorateur. Le compteur sous filtres affiche visibles / to
 du catalogue, sans rappel. Le diagnostic s’ouvre dans un panneau flottant ;
 les associations peuvent être retirées après confirmation, avec suppression du
 favori et du suivi de l’épisode, sans toucher au MP3. L’ouverture du dossier utilise l’API Windows avec le chemin cible.
+
+Lorsqu’un MP3 manque, **Télécharger** remplace Écouter si le journal contient une
+URL valide. Le dossier MP3 configuré est utilisé, ou demandé. Progression et
+annulation sont affichées ; après réception et association, **Écouter** réapparaît.
+Aucun MP3 n’est ajouté à la distribution.
 
 Le panneau **À propos** présente la version du build et les fonctionnalités ;
 son lien GitHub reste factice pour le moment. Dans Paramètres, décochez
@@ -87,7 +93,9 @@ bash tools/lot4/check.sh
 Dans l'environnement cloud préparé, activer d'abord le SDK avec
 `. /workspace/toolchains/activate-flutter.sh`. Le script de vérification réutilise
 ensuite les dépendances hors ligne, contrôle le formatage, l'analyse et les tests.
-Le cœur Dart n'effectue aucun accès réseau et ne modifie pas les fichiers fournis.
+L’import, la recherche et le scan restent sans réseau et ne modifient pas les
+fichiers fournis. Le service de téléchargement explicite utilise HTTP/HTTPS ; les
+tests emploient un serveur local, sans télécharger le corpus distant.
 Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites natives.
 
 ## Régénérer le catalogue documentaire
@@ -152,7 +160,9 @@ Pour revérifier les archives des dépendances (accès de développement à pub.
 python3 tools/lot0/verify_dependencies.py
 ```
 
-L'application future n'effectuera aucun accès réseau. Les URL documentaires ne
-seront ni téléchargées ni ouvertes automatiquement. Les MP3 déjà présents sont
+L’application ne contacte aucun serveur automatiquement. Depuis la décision du
+30 octobre, Télécharger utilise uniquement sur demande l’URL MP3 du journal intégré.
+Le fichier reçu est contrôlé puis associé à la fiche, sans écraser une cible.
+Les autres URL documentaires ne sont pas ouvertes automatiquement. Les MP3 déjà présents sont
 des fixtures existantes : ne pas en ajouter, dupliquer ou supprimer pendant l'audit.
 Seul le SQLite documentaire sera embarqué dans les futures distributions.

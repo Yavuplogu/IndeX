@@ -64,7 +64,8 @@
   et ne doit changer que le nom dans le même dossier, jamais écraser une cible.
   Tester uniquement sur des copies temporaires ; préserver les fixtures existantes.
 - V1 : SQLite documentaire prérempli dans les deux packages, aucun MP3 embarqué,
-  aucun serveur, compte, téléchargement ou télémétrie. Consultation sans CSV/TXT externes.
+  aucun serveur propre à IndeX, compte ni télémétrie ; téléchargement manuel
+  facultatif autorisé explicitement le 30 octobre (avenant ci-dessous). Consultation sans CSV/TXT externes.
 - Séparer identité métier, données documentaires, liens audio locaux et suivi.
   Ne jamais identifier un épisode par son chemin, titre ou sa date seule.
 - Ne pas écraser le suivi lors d'une mise à jour du catalogue. Sauvegarde périodique
@@ -197,3 +198,12 @@
   même dossier. Réécriture des seules racines connues, destination canonique.
   Dans les tests, comparer identité physique/canonique et préparer les collisions
   avec la destination réellement produite. Ne pas supprimer la garde d’unicité.
+
+- Décision explicite du 30 octobre : télécharger un MP3 absent depuis URL MP3
+  du journal SQLite intégré, uniquement sur clic. Consultation/scan/lecture locale
+  restent sans réseau. Cœur Mp3Download (dart:io, sans nouvelle dépendance), fichier
+  temporaire borné/annulable, contrôle de format puis publication Windows atomique
+  MoveFileExW sans remplacement. Aucun MP3 embarqué, aucun téléchargement de test
+  depuis le serveur public. Préserver suivi/favoris ; remplacement d’un lien manuel
+  indisponible confirmé dans l’UI. Android en pause : publication SAF à porter.
+  Ne pas changer le majeur 5. About Brand.showSubtitle=false uniquement dans À propos.

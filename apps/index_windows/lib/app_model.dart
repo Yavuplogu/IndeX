@@ -70,6 +70,12 @@ Future<void> openNativeFolder(String path) async {
       .invokeMethod<void>('openDirectory', path.replaceAll('/', r'\'));
 }
 
+Future<void> publishDownloadedMp3(File partial, File target) =>
+    const MethodChannel('index/local_folders').invokeMethod<void>(
+      'publishDownload',
+      {'partial': partial.path, 'target': target.path},
+    );
+
 final class AppModel extends ChangeNotifier {
   AppModel({
     required this.portableDirectory,
@@ -79,6 +85,7 @@ final class AppModel extends ChangeNotifier {
     AudioPort? audioPort,
     bool pollAudio = true,
     Random? audioRandom,
+    this.downloadPublisher = publishDownloadedMp3,
     this.android = false,
   }) : _audioRandom = audioRandom ?? Random(),
        defaultDataDirectory =
@@ -112,6 +119,115 @@ final class AppModel extends ChangeNotifier {
       mode: FileMode.append,
       flush: true,
     );
+  }
+
+  final DownloadPublisher downloadPublisher;
+  Mp3Download? activeDownload;
+  Future<void>? _downloadTask;
+  DesktopEpisode? downloadingEpisode;
+  int downloadReceived = 0;
+  int? downloadTotal;
+  bool downloadFinishing = false;
+  bool get downloading => _downloadTask != null || activeDownload != null;
+
+  bool _downloadCancelled = false, _downloadsAllowed = true;
+  void cancelDownload() {
+    _downloadCancelled = true;
+    activeDownload?.cancel();
+  }
+
+  Future<void> downloadEpisode(DesktopEpisode episode, String destination) {
+    if (busy || downloading || session == null || !_downloadsAllowed)
+      return Future.value();
+    _downloadCancelled = false;
+    final task = Future<void>.microtask(
+      () => _downloadEpisode(episode, destination),
+    );
+    _downloadTask = task;
+    return task;
+  }
+
+  Future<void> _downloadEpisode(
+    DesktopEpisode requested,
+    String destination,
+  ) async {
+    File? receivedFile;
+    try {
+      final episode = catalog.where((e) => e.id == requested.id).first;
+      if (episode.audioAvailable) return;
+      final source = mp3DownloadUri(episode.downloadUrl);
+      if (source == null)
+        throw ArgumentError('Aucune URL MP3 valide dans le journal intégré.');
+      if (android)
+        throw UnsupportedError(
+          'Téléchargement Android en attente du portage du stockage.',
+        );
+      final folder = Directory(
+        await Directory(destination).resolveSymbolicLinks(),
+      );
+      final target = File('${folder.path}/${episode.originalName}');
+      if (session!.store.database.select(
+        'SELECT 1 FROM local_audio_links WHERE audio_ref=? AND episode_id<>?',
+        [target.uri.toString(), episode.id],
+      ).isNotEmpty) {
+        throw StateError('Ce chemin est déjà associé à un autre épisode.');
+      }
+      if (_downloadCancelled) throw DownloadCancelled();
+      downloadingEpisode = episode;
+      downloadReceived = 0;
+      downloadTotal = null;
+      downloadFinishing = false;
+      error = '';
+      activeDownload = Mp3Download(
+        source: source,
+        folder: folder,
+        name: episode.originalName,
+        publish: downloadPublisher,
+        onProgress: (received, total) {
+          downloadReceived = received;
+          downloadTotal = total;
+          changed();
+        },
+        onPublishing: () {
+          downloadFinishing = true;
+          changed();
+        },
+      );
+      changed();
+      final file = await activeDownload!.run();
+      receivedFile = file;
+      await _scan(folder.path);
+      final refreshed = catalog.firstWhere((e) => e.id == episode.id);
+      if (refreshed.audioRef != file.uri.toString() ||
+          !refreshed.audioAvailable) {
+        // Action explicite de l'utilisateur : lève aussi une exclusion antérieure.
+        session!.store.recordManualLink(
+          episode.id,
+          file.uri.toString(),
+          episode.originalName,
+        );
+        _refreshAssociationReport();
+        reload();
+      }
+      message = 'Téléchargement terminé : ${episode.title}';
+    } on DownloadCancelled {
+      message = 'Téléchargement annulé.';
+    } catch (failure) {
+      error = receivedFile == null
+          ? 'Téléchargement impossible : $failure'
+          : 'Le MP3 a été reçu et conservé, mais son association a échoué. Relancez une analyse dans Fichiers. $failure';
+    } finally {
+      activeDownload = null;
+      downloadingEpisode = null;
+      downloadFinishing = false;
+      _downloadTask = null;
+      changed();
+    }
+  }
+
+  Future<void> _stopDownload() async {
+    cancelDownload();
+    await _downloadTask;
   }
 
   final bool android;
@@ -308,7 +424,16 @@ final class AppModel extends ChangeNotifier {
       ? 'Dossier MP3 non paramétré'
       : 'Disponibilité à vérifier';
 
-  Future<void> runWork(String label, Future<void> Function() action) async {
+  Future<void> runWork(
+    String label,
+    Future<void> Function() action, {
+    bool allowDuringDownload = false,
+  }) async {
+    if (downloading && !allowDuringDownload) {
+      error = 'Terminez ou annulez le téléchargement avant de modifier les dossiers ou associations.';
+      changed();
+      return;
+    }
     if (busy) return;
     busy = true;
     message = label;
@@ -740,7 +865,7 @@ final class AppModel extends ChangeNotifier {
       }
       session!.listened(e.id, e.status != 'ECOUTE', resetConfirmed: reset);
       reload();
-    });
+    }, allowDuringDownload: true);
   }
 
   Future<void> manual(String id, String reference, String name) =>
@@ -759,15 +884,24 @@ final class AppModel extends ChangeNotifier {
     [reference],
   ).isNotEmpty;
   Future<void> closeSafely() async {
-    if (_work != null) await _work;
-    await playback.unload();
-    if (session != null) {
-      await session!.closeSafely();
-      session = null;
+    _downloadsAllowed = false;
+    try {
+      await _stopDownload();
+      if (_work != null) await _work;
+      await playback.unload();
+      if (session != null) {
+        await session!.closeSafely();
+        session = null;
+      }
+    } catch (_) {
+      _downloadsAllowed = true;
+      rethrow;
     }
   }
 
   Future<void> release() async {
+    _downloadsAllowed = false;
+    await _stopDownload();
     if (_work != null) await _work;
     await playback.release();
     await session?.dispose();

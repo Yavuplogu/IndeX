@@ -62,6 +62,14 @@ void main() {
               findsOneWidget,
             );
             expect(find.text('Fonctions prévues'), findsNothing);
+            expect(
+              tester
+                  .widget<Brand>(
+                    find.descendant(of: dialog, matching: find.byType(Brand)),
+                  )
+                  .showSubtitle,
+              isFalse,
+            );
             expect(find.text('Voir sur GitHub'), findsOneWidget);
             final githubPosition = tester.getTopLeft(
               find.byKey(const ValueKey('about-github')),

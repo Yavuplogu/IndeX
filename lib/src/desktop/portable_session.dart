@@ -407,6 +407,10 @@ final class PortableSession {
             status: row['listening_status'] as String? ?? 'NON_ECOUTE',
             favorite: row['is_favorite'] == 1,
             audioRef: row['audio_ref'] as String?,
+            downloadUrl: row['journal_json'] == null
+                ? null
+                : (jsonDecode(row['journal_json'] as String) as Map)['URL MP3']
+                      as String?,
             audioAvailable:
                 scope != null &&
                 row['available'] == 1 &&

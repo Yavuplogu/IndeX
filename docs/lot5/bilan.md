@@ -667,3 +667,66 @@ Validation : `bash tools/lot4/check.sh` réussi sous Linux : 194 tests du cœur,
 diff conformes. Les scénarios Windows synthétiques s’exécutent sans dépendance
 au système hôte, mais ne remplacent pas la prochaine exécution de la CI Windows.
 Pas de build distribuable ni de nouvelle réservation de version ici.
+
+
+## Téléchargement explicite depuis le journal — 30 octobre 2026
+
+Demande utilisateur et avenant au cahier des charges : MP3 absent → Télécharger.
+Les 716 URL MP3 sont déjà présentes dans journal_json du seed, toutes en HTTP
+sur rendezvousavecmrx.free.fr ; elles correspondent actuellement à mp3_url des TXT.
+Le nouveau champ DesktopEpisode.downloadUrl provient exclusivement du journal.
+Pas de migration, régénération de seed ni nouvelle dépendance. Majeur 5 inchangé.
+
+Service partagé Mp3Download (dart:io) : URL HTTP/HTTPS sans identifiants, nom de
+fichier historique validé (pas de traversée/ADS/nom Windows réservé), réception
+streamée dans un sous-dossier .index-download-* du dossier cible. Taille limitée
+à 512 Mio, délais connexion/en-tête/inactivité de 20 s, annulation explicite.
+Redirections bornées à cinq, pas de schéma non HTTP(S) ni rétrogradation HTTPS→HTTP.
+Pas de compte, cookie ajouté, secret, authentification ou envoi du suivi/favoris.
+Content-Disposition n’impose jamais le nom. Refus HTTP non 200, page texte/HTML/JSON,
+dépassement de taille et longueur annoncée incohérente. Vérification de deux trames
+MPEG Layer III consécutives après éventuel en-tête ID3 ; aucune utilisation de COMM.
+C’est un contrôle de format, pas un décodage intégral ni une preuve d’identité du
+contenu. Les quatorze fixtures existantes passent ce contrôle en lecture seule.
+
+Publication Windows injectée par callback : MoveFileExW avec WRITE_THROUGH, sans
+REPLACE_EXISTING. Le parent cible doit être physiquement le parent du dossier
+temporaire (.index-download-*/payload.part), y compris si des alias 8.3 existent.
+Aucune copie de gros tampon via MethodChannel. Une cible apparue pendant la réception
+est refusée, pas écrasée. Nettoyage du répertoire temporaire à erreur/annulation ;
+un résidu après arrêt brutal/échec de nettoyage n’a pas l’extension MP3 et n’est
+jamais associé. La recette Windows inclut publication puis conflit sans écrasement.
+
+AppModel : transfert séparé de busy pour préserver lecteur/navigation, unique par
+session, progression/annulation affichées dans LibraryPage. Réglages de stockage
+et scans bloqués pendant transfert, statuts/favoris restent utilisables. Fermeture :
+annulation puis attente avant sauvegarde, pas de nouveau job pendant la fermeture ;
+échec de sauvegarde rétablit la possibilité d’utiliser l’application. Pas d’auto-play.
+Le scan associe normalement le nom historique ; l’action explicite peut lever une
+exclusion, avec confirmation UI si un ancien choix manuel indisponible est remplacé.
+Le suivi est conservé. Si l’association échoue après publication, garder le MP3 et
+l’indiquer. Android reste désactivé pour cette action en attendant la publication SAF ;
+réseau/validation sont partagés et la publication est une interface injectée.
+
+À propos : Brand.showSubtitle=false seulement dans ce panneau. Texte sur le mode
+hors ligne adapté à l’accès réseau facultatif, sans changement des autres fonctions.
+
+Tests locaux : serveur HTTP loopback, succès, redirection, HTTP 404, HTML, fichier
+tronqué de format, limite de taille, boucle de redirection, cible préexistante ou
+concurrente, annulation d’un flux suspendu et nettoyage ; aucune récupération du
+corpus public. Tests modèle/UI : source journal distincte du TXT, suivi conservé,
+progression, annulation/retry, choix du dossier absent, bascule Écouter sans auto-play,
+erreur URL et fermeture immédiate. Le smoke test Windows vérifie l’API native.
+
+Sonde réelle limitée à HEAD sur une URL du journal : réponse 403 via envoy dans
+l’environnement cloud. Cela ne qualifie ni la disponibilité du serveur depuis
+Windows ni le succès d’un téléchargement réel. Aucun contournement, proxy intégré
+ou téléchargement distant de MP3 réalisé. Recette Windows nécessaire après build.
+
+Validation : `bash tools/lot4/check.sh` réussi (204 tests du cœur, 51 tests Flutter,
+4 tests de versionnement). Après ajout du verrou de fermeture, analyse Flutter
+à nouveau sans anomalie et les 51 tests Flutter réussis. Formatage/diff conformes.
+Le test UI couvre aussi le choix du dossier quand aucun MP3 n’est configuré.
+Publication native, HTTP réel et lecteur sur MP3 reçu restent à qualifier sur
+Windows : pas de compilation Windows ni de récupération depuis le serveur public
+sur cette machine Linux. Aucun build distribuable ni réservation de version ici.

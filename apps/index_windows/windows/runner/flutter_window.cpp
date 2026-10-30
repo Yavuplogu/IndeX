@@ -1,4 +1,6 @@
 #include "flutter_window.h"
+#include <filesystem>
+#include <system_error>
 
 #include <optional>
 #include <shellapi.h>
@@ -33,6 +35,40 @@ bool FlutterWindow::OnCreate() {
   folder_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "publishDownload") {
+          const auto* args = call.arguments() ? std::get_if<flutter::EncodableMap>(call.arguments()) : nullptr;
+          auto path = [args](const char* key) -> std::wstring {
+            if (!args) return {};
+            const auto found = args->find(flutter::EncodableValue(key));
+            if (found == args->end()) return {};
+            const auto* value = std::get_if<std::string>(&found->second);
+            if (!value || value->empty() || value->size() > 32767 || value->find('\0') != std::string::npos) return {};
+            const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value->data(), static_cast<int>(value->size()), nullptr, 0);
+            if (size <= 0) return {};
+            std::wstring converted(static_cast<size_t>(size), L'\0');
+            MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value->data(), static_cast<int>(value->size()), converted.data(), size);
+            return converted;
+          };
+          const auto source = std::filesystem::path(path("partial"));
+          const auto target = std::filesystem::path(path("target"));
+          std::error_code directory_error;
+          if (!source.is_absolute() || !target.is_absolute() ||
+              source.filename() != L"payload.part" ||
+              source.parent_path().filename().wstring().find(L".index-download-") != 0 ||
+              !std::filesystem::equivalent(source.parent_path().parent_path(), target.parent_path(), directory_error)) {
+            result->Error("invalid_download", "Chemins de publication invalides.");
+            return;
+          }
+          // Aucun MOVEFILE_REPLACE_EXISTING : une cible concurrente est conservée.
+          if (!MoveFileExW(source.c_str(), target.c_str(), MOVEFILE_WRITE_THROUGH)) {
+            const DWORD error = GetLastError();
+            result->Error(error == ERROR_FILE_EXISTS || error == ERROR_ALREADY_EXISTS ? "target_exists" : "publish_failed",
+                          "Publication du MP3 impossible, aucun fichier existant remplace.");
+          } else {
+            result->Success();
+          }
+          return;
+        }
         if (call.method_name() != "openDirectory") {
           result->NotImplemented();
           return;

@@ -531,7 +531,11 @@ class FolderField extends StatelessWidget {
 }
 
 class Brand extends StatelessWidget {
-  const Brand({super.key = const ValueKey('index-brand')});
+  const Brand({
+    super.key = const ValueKey('index-brand'),
+    this.showSubtitle = true,
+  });
+  final bool showSubtitle;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,11 +556,12 @@ class Brand extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
         ),
       ),
-      const SizedBox(height: 5),
-      const Text(
-        'Recherche et écoute de Rendez-vous avec X',
-        style: TextStyle(fontSize: 12, height: 1.5),
-      ),
+      if (showSubtitle) const SizedBox(height: 5),
+      if (showSubtitle)
+        const Text(
+          'Recherche et écoute de Rendez-vous avec X',
+          style: TextStyle(fontSize: 12, height: 1.5),
+        ),
     ],
   );
 }
@@ -718,6 +723,46 @@ class _LibraryPageState extends State<LibraryPage> {
                       ? c.muted
                       : c.accent,
                 ),
+              ),
+            ),
+          if (m.downloading)
+            Container(
+              key: const ValueKey('download-progress'),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: c.controls,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          m.downloadFinishing
+                              ? 'Vérification et association du MP3…'
+                              : 'Téléchargement : ${m.downloadingEpisode?.title ?? "Préparation…"}',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: m.downloadFinishing
+                            ? null
+                            : m.cancelDownload,
+                        child: const Text('Annuler le téléchargement'),
+                      ),
+                    ],
+                  ),
+                  LinearProgressIndicator(
+                    value: m.downloadTotal != null && m.downloadTotal! > 0
+                        ? (m.downloadReceived / m.downloadTotal!).clamp(
+                            0.0,
+                            1.0,
+                          )
+                        : null,
+                  ),
+                  Text(
+                    '${(m.downloadReceived / 1048576).toStringAsFixed(1)} Mo reçus'
+                    '${m.downloadTotal == null ? "" : " / ${(m.downloadTotal! / 1048576).toStringAsFixed(1)} Mo"}',
+                  ),
+                ],
               ),
             ),
           Expanded(
@@ -1392,6 +1437,35 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
     super.dispose();
   }
 
+  Future<void> download(DesktopEpisode episode) async {
+    if (m.downloading || m.busy) return;
+    if (episode.audioRef != null && m.isManual(episode.audioRef!)) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Remplacer l’association indisponible ?'),
+          content: const SelectableText(
+            'Le MP3 téléchargé sera associé à cette fiche. Votre suivi et votre favori seront conservés. Aucun fichier existant ne sera remplacé.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Télécharger'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    final path = m.mp3Path.isEmpty ? await widget.pickDirectory() : m.mp3Path;
+    if (path == null || !mounted) return;
+    unawaited(m.downloadEpisode(episode, path));
+  }
+
   int tab = 0;
   String? lastId;
   String lastSearch = '';
@@ -1564,16 +1638,32 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                                     : statusLabel(e.status),
                               ),
                             ),
-                            FilledButton.icon(
-                              onPressed:
-                                  e.audioAvailable &&
+                            if (e.audioAvailable)
+                              FilledButton.icon(
+                                onPressed: !m.busy && !m.playback.busy
+                                    ? () => unawaited(m.playEpisode(e))
+                                    : null,
+                                icon: const Icon(Icons.play_arrow),
+                                label: const Text('Écouter'),
+                              )
+                            else
+                              Tooltip(
+                                message: mp3DownloadUri(e.downloadUrl) == null
+                                    ? 'Aucune URL MP3 disponible dans le journal.'
+                                    : 'Télécharger depuis ${mp3DownloadUri(e.downloadUrl)!.host} (connexion Internet requise)',
+                                child: FilledButton.icon(
+                                  key: const ValueKey('download-episode'),
+                                  onPressed:
                                       !m.busy &&
-                                      !m.playback.busy
-                                  ? () => unawaited(m.playEpisode(e))
-                                  : null,
-                              icon: const Icon(Icons.play_arrow),
-                              label: const Text('Écouter'),
-                            ),
+                                          !m.downloading &&
+                                          !m.android &&
+                                          mp3DownloadUri(e.downloadUrl) != null
+                                      ? () => unawaited(download(e))
+                                      : null,
+                                  icon: const Icon(Icons.download_outlined),
+                                  label: const Text('Télécharger'),
+                                ),
+                              ),
                             OutlinedButton.icon(
                               onPressed: () {
                                 try {
@@ -2093,7 +2183,10 @@ class IndexAboutDialog extends StatelessWidget {
                             const Text('Bonne écoute,\n\nK.'),
                           ],
                           c,
-                          heading: const Brand(key: ValueKey('about-brand')),
+                          heading: const Brand(
+                            key: ValueKey('about-brand'),
+                            showSubtitle: false,
+                          ),
                         ),
                         panelGroup(
                           'Une bibliothèque pour explorer les épisodes',
@@ -2169,7 +2262,7 @@ class IndexAboutDialog extends StatelessWidget {
                         ], c),
                         panelGroup('Vos données restent chez vous', [
                           const Text(
-                            'IndeX fonctionne hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
+                            'Le catalogue et l’écoute locale fonctionnent hors ligne, sans compte ni synchronisation automatique. Le bouton Télécharger contacte le serveur source uniquement à votre demande. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
                           ),
                           const SizedBox(height: 8),
                           const Text(

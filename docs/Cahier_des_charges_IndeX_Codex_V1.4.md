@@ -461,3 +461,28 @@ Sélectionner des packages maintenus et vérifier **avant codage** leur licence,
 - Besoins éventuels de recherche dans les paroles (transcription audio) : exclus de la V1 tant qu'ils ne sont pas explicitement demandés.
 
 ---
+
+## Avenant du 30 octobre 2026 — téléchargement manuel facultatif des MP3
+
+Demande explicite utilisateur : lorsqu’un épisode n’a pas de MP3 local disponible,
+remplacer Écouter par Télécharger si le champ URL MP3 du journal intégré est valide.
+Cette décision complète le Lot 5 Windows et remplace l’exclusion initiale de tout
+téléchargement ; elle ne lance ni le renommage (5 bis) ni le transfert JSON (5 ter).
+Le majeur reste 5, conformément à la règle de versionnement utilisateur.
+
+Le réseau n’est utilisé qu’après clic, pour le serveur indiqué dans l’URL MP3 du
+journal et ses redirections HTTP/HTTPS contrôlées. Aucun compte, serveur intermédiaire,
+télémétrie, recherche automatique de MP3 ou téléchargement au démarrage. Le catalogue,
+la recherche, le scan, le suivi et l’écoute de fichiers locaux restent hors ligne.
+
+Utiliser le dossier MP3 configuré ou demander un dossier existant. Recevoir sous
+un nom temporaire, afficher progression (ou octets reçus si taille inconnue), proposer
+Annuler et interrompre proprement à la fermeture. Publier seulement après réception
+complète et contrôle de format MP3, sans jamais écraser un fichier existant. Utiliser
+le nom historique exact du journal. Le fichier est ensuite associé à la fiche,
+le bouton redevient Écouter, sans lecture automatique ni perte de favoris/suivi.
+Une association manuelle indisponible ne change qu’après confirmation explicite.
+Une erreur ou annulation ne doit pas créer d’association vers un fichier partiel.
+
+Aucun MP3 n’est livré avec l’application. Le partage du cœur est conservé, mais
+la destination SAF et la recette physique Android restent en attente du portage.

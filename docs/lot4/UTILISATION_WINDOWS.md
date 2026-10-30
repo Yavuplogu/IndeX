@@ -9,7 +9,7 @@ restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
 ## Démarrer
 
 1. Extraire **toute l'archive**, ouvrir le dossier **IndeX** puis lancer son unique
-   fichier `IndeX.exe`. Aucun installateur, compte, téléchargement ou droit administrateur.
+   fichier `IndeX.exe`. Aucun installateur, compte ou droit administrateur requis pour l’usage local.
    Conserver les sous-dossiers `application/` et `documentation/` avec ce lanceur.
    Le dossier extrait doit être accessible en écriture.
 2. Conserver le dossier `IndeX/user` présélectionné, ou choisir un autre dossier dédié aux données utilisateur. La base de travail, les favoris,
@@ -232,3 +232,24 @@ actuel pour convertir son pointeur absolu et mémoriser sa racine. S’il avait 
 été déplacé avant cette conversion, sélectionner son dossier de données existant
 (et réindiquer si nécessaire le dossier MP3) : aucune recherche approximative ni
 création d’un profil vide n’est faite à la place des données attendues.
+
+
+## Télécharger un MP3 absent
+
+Sur sa fiche, cliquer **Télécharger** (connexion Internet requise). IndeX utilise
+uniquement l’URL MP3 du journal intégré et le dossier MP3 configuré ; sans dossier,
+un sélecteur permet d’en choisir un. Un bouton désactivé indique qu’aucune URL
+valide n’est disponible. Le serveur source peut être inaccessible ou refuser le lien :
+l’erreur reste sélectionnable, sans créer de MP3 partiel associé.
+
+La progression et **Annuler le téléchargement** apparaissent au-dessus de la liste.
+Un fichier existant n’est jamais remplacé. Après réception/contrôle et association,
+**Écouter** remplace le bouton ; l’audio ne démarre pas automatiquement. Le suivi
+et les favoris restent conservés. Si un choix manuel indisponible doit changer,
+une confirmation est demandée. Un MP3 reçu mais non associé reste dans le dossier :
+relancer une analyse dans Fichiers si le message le demande.
+
+Fermer IndeX annule un transfert en cours et nettoie le temporaire avant sauvegarde.
+Une fois la publication engagée, attendre la fin de cette opération. L’import JSON,
+le renommage et Android ne sont pas livrés par cet ajout. À propos n’affiche plus
+le sous-titre de la marque ; la barre latérale le conserve.

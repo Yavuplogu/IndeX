@@ -67,6 +67,23 @@ void main() {
             ),
           );
         });
+        await tester.runAsync(() async {
+          final staging = await root.createTemp('.index-download-');
+          final part = File('${staging.path}/payload.part')
+            ..writeAsStringSync('MP3 complet');
+          final target = File('${root.path}/test-publication.mp3');
+          await publishDownloadedMp3(part, target);
+          expect(target.readAsStringSync(), 'MP3 complet');
+          part.writeAsStringSync('ne doit pas remplacer');
+          await expectLater(
+            publishDownloadedMp3(part, target),
+            throwsA(isA<PlatformException>()),
+          );
+          expect(target.readAsStringSync(), 'MP3 complet');
+          expect(part.readAsStringSync(), 'ne doit pas remplacer');
+          await staging.delete(recursive: true);
+          await target.delete();
+        });
         await tester.runAsync(() => model.configure(data.path, '', true));
         expect(model.error, isEmpty);
         expect(model.catalog, hasLength(716));

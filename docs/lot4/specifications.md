@@ -524,3 +524,27 @@ physiquement identiques (nom court 8.3 et nom long). Les mémoriser avant dépla
 et les reconnaître lors de la réévaluation des liens. Garder les frontières de
 répertoire, les caractères encodés des URI et les chemins extérieurs ; annuler
 toujours une collision. Ne pas assimiler deux chemins par approximation de texte.
+
+
+## Télécharger un MP3 manquant — 30 octobre 2026
+
+Dans la fiche, MP3 disponible = Écouter ; absent = Télécharger, désactivé si aucune
+URL MP3 valide n’existe dans journal_json. Aucun repli vers une URL du TXT ou une
+recherche web. Infobulle avec hôte et connexion Internet requise. Sans dossier MP3,
+ouvrir le sélecteur ; annuler ce choix n’émet aucune requête. Une association manuelle
+indisponible demande confirmation avant d’être remplacée par le fichier téléchargé.
+
+Afficher un bandeau de progression non modal dans la vue principale (taille reçue,
+total si connu, sinon progression indéterminée), avec Annuler. Navigation
+et lecture d’un autre épisode restent possibles ; dossiers/associations ne changent
+pas pendant le transfert. Une seule réception à la fois. La fermeture annule/attend
+le nettoyage avant sauvegarde ; après publication commencée, elle attend la fin de
+l’association. Aucun nouveau téléchargement pendant cette fermeture.
+
+Après succès : disponibilité et fiche actualisées, bouton Écouter, suivi/favoris
+conservés, aucun démarrage audio imposé. Une erreur s’affiche dans la bannière
+sélectionnable. Un MP3 publié mais non associé à cause d’une erreur reste conservé
+et le message invite à relancer une analyse. Aucune cible préexistante n’est écrasée.
+Dans À propos, supprimer le sous-titre seulement de la marque du panneau ; conserver
+celui de la barre latérale et de l’accueil. Adapter le texte hors ligne à l’exception
+explicite du téléchargement facultatif.
