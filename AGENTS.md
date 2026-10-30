@@ -191,3 +191,9 @@
   sans racine connue : relocalisation explicite, jamais de profil supposé/vide.
   Contact À propos = copie presse-papiers/notifiée, mailto natif retiré. Logo GitHub
   Octicons MIT embarqué dans bouton bordé, licence à distribuer.
+
+- Correction CI du 30 octobre : mémoriser portable_root_aliases_v1, racines
+  canonique et utilisée (dont Windows 8.3 RUNNER~1/runneradmin), vérifiées comme
+  même dossier. Réécriture des seules racines connues, destination canonique.
+  Dans les tests, comparer identité physique/canonique et préparer les collisions
+  avec la destination réellement produite. Ne pas supprimer la garde d’unicité.

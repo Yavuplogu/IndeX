@@ -14,6 +14,7 @@ import '../search/search_engine.dart';
 import '../search/sqlite_search_engine.dart';
 import '../storage/catalog_store.dart';
 import 'episode.dart';
+import 'portable_paths.dart';
 
 String _token() => List.generate(
   12,
@@ -35,8 +36,7 @@ final class PortableSession {
   bool _closed = false;
   String get databasePath => '${dataDirectory.path}/index-utilisateur.sqlite';
 
-  static Directory _portableRoot(Directory portable) {
-    final directory = Directory(portable.resolveSymbolicLinksSync());
+  static Directory _layoutRoot(Directory directory) {
     return directory.uri.pathSegments
                 .where((s) => s.isNotEmpty)
                 .last
@@ -45,6 +45,9 @@ final class PortableSession {
         ? directory.parent
         : directory;
   }
+
+  static Directory _portableRoot(Directory portable) =>
+      _layoutRoot(Directory(portable.resolveSymbolicLinksSync()));
 
   static String? _relative(Directory root, Directory target) {
     final base = root.absolute.uri.normalizePath();
@@ -144,7 +147,15 @@ final class PortableSession {
         }
       });
       store = CatalogStore.open(database.path);
-      _refreshPortablePaths(store, _portableRoot(portableDirectory));
+      final root = _portableRoot(portableDirectory);
+      _refreshPortablePaths(store, root, {
+        root.path,
+        if (FileSystemEntity.identicalSync(
+          root.path,
+          _layoutRoot(portableDirectory.absolute).path,
+        ))
+          _layoutRoot(portableDirectory.absolute).path,
+      });
       await _writePointer(portableDirectory, data);
       return PortableSession._(portableDirectory, data, store, lock);
     } catch (_) {
@@ -201,34 +212,51 @@ final class PortableSession {
 
   /// Les références restent absolues pour le moteur audio ; leur racine est
   /// réévaluée atomiquement avant toute lecture ou analyse du profil déplacé.
-  static void _refreshPortablePaths(CatalogStore store, Directory root) {
+  static void _refreshPortablePaths(
+    CatalogStore store,
+    Directory root,
+    Set<String> currentAliases,
+  ) {
     final db = store.database;
     const key = 'portable_root_v1';
     final rows = db.select('SELECT value FROM local_settings WHERE key=?', [
       key,
     ]);
     final previous = rows.isEmpty ? null : rows.single['value'] as String;
-    if (previous == root.path) return;
-    final old = previous == null ? null : Directory(previous);
-    if (old != null && !old.isAbsolute) {
+    const aliasesKey = 'portable_root_aliases_v1';
+    final aliasRows = db.select(
+      'SELECT value FROM local_settings WHERE key=?',
+      [aliasesKey],
+    );
+    final storedAliases = aliasRows.isEmpty
+        ? null
+        : aliasRows.single['value'] as String;
+    final decoded = storedAliases == null
+        ? <Object?>[]
+        : jsonDecode(storedAliases);
+    if (decoded is! List ||
+        decoded.any(
+          (value) => value is! String || !Directory(value).isAbsolute,
+        )) {
+      throw const FormatException('Alias de racine portable invalides.');
+    }
+    final oldRoots = <String>{
+      if (previous != null) previous,
+      ...decoded.cast<String>(),
+    };
+    if (previous == root.path) currentAliases.addAll(oldRoots);
+    final aliasList = currentAliases.toList()..sort();
+    final newAliases = jsonEncode(aliasList);
+    if (previous == root.path && storedAliases == newAliases) return;
+    if (previous != null && !Directory(previous).isAbsolute) {
       throw const FormatException('Ancienne racine portable invalide.');
     }
-    String rebase(String value) {
-      if (old == null) return value;
-      for (final pair in [
-        (old.absolute.uri.toString(), root.absolute.uri.toString()),
-        (
-          '${old.path}${Platform.pathSeparator}',
-          '${root.path}${Platform.pathSeparator}',
-        ),
-      ]) {
-        final matches = Platform.isWindows
-            ? value.toLowerCase().startsWith(pair.$1.toLowerCase())
-            : value.startsWith(pair.$1);
-        if (matches) return '${pair.$2}${value.substring(pair.$1.length)}';
-      }
-      return value == old.path ? root.path : value;
-    }
+    String rebase(String value) => rebasePortableReference(
+      value,
+      (previous == null ? currentAliases : oldRoots).toList(),
+      root.path,
+      windows: Platform.isWindows,
+    );
 
     Object? walk(Object? value) {
       if (value is String) return rebase(value);
@@ -240,49 +268,51 @@ final class PortableSession {
 
     db.execute('BEGIN IMMEDIATE');
     try {
-      if (old != null) {
-        for (final table in [
-          ('local_audio_links', 'episode_id', ['audio_ref', 'evidence_json']),
-          ('audio_scan_runs', 'id', ['scope', 'summary_json']),
-          ('audio_scan_items', 'rowid', ['audio_ref', 'decision_json']),
-        ]) {
-          for (final row in db.select(
-            'SELECT ${table.$2} AS identity,${table.$3.join(',')} FROM ${table.$1}',
-          )) {
-            final values = <String>[];
-            for (final column in table.$3) {
-              final value = row[column] as String;
-              values.add(
-                column.endsWith('_json')
-                    ? jsonEncode(walk(jsonDecode(value)))
-                    : rebase(value),
-              );
-            }
-            db.execute(
-              'UPDATE ${table.$1} SET ${table.$3.map((c) => '$c=?').join(',')} WHERE ${table.$2}=?',
-              [...values, row['identity']],
+      for (final table in [
+        ('local_audio_links', 'episode_id', ['audio_ref', 'evidence_json']),
+        ('audio_scan_runs', 'id', ['scope', 'summary_json']),
+        ('audio_scan_items', 'rowid', ['audio_ref', 'decision_json']),
+      ]) {
+        for (final row in db.select(
+          'SELECT ${table.$2} AS identity,${table.$3.join(',')} FROM ${table.$1}',
+        )) {
+          final values = <String>[];
+          for (final column in table.$3) {
+            final value = row[column] as String;
+            values.add(
+              column.endsWith('_json')
+                  ? jsonEncode(walk(jsonDecode(value)))
+                  : rebase(value),
             );
           }
-        }
-        for (final setting in ['mp3_directory', 'audio_unlinked_refs_v1']) {
-          final values = db.select(
-            'SELECT value FROM local_settings WHERE key=?',
-            [setting],
+          db.execute(
+            'UPDATE ${table.$1} SET ${table.$3.map((c) => '$c=?').join(',')} WHERE ${table.$2}=?',
+            [...values, row['identity']],
           );
-          if (values.isEmpty) continue;
-          final value = values.single['value'] as String;
-          final updated = setting == 'mp3_directory'
-              ? rebase(value)
-              : jsonEncode(walk(jsonDecode(value)));
-          db.execute('UPDATE local_settings SET value=? WHERE key=?', [
-            updated,
-            setting,
-          ]);
         }
+      }
+      for (final setting in ['mp3_directory', 'audio_unlinked_refs_v1']) {
+        final values = db.select(
+          'SELECT value FROM local_settings WHERE key=?',
+          [setting],
+        );
+        if (values.isEmpty) continue;
+        final value = values.single['value'] as String;
+        final updated = setting == 'mp3_directory'
+            ? rebase(value)
+            : jsonEncode(walk(jsonDecode(value)));
+        db.execute('UPDATE local_settings SET value=? WHERE key=?', [
+          updated,
+          setting,
+        ]);
       }
       db.execute(
         'INSERT INTO local_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
         [key, root.path],
+      );
+      db.execute(
+        'INSERT INTO local_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+        [aliasesKey, newAliases],
       );
       db.execute('COMMIT');
     } catch (_) {

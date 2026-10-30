@@ -636,3 +636,34 @@ conformes. Parseur PowerShell 7.5.4 : packaging valide. Les déplacements réels
 répertoires ont été testés sous Linux ; la recette Windows (autre emplacement ou
 disque, chemins et Explorateur) reste à confirmer au prochain build. Aucun build
 distribuable lancé ici. Le prochain mineur sera réservé automatiquement.
+
+
+## Correction CI Windows : alias de chemins courts/longs — 30 octobre 2026
+
+Les logs fournis logs_111457984147.zip (run du 30 octobre, commit f86ade4) montrent
+quatre échecs dans les tests de déplacement avant toute construction du paquet.
+La racine canonique contient Users/runneradmin tandis que les références de test
+utilisent Users/RUNNER~1. Le changement de racine ne reconnaissait pas cet alias
+8.3 ; le test de collision ne produisait donc pas la collision attendue. Deux autres
+assertions comparaient des chaînes de chemins équivalents mais écrits différemment.
+
+Les formes canonique et effectivement utilisée de la racine sont désormais
+mémorisées dans portable_root_aliases_v1 (local_settings), après vérification de
+leur identité physique. Elles sont mises à jour dans la même transaction que les
+liens et la racine. Le réécrivain pur portable_paths.dart reconnaît ces racines
+connues, les URI, la casse et les séparateurs Windows, avec frontière de dossier ;
+il ne devine aucun alias après disparition de la source et préserve les suffixes
+encodés, les noms et les références extérieures. La racine canonique reste la
+destination. Aucun changement de seed, de schéma SQLite ou de dépendance.
+
+Les tests de déplacement prennent la destination canonique, vérifient l’identité
+physique des dossiers et préparent la collision sous la forme canonique réellement
+produite. La protection contre collision n’est pas retirée. Un test portable
+supplémentaire reproduit RUNNER~1/runneradmin et un changement de disque, accents,
+espaces/#/%, casse, séparateurs et frontières de répertoire, même sous Linux.
+
+Validation : `bash tools/lot4/check.sh` réussi sous Linux : 194 tests du cœur,
+48 tests Flutter, 4 tests de versionnement ; analyses sans anomalie, formatage et
+diff conformes. Les scénarios Windows synthétiques s’exécutent sans dépendance
+au système hôte, mais ne remplacent pas la prochaine exécution de la CI Windows.
+Pas de build distribuable ni de nouvelle réservation de version ici.

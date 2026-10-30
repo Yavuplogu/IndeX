@@ -71,8 +71,14 @@ void main() {
     );
     s.setSetting('skip_startup_scan', 'true');
     final oldRoot = root.path;
+    expect(
+      jsonDecode(s.setting('portable_root_aliases_v1')!),
+      containsAll({oldRoot, root.resolveSymbolicLinksSync()}),
+    );
     await s.closeSafely();
-    root = root.renameSync('$oldRoot-déplacé');
+    root = Directory(
+      root.renameSync('$oldRoot-déplacé').resolveSymbolicLinksSync(),
+    );
     portable = Directory('${root.path}/application');
     data = Directory('${root.path}/données utilisateur');
     final configured = PortableSession.configuredDirectory(portable)!;
@@ -99,7 +105,13 @@ void main() {
             .toString(),
       ),
     );
-    expect(reopened.setting('mp3_directory'), '${root.path}/MP3 été #');
+    expect(
+      FileSystemEntity.identicalSync(
+        reopened.setting('mp3_directory')!,
+        '${root.path}/MP3 été #',
+      ),
+      isTrue,
+    );
     expect(reopened.setting('skip_startup_scan'), 'true');
     expect(
       reopened.store.database.select(
@@ -172,11 +184,13 @@ void main() {
       s.store.recordManualLink(entry.id, file.uri.toString(), 'manuel.mp3');
       s.favorite(entry.id, true);
       await s.closeSafely();
-      root = root.renameSync('${root.path}-déplacé');
+      root = Directory(
+        root.renameSync('${root.path}-déplacé').resolveSymbolicLinksSync(),
+      );
       portable = Directory('${root.path}/application');
       expect(
         PortableSession.configuredDirectory(portable)!.path,
-        external.path,
+        external.resolveSymbolicLinksSync(),
       );
       final reopened = await start(folder: external, existing: true);
       expect(reopened.setting('mp3_directory'), external.path);
@@ -196,14 +210,15 @@ void main() {
     final s = await start();
     final entries = s.episodes();
     final oldRoot = root.path;
-    final destination = '$oldRoot-déplacé';
+    final oldCanonicalRoot = root.resolveSymbolicLinksSync();
+    final destination = '$oldCanonicalRoot-déplacé';
     final before = File('$oldRoot/manuel.mp3').uri.toString();
     final after = File('$destination/manuel.mp3').uri.toString();
     s.store.recordManualLink(entries[0].id, before, 'manuel.mp3');
     s.store.recordManualLink(entries[1].id, after, 'manuel.mp3');
     s.favorite(entries[0].id, true);
     await s.closeSafely();
-    root = root.renameSync(destination);
+    root = Directory(root.renameSync(destination).resolveSymbolicLinksSync());
     portable = Directory('${root.path}/application');
     data = Directory('${root.path}/données utilisateur');
     await expectLater(start(existing: true), throwsA(isA<SqliteException>()));
@@ -222,7 +237,7 @@ void main() {
               "SELECT value FROM local_settings WHERE key='portable_root_v1'",
             )
             .single['value'],
-        oldRoot,
+        oldCanonicalRoot,
       );
       expect(
         db.select(
@@ -239,7 +254,7 @@ void main() {
   test('Données relatives absentes : chemin explicite, aucun profil de remplacement', () async {
     final s = await start();
     await s.closeSafely();
-    final missing = Directory('${root.path}/absent');
+    final missing = Directory('${root.resolveSymbolicLinksSync()}/absent');
     File('${portable.path}/index-portable.json').writeAsStringSync(
       jsonEncode({'version': 2, 'relative': true, 'data_directory': 'absent'}),
     );

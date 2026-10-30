@@ -517,3 +517,10 @@ les données existantes ; ne pas choisir un autre profil par supposition.
 après. Clic = copie dans le presse-papiers avec confirmation, sans lien externe ni
 messagerie. GitHub reste factice, avec logo Primer Octicons MIT embarqué et bouton
 à bordure. Licence et provenance conservées, licence incluse dans la distribution.
+
+
+Complément Windows du 30 octobre : une racine peut avoir plusieurs écritures
+physiquement identiques (nom court 8.3 et nom long). Les mémoriser avant déplacement
+et les reconnaître lors de la réévaluation des liens. Garder les frontières de
+répertoire, les caractères encodés des URI et les chemins extérieurs ; annuler
+toujours une collision. Ne pas assimiler deux chemins par approximation de texte.
