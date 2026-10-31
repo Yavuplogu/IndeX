@@ -7,3 +7,5 @@ export 'src/desktop/episode.dart';
 export 'src/desktop/mp3_download.dart';
 
 export 'src/desktop/mp3_rename.dart';
+
+export 'src/desktop/listening_sync.dart';

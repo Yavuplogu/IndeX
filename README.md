@@ -5,16 +5,17 @@ chaque construction Windows distribuable. [Politique et compteur](tools/versioni
 
 [Lot 5 : architecture et lecteur](docs/lot5/bilan.md).
 [Lot 5 bis : renommage, contrôles et recette Windows](docs/lot5bis/bilan.md).
+[Lot 5 ter : transfert JSON et recette Windows](docs/lot5ter/bilan.md).
 
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 5 bis lancé — renommage global Windows ; Android en pause.**
+**État : Lot 5 ter lancé — export/import JSON du suivi Windows ; Android en pause.**
 Décision du 27 octobre 2026 : conserver le socle partagé et tous les objectifs
 fonctionnels du futur portage Android. Voir l’[avenant au cahier des charges](docs/Cahier_des_charges_IndeX_Codex_V1.4.md#avenant-du-27-octobre-2026--priorité-windows-android-en-pause).
 Le code Android existant est conservé ; le workflow APK se lance uniquement à la
-main. Le Lot 5 bis est lancé le 31 octobre ; le Lot 5 ter reste non lancé.
+main. Les Lots 5 bis et 5 ter sont lancés explicitement le 31 octobre.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème

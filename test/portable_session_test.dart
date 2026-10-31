@@ -401,7 +401,7 @@ void main() {
     expect(missing.existsSync(), isFalse);
   });
 
-  test('Migration utilisateur réelle v4 vers v6 conserve favori, statut et progression', () async {
+  test('Migration utilisateur réelle v4 vers le schéma courant conserve favori, statut et progression', () async {
     final copy = File('${data.path}/index-utilisateur.sqlite');
     await copy.writeAsBytes(seed);
     final old = sqlite3.open(copy.path);
@@ -416,7 +416,7 @@ void main() {
     final s = await start(existing: true);
     expect(
       s.store.database.select('PRAGMA user_version').single.values.single,
-      6,
+      7,
     );
     final state = s.listeningState(id)!;
     expect(state['position_ms'], 42000);

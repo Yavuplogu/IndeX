@@ -36,8 +36,9 @@ bool FlutterWindow::OnCreate() {
   folder_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-        if (call.method_name() == "publishDownload" || call.method_name() == "renameMp3") {
+        if (call.method_name() == "publishDownload" || call.method_name() == "renameMp3" || call.method_name() == "publishExport") {
           const bool renaming = call.method_name() == "renameMp3";
+          const bool exporting = call.method_name() == "publishExport";
           const auto* args = call.arguments() ? std::get_if<flutter::EncodableMap>(call.arguments()) : nullptr;
           auto path = [args](const char* key) -> std::wstring {
             if (!args) return {};
@@ -56,9 +57,10 @@ bool FlutterWindow::OnCreate() {
           std::error_code directory_error;
           if (!source.is_absolute() || !target.is_absolute() ||
               (!renaming && (source.filename() != L"payload.part" ||
-                source.parent_path().filename().wstring().find(L".index-download-") != 0)) ||
+                source.parent_path().filename().wstring().find(exporting ? L".index-export-" : L".index-download-") != 0)) ||
               (renaming && (_wcsicmp(source.extension().c_str(), L".mp3") != 0)) ||
               (renaming && _wcsicmp(target.extension().c_str(), L".mp3") != 0) ||
+              (exporting && _wcsicmp(target.extension().c_str(), L".json") != 0) ||
               !std::filesystem::equivalent(renaming ? source.parent_path() : source.parent_path().parent_path(), target.parent_path(), directory_error)) {
             result->Error(renaming ? "invalid_rename" : "invalid_download", "Chemins de publication invalides.");
             return;

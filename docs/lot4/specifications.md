@@ -579,3 +579,21 @@ et journal SQLite persistant. Les MP3 utilisés par le lecteur sont ignorés.
 Le panneau permet d’actualiser l’aperçu et de consulter le journal précédent.
 Blocage du scan si une interruption laisse une réconciliation ambiguë.
 Description technique et recette : ../lot5bis/bilan.md. Version initiale 0.6.0.
+
+
+### Lot 5 ter — transfert JSON Windows, 31 octobre 2026
+
+Dans Paramètres → Transfert du suivi, les deux boutons sont fonctionnels. Export
+vers exports/ sous le dossier utilisateur, nom explicite sans espaces, publication
+complète sans écrasement et notification avec chemin sélectionnable/ouverture du
+dossier. Import : sélecteur JSON, panneau d’aperçu (source, date, comptes, changements
+et inconnus), choix par conflit Conserver cet appareil / Utiliser le fichier, puis
+confirmation globale. Aucun choix de conflit présélectionné et aucune fusion avant
+confirmation ; Fermer annule sans effet sur le suivi importé. Les erreurs sont
+sélectionnables. Couleurs/cadres communs aux thèmes clair et sombre.
+
+Lecteur chargé : proposer Mettre en pause et libérer la piste, sauvegarder la
+position, puis préparer l’aperçu. Sauvegarde SQLite avant fusion, suivi local changé
+depuis aperçu = nouvel aperçu requis. JSON déjà importé = annonce sans application.
+Android demeure désactivé pour ce parcours, format partagé préparé. Voir le bilan
+et le contrat du Lot 5 ter. Aucune modification de la maquette HTML historique.

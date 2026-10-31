@@ -17,6 +17,7 @@ import '../storage/catalog_store.dart';
 import 'episode.dart';
 import 'portable_paths.dart';
 import 'mp3_rename.dart';
+import 'listening_sync.dart';
 
 String _token() => List.generate(
   12,
@@ -158,6 +159,7 @@ final class PortableSession {
         ))
           _layoutRoot(portableDirectory.absolute).path,
       });
+      ListeningSync(store).deviceId;
       await Mp3Renamer(store).recover();
       await _writePointer(portableDirectory, data);
       return PortableSession._(portableDirectory, data, store, lock);
@@ -469,6 +471,8 @@ final class PortableSession {
             id,
           ],
         );
+      if (listened != null)
+        ListeningSync(store).markExplicit(id, ['status', 'position']);
       store.database.execute('COMMIT');
     } catch (_) {
       store.database.execute('ROLLBACK');

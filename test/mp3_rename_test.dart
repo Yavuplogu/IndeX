@@ -401,7 +401,7 @@ void main() {
     expect(renamer.report(run).single['status'], 'failed');
     expect(source.existsSync(), isTrue);
   });
-  test('Migration réelle v5 vers v6 : tous les champs du suivi et liens sont conservés', () async {
+  test('Migration réelle v5 vers le schéma courant : tous les champs du suivi et liens sont conservés', () async {
     store.recordManualLink(id, source.uri.toString(), name);
     store.database.execute(
       "INSERT INTO user_episode_state(episode_id,position_ms,duration_ms,listening_status,is_favorite,last_played_at,completed_at,playback_status) VALUES(?,45678,120000,'ECOUTE',1,'2026-10-30T12:00:00Z','2026-10-30T12:02:00Z','paused')",
@@ -413,6 +413,14 @@ void main() {
     final link = Map<String, Object?>.from(
       store.database.select('SELECT * FROM local_audio_links').single,
     );
+    for (final trigger in store.database.select(
+      "SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'sync_%'",
+    )) {
+      store.database.execute('DROP TRIGGER ${trigger['name']}');
+    }
+    store.database.execute(
+      'DROP TABLE sync_fields; DROP TABLE sync_imports; DROP TABLE sync_device;',
+    );
     // Reconstitue exactement le schéma utilisateur v5, sans les deux tables du v6.
     store.database.execute(
       'DROP TABLE rename_items; DROP TABLE rename_runs; PRAGMA user_version=5;',
@@ -421,7 +429,7 @@ void main() {
     store = CatalogStore.open('${root.path}/user.sqlite');
     expect(
       store.database.select('PRAGMA user_version').single.values.single,
-      6,
+      7,
     );
     expect(
       Map<String, Object?>.from(

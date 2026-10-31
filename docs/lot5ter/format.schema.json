@@ -1,0 +1,272 @@
+{
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "index-listening-sync"
+    },
+    "schema_version": {
+      "const": 1,
+      "type": "integer"
+    },
+    "export_id": {
+      "type": "string",
+      "pattern": "^e_[0-9a-f]{32}$"
+    },
+    "exported_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$",
+      "maxLength": 32
+    },
+    "source_device_id": {
+      "type": "string",
+      "pattern": "^d_[0-9a-f]{32}$"
+    },
+    "catalog_version": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "episodes": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "properties": {
+          "episode_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 259,
+            "pattern": "^mrx:.+\\.[mM][pP]3$"
+          },
+          "fields": {
+            "type": "object",
+            "properties": {
+              "favorite": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "boolean"
+                  },
+                  "clock": {
+                    "$ref": "#/$defs/clock"
+                  }
+                },
+                "required": [
+                  "value",
+                  "clock"
+                ],
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "clock": {
+                          "maxProperties": 0
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "const": false
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "listening_status": {
+                        "enum": [
+                          "NON_ECOUTE",
+                          "EN_COURS",
+                          "ECOUTE"
+                        ]
+                      },
+                      "completed_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$",
+                        "maxLength": 32
+                      }
+                    },
+                    "required": [
+                      "listening_status",
+                      "completed_at"
+                    ],
+                    "additionalProperties": false,
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "listening_status": {
+                              "enum": [
+                                "NON_ECOUTE",
+                                "EN_COURS"
+                              ]
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "completed_at": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "clock": {
+                    "$ref": "#/$defs/clock"
+                  }
+                },
+                "required": [
+                  "value",
+                  "clock"
+                ],
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "clock": {
+                          "maxProperties": 0
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "const": {
+                            "listening_status": "NON_ECOUTE",
+                            "completed_at": null
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "position_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 604800000
+                      },
+                      "duration_ms": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 604800000
+                          }
+                        ]
+                      },
+                      "last_played_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$",
+                        "maxLength": 32
+                      }
+                    },
+                    "required": [
+                      "position_ms",
+                      "duration_ms",
+                      "last_played_at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "clock": {
+                    "$ref": "#/$defs/clock"
+                  }
+                },
+                "required": [
+                  "value",
+                  "clock"
+                ],
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "clock": {
+                          "maxProperties": 0
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "const": {
+                            "position_ms": 0,
+                            "duration_ms": null,
+                            "last_played_at": null
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "favorite",
+              "status",
+              "position"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "episode_id",
+          "fields"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "format",
+    "schema_version",
+    "export_id",
+    "exported_at",
+    "source_device_id",
+    "catalog_version",
+    "episodes"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:index:listening-sync:1",
+  "$comment": "Validation additionnelle hors schéma : fichier UTF-8 de 5 Mio maximum, profondeur 12, identités canoniques et uniques, dates calendaires UTC valides, position <= durée connue, causalité. Aucun chargement réseau de ce schéma par IndeX.",
+  "$defs": {
+    "clock": {
+      "type": "object",
+      "maxProperties": 32,
+      "patternProperties": {
+        "^d_[0-9a-f]{32}$": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000000
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

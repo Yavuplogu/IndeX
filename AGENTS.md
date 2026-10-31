@@ -2,13 +2,13 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 5 bis Windows**, lancé explicitement le 31 octobre 2026.
+- Périmètre actuellement autorisé : **Lot 5 ter Windows**, lancé explicitement le 31 octobre 2026.
   GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
   Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
   Priorité du 27 octobre 2026 : finaliser Windows ; développement et recette Android
   en pause. Conserver le code Android et la portabilité de toutes les fonctionnalités
   essentielles (interfaces de plateforme, cœur et données communs). Voir l’avenant
-  au cahier des charges et docs/lot5/bilan.md. Renommage autorisé au Lot 5 bis ; JSON reste au Lot 5 ter, non lancé.
+  au cahier des charges et docs/lot5/bilan.md. Renommage livré au Lot 5 bis ; export/import JSON autorisé au Lot 5 ter.
   Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
@@ -19,7 +19,8 @@
   navigation, commandes de fenêtre, aucun bouton Fiche précédente ; noms des références
   et morceaux en en-tête de cadre, sans lignes Référence/Morceau répétées, morceau vide
   affiché « Aucune donnée ». Lettrine du résumé et titre du lecteur dans la police de
-  la fiche. Renommage/export/import dans Paramètres restent des aperçus des Lots 5 bis/5 ter.
+  la fiche. Dans le HTML historique, renommage/export/import restent des aperçus ;
+  les fonctions natives des Lots 5 bis/5 ter lancés explicitement priment.
 - Les compléments utilisateur du 25 octobre 2026 sont dans `docs/lot4/specifications.md` :
   Windows portable sans installateur, dossier `IndeX/user` présélectionné et modifiable,
   MP3 facultatifs par case au premier démarrage seulement. Aux ouvertures suivantes,
@@ -228,3 +229,13 @@
   parents et de périmètre. PortableSession.episodes doit reconnaître un dossier MP3
   configuré via alias court/long et conserver la frontière du dossier (MP3-autre
   reste extérieur à MP3/). Ne pas remplacer ce contrôle par available=1 seul.
+
+- Lot 5 ter lancé explicitement : schéma utilisateur v7 (sync_device/fields/imports),
+  seed documentaire v4 conservé. JSON index-listening-sync v1, états/favoris/reprise
+  seulement, aucune URL/chemin/permission/réglage/MP3. Voir docs/lot5ter/format.md
+  et bilan.md. Triggers transactionnels par champ et tombstones lors d’un retrait ;
+  horloges vectorielles, aucune résolution par date ou position maximale.
+  Aperçu périmé rejeté ; lecteur libéré explicitement avant import ; sauvegarde
+  SQLite puis transaction unique. Export dans user/exports, publication Windows
+  publishExport sans remplacement. Android en pause, format/cœur partagés.
+  Majeur reste 0.6, mineur réservé par le build. Lot 6 non lancé.

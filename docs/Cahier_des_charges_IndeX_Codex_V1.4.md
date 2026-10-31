@@ -503,3 +503,24 @@ nouveaux fichiers directement au nom système ; il reste indépendant de ce lot.
 Aucun fichier audio embarqué. Tests sur copies temporaires, jamais sur le corpus
 original. Android demeure en pause ; interface de renommage isolée pour SAF.
 Le Lot 5 ter (JSON) n’est pas lancé. Voir docs/lot5bis/bilan.md.
+
+
+## Avenant du 31 octobre 2026 — lancement du Lot 5 ter Windows
+
+L’utilisateur valide le dernier build puis lance le Lot 5 ter. Implémenter le §5.7
+pour Windows, en conservant le majeur **0.6** et l’incrément de mineur automatique.
+Android reste en pause ; schéma JSON et fusion doivent rester communs au futur
+portage SAF. Le Lot 6 n’est pas lancé par cette demande.
+
+Livrer un export JSON sous exports/ dans les données utilisateur, et un import
+validé/borné avec aperçu, choix des conflits, sauvegarde et confirmation avant une
+transaction SQLite. Versions par champ (favori, état, reprise), retraits/reset
+explicites, idempotence. Ne transférer ni fichiers MP3, catalogue, chemins, liens
+locaux, permissions, préférences ou journaux techniques. Un lecteur chargé doit
+être libéré explicitement avant l’aperçu, avec sauvegarde de sa position, pour
+éviter qu’un checkpoint ne remplace ensuite les valeurs importées.
+
+Le JSON v1 peut structurer les données sous episodes[].fields ; le contrat exact,
+ses bornes et exemples sont dans docs/lot5ter/format.md et format.schema.json.
+Les installations indépendantes gardent des identifiants distincts ; le JSON est
+le moyen de transfert du suivi, pas une copie concurrente d’une même base ouverte.

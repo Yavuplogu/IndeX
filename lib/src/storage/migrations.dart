@@ -1,7 +1,9 @@
 import 'package:sqlite3/sqlite3.dart';
 
+import 'sync_schema.dart';
+
 const applicationId = 0x49445831;
-const schemaVersion = 6;
+const schemaVersion = 7;
 
 // Version 1 réellement utilisable comme fixture de migration vers les données locales v2.
 const schemaV1 = '''
@@ -132,6 +134,10 @@ void migrate(Database db) {
     if (version < 6) {
       db.execute(schemaV6);
       db.execute('PRAGMA user_version=6');
+    }
+    if (version < 7) {
+      db.execute(schemaV7);
+      db.execute('PRAGMA user_version=7');
     }
     db.execute('COMMIT');
   } catch (_) {

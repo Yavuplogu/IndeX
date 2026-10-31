@@ -217,6 +217,7 @@ final class CatalogStore {
             3,
             4,
             5,
+            6,
             schemaVersion,
           }.contains(source.select('PRAGMA user_version').single.values.single))
         throw const FormatException('Catalogue de référence non reconnu.');
@@ -245,6 +246,15 @@ final class CatalogStore {
           source.select('SELECT 1 FROM rename_runs LIMIT 1').isNotEmpty) {
         throw const FormatException(
           'Un seed ne doit pas contenir de renommages personnels.',
+        );
+      }
+      if ((source.select('PRAGMA user_version').single.values.single as int) >=
+              7 &&
+          (source.select('SELECT 1 FROM sync_device LIMIT 1').isNotEmpty ||
+              source.select('SELECT 1 FROM sync_fields LIMIT 1').isNotEmpty ||
+              source.select('SELECT 1 FROM sync_imports LIMIT 1').isNotEmpty)) {
+        throw const FormatException(
+          'Un seed ne doit pas contenir de suivi de transfert personnel.',
         );
       }
       final version = source.select('SELECT * FROM catalog_versions').single;
@@ -650,6 +660,11 @@ final class CatalogStore {
       );
       if (rows.isEmpty) throw StateError('Cette association n’existe plus.');
       _saveUnlinked(unlinkedAudioReferences..add(reference));
+      // Même sans suivi existant, le retrait est un reset explicite à transférer.
+      database.execute(
+        'INSERT OR IGNORE INTO user_episode_state(episode_id) VALUES(?)',
+        [rows.single['episode_id']],
+      );
       database.execute('DELETE FROM user_episode_state WHERE episode_id=?', [
         rows.single['episode_id'],
       ]);

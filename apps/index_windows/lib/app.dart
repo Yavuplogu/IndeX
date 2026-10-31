@@ -25,6 +25,13 @@ Future<String?> nativeDirectoryPicker() => Platform.isAndroid
     ? AppModel.androidChannel.invokeMethod<String>('pickTree')
     : getDirectoryPath(confirmButtonText: 'Choisir ce dossier');
 
+typedef SyncFilePicker = Future<String?> Function();
+Future<String?> nativeSyncFilePicker() async => (await openFile(
+  acceptedTypeGroups: const [
+    XTypeGroup(label: 'Suivi IndeX JSON', extensions: ['json']),
+  ],
+))?.path;
+
 final class EditorialColors {
   EditorialColors(bool dark)
     : background = dark ? const Color(0xff1b1918) : const Color(0xfff5f1e9),
@@ -2267,10 +2274,6 @@ class IndexAboutDialog extends StatelessWidget {
                           const Text(
                             'Le catalogue et l’écoute locale fonctionnent hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Le transfert par export/import JSON est prévu au Lot 5 ter et n’est pas encore disponible.',
-                          ),
                         ], c),
                       ],
                     ),
@@ -2297,9 +2300,11 @@ class SettingsDialog extends StatefulWidget {
     super.key,
     required this.model,
     required this.pickDirectory,
+    this.pickSyncFile = nativeSyncFilePicker,
   });
   final AppModel model;
   final DirectoryPicker pickDirectory;
+  final SyncFilePicker pickSyncFile;
   @override
   State<SettingsDialog> createState() => _SettingsDialogState();
 }
@@ -2334,21 +2339,53 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
   }
 
-  void future(String title, String text) => unawaited(
-    showDialog<void>(
+  Future<void> exportSync() async {
+    final file = await m.exportListeningSync();
+    if (file == null || !mounted) return;
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SelectableText(text),
+        title: const Text('Suivi exporté'),
+        content: SelectableText(
+          'Le fichier contient les favoris, états d’écoute et progressions sauvegardées. Copiez-le sur l’autre appareil puis importez-le dans IndeX.\n\n${file.path}',
+        ),
         actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await m.folderOpener(file.parent.path);
+              } catch (error) {
+                m.error = error.toString();
+                m.changed();
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Ouvrir le dossier des exports'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Fermer'),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Future<void> importSync() async {
+    try {
+      final path = await widget.pickSyncFile();
+      if (path == null || !mounted) return;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => ListeningImportDialog(model: m, path: path),
+      );
+    } catch (error) {
+      m.error = error.toString();
+      m.changed();
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: m,
@@ -2490,7 +2527,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ], c),
                           panelGroup('Transfert du suivi', [
                             const Text(
-                              'Transfert manuel des favoris, statuts et progressions entre Windows et Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé sera créé dans le dossier "exports" du dossier des données utilisateur.',
+                              'Transfert manuel des favoris, statuts et progressions entre installations IndeX. Disponible sur Windows ; le transfert Android sera activé lors du portage. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé est créé dans le dossier "exports" du dossier des données utilisateur.',
                             ),
                             const SizedBox(height: 10),
                             Wrap(
@@ -2498,17 +2535,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               runSpacing: 8,
                               children: [
                                 OutlinedButton(
-                                  onPressed: () => future(
-                                    'Export du suivi — Lot 5 ter',
-                                    'Cette fonction sera disponible au Lot 5 ter. Elle créera un fichier tel que IndeX_suivi_20261025T143000Z_a1b2c3d4.json dans le dossier exports des données utilisateur, sans modifier le suivi local.',
-                                  ),
+                                  onPressed: m.android
+                                      ? null
+                                      : () => unawaited(exportSync()),
                                   child: const Text('Exporter le suivi JSON'),
                                 ),
                                 OutlinedButton(
-                                  onPressed: () => future(
-                                    'Import et fusion — Lot 5 ter',
-                                    'La fusion présentera les différences et les conflits avant confirmation. Cette fonction n’est pas encore livrée.',
-                                  ),
+                                  onPressed: m.android
+                                      ? null
+                                      : () => unawaited(importSync()),
                                   child: const Text(
                                     'Importer et fusionner un suivi JSON',
                                   ),
@@ -2518,7 +2553,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ], c),
                           panelGroup('Fichiers audio', [
                             const Text(
-                              'Une seule conversion sera proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
+                              'Une seule conversion est proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
                             ),
                             const SizedBox(height: 10),
                             OutlinedButton(
@@ -3358,6 +3393,267 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                         child: Text(
                           'Confirmer les ${plan?.planned ?? 0} renommages',
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+String syncValueLabel(String field, Object? value) {
+  if (field == 'favorite') return value == true ? 'Favori' : 'Non favori';
+  final data = value as Map;
+  if (field == 'status') {
+    return '${statusLabel(data['listening_status'] as String)}${data['completed_at'] == null ? '' : ' · terminé le ${data['completed_at']}'}';
+  }
+  String time(int ms) {
+    final seconds = ms ~/ 1000;
+    return '${seconds ~/ 3600}:${(seconds ~/ 60 % 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
+  }
+
+  return '${time(data['position_ms'] as int)} / ${data['duration_ms'] == null ? 'durée inconnue' : time(data['duration_ms'] as int)}${data['last_played_at'] == null ? '' : '\nDernière écoute : ${data['last_played_at']}'}';
+}
+
+class ListeningImportDialog extends StatefulWidget {
+  const ListeningImportDialog({
+    super.key,
+    required this.model,
+    required this.path,
+  });
+  final AppModel model;
+  final String path;
+  @override
+  State<ListeningImportDialog> createState() => _ListeningImportDialogState();
+}
+
+class _ListeningImportDialogState extends State<ListeningImportDialog> {
+  final _choices = <String, SyncChoice>{};
+  bool _applied = false;
+  @override
+  void initState() {
+    super.initState();
+    widget.model.syncPlan = null;
+    scheduleMicrotask(
+      () => unawaited(widget.model.previewListeningSync(widget.path)),
+    );
+  }
+
+  Future<void> refresh({bool release = false}) async {
+    _choices.clear();
+    if (release) await widget.model.pauseForSync();
+    if (!release || widget.model.error.isEmpty)
+      await widget.model.previewListeningSync(widget.path);
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.model,
+    builder: (context, _) {
+      final m = widget.model;
+      final plan = m.syncPlan;
+      final c = EditorialColors(m.dark);
+      final titles = {
+        for (final e in m.catalog) e.id: '${e.title} · ${dateLabel(e.date)}',
+      };
+      return PopScope(
+        canPop: !m.busy,
+        child: Dialog(
+          backgroundColor: c.panel,
+          surfaceTintColor: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 850, maxHeight: 780),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Importer et fusionner le suivi',
+                          style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: m.busy ? null : () => Navigator.pop(context),
+                        child: const Text('Fermer'),
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'L’aperçu ne modifie pas le suivi. Choisissez pour chaque conflit, puis confirmez. Une sauvegarde est créée avant la fusion. Aucun MP3, dossier, lien audio ou réglage local n’est importé.',
+                  ),
+                  if (m.busy) ...[
+                    const SizedBox(height: 10),
+                    const LinearProgressIndicator(),
+                    Text(m.message),
+                  ],
+                  if (_applied)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SelectableText(
+                        'Import terminé. Le suivi a été fusionné et la bibliothèque actualisée.',
+                      ),
+                    ),
+                  if (plan != null) ...[
+                    const SizedBox(height: 12),
+                    SelectableText(
+                      'Export du ${plan.document.exportedAt}\nAppareil source : ${plan.document.sourceDevice}',
+                    ),
+                    if (plan.alreadyImported)
+                      const Text(
+                        'Cet export a déjà été importé : aucune modification à appliquer.',
+                      ),
+                    Text(
+                      '${plan.newEpisodes} nouveaux suivis · ${plan.modifications} modifications de champs · ${plan.conflicts.length} conflits · ${plan.unknown.length} épisodes inconnus',
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: SelectionArea(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          if (m.error.isNotEmpty)
+                            SelectableText(
+                              m.error,
+                              style: TextStyle(color: c.alert),
+                            ),
+                          if (plan != null)
+                            for (final change in plan.changes.where(
+                              (e) =>
+                                  e.kind == SyncChangeKind.incoming ||
+                                  e.kind == SyncChangeKind.conflict ||
+                                  e.kind == SyncChangeKind.merged,
+                            ))
+                              panelGroup(
+                                titles[change.episodeId] ?? change.episodeId,
+                                [
+                                  Text(
+                                    switch (change.field) {
+                                      'favorite' => 'Favori',
+                                      'status' => 'État d’écoute',
+                                      _ => 'Reprise',
+                                    },
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Cet appareil : ${syncValueLabel(change.field, change.local.value)}',
+                                  ),
+                                  Text(
+                                    'Fichier : ${syncValueLabel(change.field, change.incoming.value)}',
+                                  ),
+                                  if (change.kind ==
+                                      SyncChangeKind.conflict) ...[
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 6,
+                                      children: [
+                                        for (final choice in SyncChoice.values)
+                                          OutlinedButton(
+                                            key: ValueKey(
+                                              'sync-${change.key}-${choice.name}',
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              backgroundColor:
+                                                  _choices[change.key] == choice
+                                                  ? Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                  : c.controls,
+                                              foregroundColor:
+                                                  _choices[change.key] == choice
+                                                  ? Theme.of(context)
+                                                        .colorScheme
+                                                        .onPrimary
+                                                  : c.ink,
+                                            ),
+                                            onPressed: m.busy
+                                                ? null
+                                                : () => setState(
+                                                    () => _choices[change.key] =
+                                                        choice,
+                                                  ),
+                                            child: Text(
+                                              choice == SyncChoice.local
+                                                  ? 'Conserver cet appareil'
+                                                  : 'Utiliser le fichier',
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ] else
+                                    Text(
+                                      change.kind == SyncChangeKind.merged
+                                          ? 'Valeurs identiques : versions réunies.'
+                                          : 'Modification non conflictuelle à importer.',
+                                    ),
+                                ],
+                                c,
+                              ),
+                          if (plan != null)
+                            for (final id in plan.unknown)
+                              panelGroup('Épisode absent du catalogue', [
+                                Text(id),
+                                const Text(
+                                  'Ignoré : aucun autre épisode ne sera modifié à sa place.',
+                                ),
+                              ], c),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 10,
+                    runSpacing: 6,
+                    children: [
+                      if (m.playback.reference != null)
+                        OutlinedButton(
+                          onPressed: m.busy
+                              ? null
+                              : () => unawaited(refresh(release: true)),
+                          child: const Text(
+                            'Mettre en pause et libérer la piste',
+                          ),
+                        ),
+                      if (!_applied)
+                        OutlinedButton(
+                          onPressed: m.busy ? null : () => unawaited(refresh()),
+                          child: const Text('Actualiser l’aperçu'),
+                        ),
+                      FilledButton(
+                        key: const ValueKey('confirm-listening-import'),
+                        onPressed:
+                            m.busy ||
+                                plan == null ||
+                                plan.alreadyImported ||
+                                _choices.length != plan.conflicts.length
+                            ? null
+                            : () async {
+                                await m.applyListeningSync(
+                                  plan,
+                                  Map.of(_choices),
+                                );
+                                if (mounted &&
+                                    m.error.isEmpty &&
+                                    m.syncPlan == null)
+                                  setState(() => _applied = true);
+                              },
+                        child: const Text('Confirmer la fusion'),
                       ),
                     ],
                   ),

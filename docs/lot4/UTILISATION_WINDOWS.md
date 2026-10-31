@@ -1,10 +1,10 @@
-# IndeX portable Windows — Lot 4
+# IndeX portable Windows
 
 Cette version propose le catalogue, la recherche documentaire, les favoris,
 les statuts manuels et l'association des MP3. Le Lot 5 raccorde désormais le
 lecteur audio et le suivi automatique ; sa recette native est décrite dans le
 [bilan Lot 5](../lot5/bilan.md). Renommage et transfert JSON
-restent aux Lots 5 bis et 5 ter, explicitement indiqués dans Paramètres.
+sont accessibles dans Paramètres depuis les Lots 5 bis et 5 ter.
 
 ## Démarrer
 
@@ -58,7 +58,7 @@ En cas d'erreur, la fenêtre reste ouverte et propose Réessayer ou Annuler.
 
 Le dossier `sauvegardes` conserve `IndeX_derniere_sauvegarde.sqlite` et
 `IndeX_sauvegarde_precedente.sqlite`. Ces fichiers incluent les données et le catalogue,
-pas les MP3. Ne pas les confondre avec les exports JSON de suivi prévus au Lot 5 ter.
+pas les MP3. Ne pas les confondre avec les exports JSON du suivi.
 Ne pas copier isolément la base ouverte en oubliant son WAL : utiliser les sauvegardes
 produites après fermeture réussie. Elles ne remplacent pas les MP3, à conserver séparément.
 
@@ -250,8 +250,8 @@ une confirmation est demandée. Un MP3 reçu mais non associé reste dans le dos
 relancer une analyse dans Fichiers si le message le demande.
 
 Fermer IndeX annule un transfert en cours et nettoie le temporaire avant sauvegarde.
-Une fois la publication engagée, attendre la fin de cette opération. L’import JSON,
-le renommage et Android ne sont pas livrés par cet ajout. À propos n’affiche plus
+Une fois la publication engagée, attendre la fin de cette opération. Le renommage
+et le transfert JSON sont décrits dans les sections suivantes ; Android reste en pause. À propos n’affiche plus
 le sous-titre de la marque ; la barre latérale le conserve.
 
 Les MP3 téléchargés sont enregistrés sous le **titre système** du catalogue, avec
@@ -282,3 +282,30 @@ le dossier inaccessible, aucun choix n’est imposé : rétablir le dossier, con
 le journal puis **Actualiser l’aperçu** pour retenter la réconciliation. Ne pas
 renommer manuellement d’autres fichiers pendant l’opération. Aucun écrasement ni
 retour global automatique au nom historique n’est proposé.
+
+
+## Transférer le suivi par JSON
+
+Dans **Paramètres → Transfert du suivi**, **Exporter le suivi JSON** crée un fichier
+`IndeX_suivi_<date_UTC>_<identifiant_unique>.json` sous **exports/** dans le dossier
+de données utilisateur. Le chemin est affiché et le dossier peut être ouvert.
+L’export contient les favoris, statuts, positions/durées et versions nécessaires
+à la fusion ; il ne modifie pas votre suivi. La position exportée est celle du
+dernier enregistrement durable (les checkpoints d’écoute ont lieu régulièrement).
+
+Copier ce fichier sur l’autre installation Windows, puis **Importer et fusionner
+un suivi JSON**. Si une piste est chargée, utiliser **Mettre en pause et libérer la
+piste** ; sa position est sauvegardée. Lire l’aperçu. Pour chaque conflit, choisir
+**Conserver cet appareil** ou **Utiliser le fichier** ; aucune date ou position
+maximale ne décide à votre place. **Confirmer la fusion** crée une sauvegarde dans
+**sauvegardes/**, puis applique le suivi. Fermer l’aperçu annule l’import. Si le suivi
+a changé entre-temps, actualiser l’aperçu. Réimporter le même fichier ne change rien.
+
+Aucun MP3, catalogue, chemin, association, permission, réglage d’apparence ou journal
+technique n’est transféré. Les épisodes inconnus du catalogue local sont signalés et
+ignorés ; après une mise à jour du catalogue, demander un nouvel export pour les
+retenter. Pour renvoyer les modifications de l’autre installation, faire un export
+inverse : aucune synchronisation automatique ni connexion réseau. Le transfert
+Android sera activé lors du portage. Utiliser un profil propre par installation
+indépendante ; copier simultanément le même profil sur deux machines n’est pas
+équivalent à une fusion JSON.

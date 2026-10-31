@@ -107,6 +107,26 @@ void main() {
           target.deleteSync();
           other.deleteSync();
         });
+        await tester.runAsync(() async {
+          final staging = await root.createTemp('.index-export-');
+          final part = File('${staging.path}/payload.part')
+            ..writeAsStringSync('{"suivi":true}');
+          final target = File('${root.path}/IndeX_suivi_test.json');
+          await publishSyncExport(part, target);
+          expect(target.readAsStringSync(), '{"suivi":true}');
+          part.writeAsStringSync('ne pas remplacer');
+          await expectLater(
+            publishSyncExport(part, target),
+            throwsA(isA<PlatformException>()),
+          );
+          expect(target.readAsStringSync(), '{"suivi":true}');
+          await expectLater(
+            publishSyncExport(part, File('${root.path}/refuse.mp3')),
+            throwsA(isA<PlatformException>()),
+          );
+          await staging.delete(recursive: true);
+          await target.delete();
+        });
         await tester.runAsync(() => model.configure(data.path, '', true));
         expect(model.error, isEmpty);
         expect(model.catalog, hasLength(716));

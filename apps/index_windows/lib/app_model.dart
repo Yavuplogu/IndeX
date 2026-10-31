@@ -56,6 +56,12 @@ Future<void> renameNativeMp3(File source, File target) =>
       'target': target.path,
     });
 
+Future<void> publishSyncExport(File partial, File target) =>
+    const MethodChannel('index/local_folders').invokeMethod<void>(
+      'publishExport',
+      {'partial': partial.path, 'target': target.path},
+    );
+
 enum CatalogSort {
   relevance,
   dateNew,
@@ -93,6 +99,7 @@ final class AppModel extends ChangeNotifier {
     Random? audioRandom,
     this.downloadPublisher = publishDownloadedMp3,
     this.renameFile = renameNativeMp3,
+    this.syncPublisher = publishSyncExport,
     this.android = false,
   }) : _audioRandom = audioRandom ?? Random(),
        defaultDataDirectory =
@@ -127,6 +134,54 @@ final class AppModel extends ChangeNotifier {
       flush: true,
     );
   }
+
+  final SyncPublisher syncPublisher;
+  SyncImportPlan? syncPlan;
+  Future<File?> exportListeningSync() async {
+    File? result;
+    await runWork('Export du suivi…', () async {
+      if (android) throw UnsupportedError('Transfert Android en pause.');
+      result = await ListeningSync(session!.store)
+          .exportFile(session!.dataDirectory, publish: syncPublisher);
+      message = 'Export du suivi créé dans le dossier exports.';
+    });
+    return result;
+  }
+
+  Future<void> pauseForSync() =>
+      runWork('Sauvegarde et libération du lecteur…', () async {
+        await playback.unload();
+      });
+  Future<void> previewListeningSync(String path) =>
+      runWork('Lecture du suivi à importer…', () async {
+        syncPlan = null;
+        if (android) throw UnsupportedError('Transfert Android en pause.');
+        if (playback.reference != null)
+          throw StateError(
+            'Mettez en pause et libérez la piste avant de préparer un import.',
+          );
+        final document = await ListeningSync.readFile(File(path));
+        syncPlan = ListeningSync(session!.store).preview(document);
+      });
+  Future<void> applyListeningSync(
+    SyncImportPlan plan,
+    Map<String, SyncChoice> choices,
+  ) => runWork('Sauvegarde puis fusion du suivi…', () async {
+    if (!identical(plan, syncPlan))
+      throw StateError('Préparez un aperçu avant de confirmer.');
+    if (playback.reference != null)
+      throw StateError('Libérez le lecteur avant de fusionner le suivi.');
+    await ListeningSync(session!.store).apply(
+      plan,
+      choices,
+      backup: () async {
+        await session!.backup();
+      },
+    );
+    syncPlan = null;
+    reload();
+    message = 'Suivi importé et fusionné. Aucun MP3 ni réglage local modifié.';
+  });
 
   final RenameFile renameFile;
   RenamePlan? renamePlan;

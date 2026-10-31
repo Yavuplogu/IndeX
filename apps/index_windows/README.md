@@ -98,4 +98,15 @@ avec confirmation et journal de reprise. Cœur `Mp3Renamer` commun ; publication
 Windows `renameMp3` via MoveFileExW sans remplacement. Le schéma utilisateur v6
 ajoute le journal, le seed documentaire v4 reste inchangé. Voir le
 [bilan Lot 5 bis](../../docs/lot5bis/bilan.md) et la recette Windows restante.
-Android reste en pause ; pas de renommage SAF ni de transfert JSON livré.
+Android reste en pause ; le renommage SAF n’est pas livré. Le transfert JSON
+Windows est décrit ci-dessous au Lot 5 ter.
+
+
+## Lot 5 ter — transfert JSON du suivi
+
+Paramètres → Transfert du suivi : export Windows dans exports/, import avec aperçu,
+conflits explicites et sauvegarde avant transaction. Cœur ListeningSync et contrat
+JSON v1 communs au futur Android ; sélection/publication SAF restent différées.
+Schéma utilisateur v7, seed documentaire v4 conservé. Le compteur de builds 0.6
+continue sans réinitialisation. Voir [le bilan](../../docs/lot5ter/bilan.md) et
+[le contrat](../../docs/lot5ter/format.md).
