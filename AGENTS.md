@@ -254,3 +254,12 @@
   la dernière seconde exige le vrai ended pour valider, sans validation en pause
   ou sur seek programmatique seul. Reset global confirmé et sauvegardé, atomique,
   marqueurs de reset transférables, favoris/MP3/associations conservés. Majeur 0.6.
+
+
+- Révision du 1er novembre 2026 : état et reprise forment une seule unité de fusion
+  Écoute ; favori indépendant, un cadre par épisode, compteurs en épisodes.
+  Comparer le produit des horloges par champ, sans maximum interchamps.
+  Nouveaux exports JSON v2 avec source_platform ; lecture v1 et empreintes
+  historiques conservées. Ancien lecteur v1 incompatible avec nouveaux exports.
+  SQLite v7/seed v4/majeur 0.6 inchangés. Renommage : dimensions stables sous
+  filtrage ; liseré lecteur limité au titre et à la date.

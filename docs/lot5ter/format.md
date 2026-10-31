@@ -1,6 +1,6 @@
-# Transfert manuel IndeX — contrat JSON v1
+# Transfert manuel IndeX — contrat JSON v2
 
-Format `index-listening-sync`, schema_version **1**. Schéma documentaire :
+Format `index-listening-sync`, schema_version **2**. Schéma documentaire :
 [format.schema.json](format.schema.json), exemple : [exemple.json](exemple.json).
 Le parseur Dart applique ces règles hors ligne ; il ne télécharge aucun schéma.
 Le schéma formel ne remplace pas les contrôles calendaires, d’identité, de taille,
@@ -11,7 +11,8 @@ de causalité et de position/durée ci-dessous.
 JSON UTF-8, maximum **5 Mio**, profondeur **12**, **10 000 épisodes** ; aucun champ
 supplémentaire accepté. format/schema_version, export_id (`e_` + 32 hex), exported_at
 (ISO UTC avec Z), source_device_id (`d_` + 32 hex, pseudonyme local stable),
-catalog_version (texte ≤200 caractères) et episodes sont obligatoires.
+catalog_version (texte ≤200 caractères), source_platform (`windows`, `android` ou
+`unknown`) et episodes sont obligatoires.
 Chaque élément contient episode_id canonique `mrx:<nom MP3 historique>` (≤259
 caractères, unique dans le fichier), et fields avec exactement favorite/status/position.
 Les noms système et emplacements actuels des MP3 ne participent pas à l’identité.
@@ -53,9 +54,10 @@ A domine B si tous ses compteurs sont ≥ à B et au moins un est supérieur. À
 - versions concurrentes différentes : conflit, choix explicite local/fichier. Réunir
   les contextes et avancer la version locale de résolution pour dominer les deux.
 
-Aucune résolution par horloge ou maximum de position. Les champs sont indépendants,
-y compris état et reprise ; les choix restent visibles dans l’aperçu. Une reprise
-plus basse peut être choisie. Un ancien export ne peut pas effacer un retrait/reset
+Aucune résolution par date ou maximum de position. Le favori reste indépendant.
+État et reprise sont désormais une unité logique « Écoute » : état, progression,
+durée et dates proviennent ensemble du même appareil ou du même fichier. Une
+reprise plus basse peut être choisie, avec son état associé. Un ancien export ne peut pas effacer un retrait/reset
 causalement plus récent. Les informations inconnues ne sont pas assimilées à un autre
 épisode : elles sont listées et ignorées, le journal d’import conserve leurs identités.
 Un nouvel export permettra de les retenter après actualisation du catalogue.
@@ -93,10 +95,36 @@ nécessitera le sélecteur SAF, la publication locale et une recette physique s�
 ## Présentation et nom de fichier — révision du 31 octobre
 
 Le nom externe est IndeX_suivi_AAAAMMJJ_HHMMSS.json (date/heure locales, seconde),
-sans UUID. Cela ne change pas export_id, les dates UTC ni schema_version=1 du
-contenu. Un export déjà présent à la même seconde est conservé : réessayer une
+sans UUID. Cela ne change pas export_id ni les dates UTC du contenu. Un export déjà présent à la même seconde est conservé : réessayer une
 seconde plus tard. Les conflits restent causaux ; le panneau sélectionne désormais
 le fichier importé par défaut selon la demande utilisateur, avec modification
 individuelle/globale possible et confirmation globale toujours obligatoire.
 Un reset général ne modifie pas les favoris et marque tous les états/reprises
 NON_ECOUTE/0 comme changements explicites, même pour les épisodes jamais commencés.
+
+## Révision du 1er novembre 2026 : écoute liée et provenance
+
+Les horloges restent stockées et transportées par champ. Pour l’écoute, comparer
+le produit des horloges état/reprise : chaque couple (champ, appareil) constitue
+une dimension. Ne jamais additionner ni prendre le maximum des compteurs entre
+ces champs. Une domination dans des sens opposés constitue un conflit du groupe,
+même si aucun champ isolé n’était concurrent. Des valeurs de groupe identiques
+peuvent réunir leurs contextes. Une résolution choisit les deux valeurs de la même
+source, joint chaque contexte et avance les deux versions locales. Les anciens
+choix séparés état/reprise sont refusés. Cette règle empêche de créer un mélange
+entre deux suivis ; elle ne répare pas un état déjà incohérent dans un fichier.
+
+L’aperçu présente un cadre par épisode, avec choix séparés uniquement pour le
+favori et l’écoute. Les compteurs et filtres comptent des épisodes, classés dans
+une catégorie exclusive : conflit, modification entrante, versions réunies,
+conservé localement, puis identique. Les conflits sont présentés en premier.
+Un épisode identique est résumé sans répéter ses champs initiaux.
+
+Les nouveaux exports v2 indiquent source_platform, sans déduire la plateforme
+de l’identifiant pseudonyme. Les v1 restent importables : « Plateforme non
+renseignée (ancien export) ». Les v2 unknown affichent « Plateforme non
+renseignée ». L’empreinte d’un ancien document est conservée sans ajouter de
+champ, pour préserver l’idempotence des imports antérieurs. Les anciens lecteurs
+v1 ne lisent pas les nouveaux exports v2 : mettre à jour les deux installations.
+Les schémas et exemples v1 sont archivés dans [format-v1.schema.json](format-v1.schema.json)
+et [exemple-v1.json](exemple-v1.json). Le schéma SQLite reste v7, le seed v4.

@@ -107,9 +107,13 @@ final class SyncDocument {
     this.catalogVersion,
     List<SyncEpisode> episodes,
     this.digest,
+    this.schemaVersion,
+    this.sourcePlatform,
   ) : episodes = List.unmodifiable(episodes);
   final String exportId, sourceDevice, exportedAt, catalogVersion, digest;
   final List<SyncEpisode> episodes;
+  final int schemaVersion;
+  final String sourcePlatform;
 
   factory SyncDocument.decode(List<int> bytes) {
     if (bytes.length > syncMaxBytes) _invalid('fichier supérieur à 5 Mio.');
@@ -133,7 +137,13 @@ final class SyncDocument {
         depth--;
       }
     }
-    final root = _map(jsonDecode(text), {
+    final root = _map(jsonDecode(text), null);
+    final version = root['schema_version'];
+    if (root['format'] != 'index-listening-sync' ||
+        version is! int ||
+        ![1, 2].contains(version))
+      _invalid('format ou version non pris en charge.');
+    _map(root, {
       'format',
       'schema_version',
       'export_id',
@@ -141,11 +151,11 @@ final class SyncDocument {
       'source_device_id',
       'catalog_version',
       'episodes',
+      if (version == 2) 'source_platform',
     });
-    if (root['format'] != 'index-listening-sync' ||
-        root['schema_version'] is! int ||
-        root['schema_version'] != 1)
-      _invalid('format ou version non pris en charge.');
+    final platform = version == 1 ? 'unknown' : root['source_platform'];
+    if (!['windows', 'android', 'unknown'].contains(platform))
+      _invalid('plateforme source invalide.');
     _id(root['export_id'], 'e');
     _id(root['source_device_id'], 'd');
     _date(root['exported_at'], nullable: false);
@@ -194,6 +204,8 @@ final class SyncDocument {
       root['catalog_version'] as String,
       episodes,
       sha256.convert(utf8.encode(_json(root))).toString(),
+      version,
+      platform as String,
     );
   }
 }
@@ -203,16 +215,18 @@ enum SyncChoice { local, file }
 enum SyncChangeKind { incoming, retained, identical, merged, conflict }
 
 final class SyncChange {
-  const SyncChange._(
+  SyncChange._(
     this.episodeId,
     this.field,
     this.local,
     this.incoming,
-    this.kind,
-  );
+    this.kind, {
+    List<SyncChange> components = const [],
+  }) : components = List.unmodifiable(components);
   final String episodeId, field;
   final SyncField local, incoming;
   final SyncChangeKind kind;
+  final List<SyncChange> components;
   String get key => '$episodeId|$field';
 }
 
@@ -342,10 +356,15 @@ final class ListeningSync {
     );
     final root = {
       'format': 'index-listening-sync',
-      'schema_version': 1,
+      'schema_version': 2,
       'export_id': _token('e_'),
       'exported_at': _now().toUtc().toIso8601String(),
       'source_device_id': device,
+      'source_platform': Platform.isWindows
+          ? 'windows'
+          : Platform.isAndroid
+          ? 'android'
+          : 'unknown',
       'catalog_version':
           store.database
               .select(
@@ -370,10 +389,12 @@ final class ListeningSync {
   List<int> encode(SyncDocument document) => utf8.encode(
     const JsonEncoder.withIndent('  ').convert({
       'format': 'index-listening-sync',
-      'schema_version': 1,
+      'schema_version': document.schemaVersion,
       'export_id': document.exportId,
       'exported_at': document.exportedAt,
       'source_device_id': document.sourceDevice,
+      if (document.schemaVersion == 2)
+        'source_platform': document.sourcePlatform,
       'catalog_version': document.catalogVersion,
       'episodes': [
         for (final e in document.episodes)
@@ -460,6 +481,7 @@ final class ListeningSync {
         [e.id],
       ).isEmpty)
         created++;
+      final individual = <String, SyncChange>{};
       for (final field in _fields) {
         final local = _read(e.id, field), incoming = e.fields[field]!;
         final devices = {...local.clock.keys, ...incoming.clock.keys};
@@ -483,8 +505,42 @@ final class ListeningSync {
             : greater
             ? SyncChangeKind.retained
             : SyncChangeKind.identical;
-        changes.add(SyncChange._(e.id, field, local, incoming, kind));
+        individual[field] = SyncChange._(e.id, field, local, incoming, kind);
       }
+      changes.add(individual['favorite']!);
+      final parts = [individual['status']!, individual['position']!];
+      var greater = false, less = false;
+      // Les compteurs de status et position sont deux dimensions distinctes :
+      // ne jamais les additionner ni prendre leur maximum pour ordonner l’écoute.
+      for (final part in parts) {
+        for (final d in {
+          ...part.local.clock.keys,
+          ...part.incoming.clock.keys,
+        }) {
+          greater |= (part.local.clock[d] ?? 0) > (part.incoming.clock[d] ?? 0);
+          less |= (part.local.clock[d] ?? 0) < (part.incoming.clock[d] ?? 0);
+        }
+      }
+      final same = parts.every(
+        (p) => p.local.valueJson == p.incoming.valueJson,
+      );
+      final kind = greater && less
+          ? (same ? SyncChangeKind.merged : SyncChangeKind.conflict)
+          : less
+          ? SyncChangeKind.incoming
+          : greater
+          ? SyncChangeKind.retained
+          : SyncChangeKind.identical;
+      changes.add(
+        SyncChange._(
+          e.id,
+          'listening',
+          SyncField._({for (final p in parts) p.field: p.local.value}, {}),
+          SyncField._({for (final p in parts) p.field: p.incoming.value}, {}),
+          kind,
+          components: parts,
+        ),
+      );
     }
     return SyncImportPlan._(
       document,
@@ -513,26 +569,31 @@ final class ListeningSync {
       throw StateError('Choisissez une résolution pour chaque conflit.');
     // Calculer/valider toutes les résolutions avant le point de restauration.
     final selected = <SyncChange, SyncField>{};
-    for (final c in plan.changes) {
-      if (c.kind == SyncChangeKind.retained ||
-          c.kind == SyncChangeKind.identical)
+    for (final unit in plan.changes) {
+      if (unit.kind == SyncChangeKind.retained ||
+          unit.kind == SyncChangeKind.identical)
         continue;
-      final clock = <String, int>{};
-      for (final d in {...c.local.clock.keys, ...c.incoming.clock.keys}) {
-        clock[d] = max(c.local.clock[d] ?? 0, c.incoming.clock[d] ?? 0);
+      final localChoice =
+          unit.kind == SyncChangeKind.conflict &&
+          choices[unit.key] == SyncChoice.local;
+      // Une seule source pour les deux composantes de l’écoute. Les versions
+      // restent distinctes pour conserver la compatibilité des exports v1.
+      for (final c in unit.components.isEmpty ? [unit] : unit.components) {
+        final clock = <String, int>{};
+        for (final d in {...c.local.clock.keys, ...c.incoming.clock.keys}) {
+          clock[d] = max(c.local.clock[d] ?? 0, c.incoming.clock[d] ?? 0);
+        }
+        if (unit.kind == SyncChangeKind.conflict)
+          clock[plan.device] = (clock[plan.device] ?? 0) + 1;
+        if (clock.length > 32)
+          _invalid('fusion de plus de 32 appareils non prise en charge.');
+        if (clock.values.any((v) => v > _maxCounter))
+          _invalid('compteur de version épuisé.');
+        selected[c] = SyncField._(
+          localChoice ? c.local.value : c.incoming.value,
+          clock,
+        );
       }
-      if (c.kind == SyncChangeKind.conflict)
-        clock[plan.device] = (clock[plan.device] ?? 0) + 1;
-      if (clock.length > 32)
-        _invalid('fusion de plus de 32 appareils non prise en charge.');
-      if (clock.values.any((v) => v > _maxCounter))
-        _invalid('compteur de version épuisé.');
-      final value =
-          c.kind == SyncChangeKind.conflict &&
-              choices[c.key] == SyncChoice.local
-          ? c.local.value
-          : c.incoming.value;
-      selected[c] = SyncField._(value, clock);
     }
     await backup();
     final db = store.database;

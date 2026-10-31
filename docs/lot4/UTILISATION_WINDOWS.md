@@ -335,3 +335,17 @@ L’enchaînement automatique ignore les épisodes déjà Écoutés. Pour les r�
 utiliser les commandes manuelles. Un glissement jusqu’au bout d’une piste en cours
 se valide à la fin réellement signalée par le moteur. Le titre du lecteur affiche
 un liseré au survol pour indiquer son accès cliquable à la fiche.
+
+
+### Révision du 1er novembre 2026 — transfert et présentation
+
+Le transfert fusionne l’écoute comme un ensemble : état, position, durée et dates
+proviennent de la même source. Le favori reste indépendant. Un cadre par épisode
+remplace les cadres par champ ; les filtres comptent des épisodes, avec priorité
+conflit > modification > versions réunies > conservé > identique. Le choix par
+défaut reste le fichier importé et la confirmation globale reste obligatoire.
+Les nouveaux JSON v2 indiquent Windows/Android ; les anciens v1 sont acceptés avec
+plateforme non renseignée. Mettre à jour les deux installations avant d’échanger
+des v2. Voir [le contrat](../lot5ter/format.md). Aucun changement SQLite/seed.
+Le panneau de renommage conserve ses dimensions quand on filtre. Le liseré
+du lecteur entoure uniquement le titre et sa date, dans la largeur disponible.

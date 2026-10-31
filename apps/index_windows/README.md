@@ -106,7 +106,7 @@ Windows est décrit ci-dessous au Lot 5 ter.
 
 Paramètres → Transfert du suivi : export Windows dans exports/, import avec aperçu,
 conflits explicites et sauvegarde avant transaction. Cœur ListeningSync et contrat
-JSON v1 communs au futur Android ; sélection/publication SAF restent différées.
+JSON v2 (lecture v1 conservée) communs au futur Android ; sélection/publication SAF restent différées.
 Schéma utilisateur v7, seed documentaire v4 conservé. Le compteur de builds 0.6
 continue sans réinitialisation. Voir [le bilan](../../docs/lot5ter/bilan.md) et
 [le contrat](../../docs/lot5ter/format.md).

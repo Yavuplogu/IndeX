@@ -72,12 +72,28 @@ void main() {
           expect(source.existsSync(), isTrue);
           expect(moves, 0);
           if (cancel) {
+            final sizeBefore = tester.getSize(
+              find.byKey(const ValueKey('rename-dialog-size')),
+            );
             await tester.tap(
               find.byKey(const ValueKey('rename-filter-ignored')),
             );
             await tester.pumpAndSettle();
+            expect(
+              tester.getSize(find.byKey(const ValueKey('rename-dialog-size'))),
+              sizeBefore,
+            );
             expect(find.text('Prévu'), findsNothing);
             expect(find.text('Ignoré'), findsOneWidget);
+            await tester.tap(
+              find.byKey(const ValueKey('rename-filter-conflict')),
+            );
+            await tester.pumpAndSettle();
+            expect(
+              tester.getSize(find.byKey(const ValueKey('rename-dialog-size'))),
+              sizeBefore,
+            );
+            expect(find.text('Prévu'), findsNothing);
             await tester.tap(find.byKey(const ValueKey('rename-filter-all')));
             await tester.pumpAndSettle();
             expect(find.text('Prévu'), findsOneWidget);

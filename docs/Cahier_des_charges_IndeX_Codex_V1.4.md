@@ -550,3 +550,12 @@ global du suivi (positions/statuts) dans Paramètres, avec confirmation/sauvegar
 et conservation des favoris/MP3/liens. Lors d’un glissement en lecture au terme,
 le signal de fin moteur confirme Écouté même sans progression mesurée après seek.
 Voir les spécifications natives actualisées ; le majeur reste 0.6.
+
+
+- Révision du 1er novembre 2026 : état et reprise forment une seule unité de fusion
+  Écoute ; favori indépendant, un cadre par épisode, compteurs en épisodes.
+  Comparer le produit des horloges par champ, sans maximum interchamps.
+  Nouveaux exports JSON v2 avec source_platform ; lecture v1 et empreintes
+  historiques conservées. Ancien lecteur v1 incompatible avec nouveaux exports.
+  SQLite v7/seed v4/majeur 0.6 inchangés. Renommage : dimensions stables sous
+  filtrage ; liseré lecteur limité au titre et à la date.

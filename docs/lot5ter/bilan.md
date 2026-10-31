@@ -6,7 +6,7 @@ auparavant. Android reste en pause ; Lot 6 non lancé. Aucun nouveau package run
 
 ## Décisions et réalisation
 
-- Cœur `ListeningSync` : contrat JSON v1, snapshots de lecture, validation bornée,
+- Cœur `ListeningSync` : contrat JSON v2 (lecture v1 conservée), snapshots de lecture, validation bornée,
   plan de fusion immuable, choix local/fichier par conflit, application transactionnelle.
   Voir [format.md](format.md), schéma et exemple JSON.
 - Migration utilisateur v7 : sync_device, sync_fields, sync_imports. Triggers par champ
@@ -140,3 +140,25 @@ commandes globales sur plusieurs conflits, bilan minimal après import, nom cour
 et collision d’export, liseré réel au survol du titre lecteur. La recette Windows
 sur MP3 réels, notamment le glissement au terme, reste nécessaire après build.
 Aucun changement de majeur ou du contrat JSON et aucune modification du corpus.
+
+
+### Révision du 1er novembre 2026 — transfert et présentation
+
+Le transfert fusionne l’écoute comme un ensemble : état, position, durée et dates
+proviennent de la même source. Le favori reste indépendant. Un cadre par épisode
+remplace les cadres par champ ; les filtres comptent des épisodes, avec priorité
+conflit > modification > versions réunies > conservé > identique. Le choix par
+défaut reste le fichier importé et la confirmation globale reste obligatoire.
+Les nouveaux JSON v2 indiquent Windows/Android ; les anciens v1 sont acceptés avec
+plateforme non renseignée. Mettre à jour les deux installations avant d’échanger
+des v2. Voir [le contrat](../lot5ter/format.md). Aucun changement SQLite/seed.
+Le panneau de renommage conserve ses dimensions quand on filtre. Le liseré
+du lecteur entoure uniquement le titre et sa date, dans la largeur disponible.
+
+Validation de cette révision sous Linux : `bash tools/lot4/check.sh` réussi,
+243 tests Dart, 61 tests Flutter et 7 tests Python ; analyses sans problème.
+Les schémas et exemples JSON v1/v2 ont également été validés localement.
+Les tests couvrent les choix d’écoute des deux sources, le refus des choix
+séparés, les causalités croisées, le favori indépendant, l’idempotence v1,
+la provenance Windows/Android et les dimensions du panneau/liseré.
+La recette sur l’exécutable Windows reste à effectuer après construction.

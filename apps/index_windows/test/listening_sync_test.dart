@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -87,6 +88,12 @@ void main() {
         );
         await tester.pumpAndSettle();
         for (final cancel in [true, false]) {
+          await tester.runAsync(() async {
+            final raw =
+                jsonDecode(await file!.readAsString()) as Map<String, dynamic>;
+            raw['source_platform'] = cancel ? 'windows' : 'android';
+            await file.writeAsString(jsonEncode(raw));
+          });
           final import = find.text('Importer et fusionner un suivi JSON');
           await tester.ensureVisible(import);
           await tester.tap(import);
@@ -99,6 +106,29 @@ void main() {
           await tester.pumpAndSettle();
           final plan = b.syncPlan!;
           expect(plan.conflicts, hasLength(2));
+          expect(
+            find.textContaining(
+              cancel
+                  ? 'Appareil source : Windows'
+                  : 'Appareil source : Android',
+            ),
+            findsOneWidget,
+          );
+          final scrollable = find
+              .descendant(
+                of: find.byKey(const ValueKey('sync-results-list')),
+                matching: find.byType(Scrollable),
+              )
+              .first;
+          final episodeCard = find.byKey(ValueKey('sync-episode-$id'));
+          await tester.scrollUntilVisible(
+            episodeCard,
+            200,
+            scrollable: scrollable,
+          );
+          expect(episodeCard, findsOneWidget);
+          expect(find.byKey(ValueKey('sync-$id|status-file')), findsNothing);
+          expect(find.byKey(ValueKey('sync-$id|position-file')), findsNothing);
           expect(b.catalog.first.favorite, isFalse);
           expect(
             b.session!.store.database.select('SELECT * FROM sync_imports'),
@@ -118,12 +148,23 @@ void main() {
               const ValueKey('confirm-listening-import'),
             );
             expect(tester.widget<FilledButton>(confirm).onPressed, isNotNull);
+            tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+            await tester.pumpAndSettle();
+            await tester.scrollUntilVisible(
+              find.byKey(const ValueKey('sync-all-local')),
+              200,
+              scrollable: scrollable,
+            );
             await tester.tap(find.byKey(const ValueKey('sync-all-local')));
             await tester.pumpAndSettle();
             final localChoice = find.byKey(
               ValueKey('sync-${plan.conflicts.first.key}-local'),
             );
-            await tester.ensureVisible(localChoice);
+            await tester.scrollUntilVisible(
+              localChoice,
+              200,
+              scrollable: scrollable,
+            );
             expect(
               tester
                   .widget<OutlinedButton>(localChoice)
@@ -133,15 +174,23 @@ void main() {
               Theme.of(tester.element(localChoice)).colorScheme.primary,
             );
             final allFile = find.byKey(const ValueKey('sync-all-file'));
-            await tester.ensureVisible(allFile);
+            tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+            await tester.pumpAndSettle();
+            await tester.scrollUntilVisible(
+              allFile,
+              200,
+              scrollable: scrollable,
+            );
             await tester.tap(allFile);
             await tester.pumpAndSettle();
             tester
                 .state<ScrollableState>(
-                  find.descendant(
-                    of: find.byKey(const ValueKey('sync-results-list')),
-                    matching: find.byType(Scrollable),
-                  ),
+                  find
+                      .descendant(
+                        of: find.byKey(const ValueKey('sync-results-list')),
+                        matching: find.byType(Scrollable),
+                      )
+                      .first,
                 )
                 .position
                 .jumpTo(0);
@@ -167,7 +216,13 @@ void main() {
             final choice = find.byKey(
               ValueKey('sync-${plan.conflicts.first.key}-file'),
             );
+            await tester.scrollUntilVisible(
+              choice,
+              200,
+              scrollable: scrollable,
+            );
             await tester.ensureVisible(choice);
+            await tester.pumpAndSettle();
             await tester.tap(choice);
             await tester.pumpAndSettle();
             await tester.tap(confirm);

@@ -1,0 +1,40 @@
+{
+  "format": "index-listening-sync",
+  "schema_version": 1,
+  "export_id": "e_22222222222222222222222222222222",
+  "exported_at": "2026-10-31T12:00:00Z",
+  "source_device_id": "d_11111111111111111111111111111111",
+  "catalog_version": "corpus-2026-10-26-noms-journal-r3",
+  "episodes": [
+    {
+      "episode_id": "mrx:mr_x_1997_01_04.mp3",
+      "fields": {
+        "favorite": {
+          "value": true,
+          "clock": {
+            "d_11111111111111111111111111111111": 1
+          }
+        },
+        "status": {
+          "value": {
+            "listening_status": "EN_COURS",
+            "completed_at": null
+          },
+          "clock": {
+            "d_11111111111111111111111111111111": 1
+          }
+        },
+        "position": {
+          "value": {
+            "position_ms": 42000,
+            "duration_ms": 120000,
+            "last_played_at": "2026-10-31T11:59:00Z"
+          },
+          "clock": {
+            "d_11111111111111111111111111111111": 2
+          }
+        }
+      }
+    }
+  ]
+}

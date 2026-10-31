@@ -1,7 +1,7 @@
 {
   "format": "index-listening-sync",
-  "schema_version": 1,
-  "export_id": "e_22222222222222222222222222222222",
+  "schema_version": 2,
+  "export_id": "e_33333333333333333333333333333333",
   "exported_at": "2026-10-31T12:00:00Z",
   "source_device_id": "d_11111111111111111111111111111111",
   "catalog_version": "corpus-2026-10-26-noms-journal-r3",
@@ -36,5 +36,6 @@
         }
       }
     }
-  ]
+  ],
+  "source_platform": "windows"
 }

@@ -1302,43 +1302,47 @@ class _LibraryPageState extends State<LibraryPage> {
           Row(
             children: [
               Expanded(
-                child: HoverOutlinedAction(
-                  key: const ValueKey('player-episode-title'),
-                  onTap: episode == null
-                      ? null
-                      : () => openPlayerEpisode(episode),
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: episode?.title ?? 'Aucun épisode en lecture',
-                          style: const TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (episode != null)
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  heightFactor: 1,
+                  child: HoverOutlinedAction(
+                    key: const ValueKey('player-episode-title'),
+                    onTap: episode == null
+                        ? null
+                        : () => openPlayerEpisode(episode),
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
                           TextSpan(
-                            text: ' · ${dateLabel(episode.date)}',
-                            style: TextStyle(
-                              fontFamily: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.fontFamily,
-                              fontSize: 11,
-                              fontWeight: FontWeight.normal,
-                              color: m.audioKnown && !episode.audioAvailable
-                                  ? c.missingInk
-                                  : episode.status == 'ECOUTE'
-                                  ? c.heardInk
-                                  : c.ink,
+                            text: episode?.title ?? 'Aucun épisode en lecture',
+                            style: const TextStyle(
+                              fontFamily: 'Georgia',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                      ],
+                          if (episode != null)
+                            TextSpan(
+                              text: ' · ${dateLabel(episode.date)}',
+                              style: TextStyle(
+                                fontFamily: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.fontFamily,
+                                fontSize: 11,
+                                fontWeight: FontWeight.normal,
+                                color: m.audioKnown && !episode.audioAvailable
+                                    ? c.missingInk
+                                    : episode.status == 'ECOUTE'
+                                    ? c.heardInk
+                                    : c.ink,
+                              ),
+                            ),
+                        ],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -3326,8 +3330,10 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
         child: Dialog(
           backgroundColor: c.panel,
           surfaceTintColor: Colors.transparent,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 850, maxHeight: 760),
+          child: SizedBox(
+            key: const ValueKey('rename-dialog-size'),
+            width: 850,
+            height: 760,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -3381,7 +3387,7 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                         setState(() => _resultFilter = value),
                     colors: c,
                   ),
-                  Flexible(
+                  Expanded(
                     child: SelectionArea(
                       child: ListView(
                         shrinkWrap: true,
@@ -3516,9 +3522,21 @@ String syncDateLabel(String value) {
   return '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
 }
 
+String syncPlatformLabel(SyncDocument document) =>
+    switch (document.sourcePlatform) {
+      'windows' => 'Windows',
+      'android' => 'Android',
+      _ =>
+        document.schemaVersion == 1
+            ? 'Plateforme non renseignée (ancien export)'
+            : 'Plateforme non renseignée',
+    };
+
 String syncValueLabel(String field, Object? value) {
   if (field == 'favorite') return value == true ? 'Favori' : 'Non favori';
   final data = value as Map;
+  if (field == 'listening')
+    return '${syncValueLabel('status', data['status'])}\n${syncValueLabel('position', data['position'])}';
   if (field == 'status') {
     return '${statusLabel(data['listening_status'] as String)}${data['completed_at'] == null ? '' : ' · terminé le ${syncDateLabel(data['completed_at'] as String)}'}';
   }
@@ -3555,7 +3573,7 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
   bool _applied = false;
   String _filter = 'all';
   static const labels = {
-    'all': 'Tous les résultats',
+    'all': 'Tous les épisodes',
     'conflict': 'Conflits',
     'incoming': 'Modifications',
     'merged': 'Versions réunies',
@@ -3625,21 +3643,94 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
       final titles = {
         for (final e in m.catalog) e.id: '${e.title} · ${dateLabel(e.date)}',
       };
-      final changes =
-          List<SyncChange>.from(plan?.changes ?? const <SyncChange>[])
-            ..sort((a, b) {
-              final rankA = a.kind == SyncChangeKind.conflict ? 0 : 1;
-              final rankB = b.kind == SyncChangeKind.conflict ? 0 : 1;
-              final rank = rankA.compareTo(rankB);
-              return rank != 0 ? rank : a.key.compareTo(b.key);
-            });
+      final grouped = <String, List<SyncChange>>{};
+      for (final change in plan?.changes ?? const <SyncChange>[]) {
+        (grouped[change.episodeId] ??= []).add(change);
+      }
+      const priority = [
+        SyncChangeKind.conflict,
+        SyncChangeKind.incoming,
+        SyncChangeKind.merged,
+        SyncChangeKind.retained,
+        SyncChangeKind.identical,
+      ];
+      SyncChangeKind category(List<SyncChange> units) =>
+          priority.firstWhere((kind) => units.any((u) => u.kind == kind));
+      final episodes = grouped.entries.toList()
+        ..sort((a, b) {
+          final rank = priority
+              .indexOf(category(a.value))
+              .compareTo(priority.indexOf(category(b.value)));
+          return rank != 0 ? rank : a.key.compareTo(b.key);
+        });
       final counts = <String, int>{
-        'all': changes.length + (plan?.unknown.length ?? 0),
+        'all': episodes.length + (plan?.unknown.length ?? 0),
         'unknown': plan?.unknown.length ?? 0,
       };
-      for (final change in changes) {
-        counts.update(change.kind.name, (v) => v + 1, ifAbsent: () => 1);
+      for (final episode in episodes) {
+        counts.update(
+          category(episode.value).name,
+          (v) => v + 1,
+          ifAbsent: () => 1,
+        );
       }
+      Widget comparison(SyncChange change) => Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${labels[change.kind.name]} · ${change.field == 'favorite' ? 'Favori' : 'Écoute (état et reprise)'}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Cet appareil : ${syncValueLabel(change.field, change.local.value)}',
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Fichier importé : ${syncValueLabel(change.field, change.incoming.value)}',
+            ),
+            if (change.kind == SyncChangeKind.conflict) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 6,
+                children: [
+                  for (final choice in SyncChoice.values)
+                    OutlinedButton(
+                      key: ValueKey('sync-${change.key}-${choice.name}'),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: _choices[change.key] == choice
+                            ? Theme.of(context).colorScheme.primary
+                            : c.controls,
+                        foregroundColor: _choices[change.key] == choice
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : c.ink,
+                      ),
+                      onPressed: m.busy
+                          ? null
+                          : () => setState(() => _choices[change.key] = choice),
+                      child: Text(
+                        choice == SyncChoice.local
+                            ? 'Conserver cet appareil'
+                            : 'Utiliser le fichier importé',
+                      ),
+                    ),
+                ],
+              ),
+            ] else
+              Text(switch (change.kind) {
+                SyncChangeKind.merged =>
+                  'Valeurs identiques : versions réunies.',
+                SyncChangeKind.retained =>
+                  'La version locale est plus récente : suivi conservé.',
+                SyncChangeKind.identical => 'Aucune modification nécessaire.',
+                _ => 'Modification non conflictuelle à importer.',
+              }),
+          ],
+        ),
+      );
       return PopScope(
         canPop: !m.busy,
         child: Dialog(
@@ -3684,14 +3775,14 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
                           if (plan != null) ...[
                             const SizedBox(height: 10),
                             SelectableText(
-                              'Export du ${syncDateLabel(plan.document.exportedAt)}\nAppareil source : ${plan.document.sourceDevice}',
+                              'Export du ${syncDateLabel(plan.document.exportedAt)}\nAppareil source : ${syncPlatformLabel(plan.document)} · ${plan.document.sourceDevice}',
                             ),
                             if (plan.alreadyImported)
                               const Text(
                                 'Cet export a déjà été importé : aucune modification à appliquer.',
                               ),
                             Text(
-                              '${plan.newEpisodes} nouveaux suivis · ${plan.modifications} modifications de champs · ${plan.conflicts.length} conflits · ${plan.unknown.length} épisodes inconnus',
+                              '${plan.newEpisodes} nouveaux suivis · ${(counts['incoming'] ?? 0) + (counts['merged'] ?? 0)} épisodes à modifier · ${counts['conflict'] ?? 0} épisodes en conflit · ${plan.unknown.length} épisodes inconnus',
                             ),
                             ResultFilters(
                               prefix: 'sync-filter',
@@ -3733,76 +3824,30 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
                               m.error,
                               style: TextStyle(color: c.alert),
                             ),
-                          for (final change in changes.where(
-                            (e) => _filter == 'all' || e.kind.name == _filter,
+                          for (final episode in episodes.where(
+                            (e) =>
+                                _filter == 'all' ||
+                                category(e.value).name == _filter,
                           ))
-                            panelGroup(titles[change.episodeId] ?? change.episodeId, [
-                              Text(
-                                '${labels[change.kind.name]} · ${switch (change.field) {
-                                  'favorite' => 'Favori',
-                                  'status' => 'État d’écoute',
-                                  _ => 'Reprise',
-                                }}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            KeyedSubtree(
+                              key: ValueKey('sync-episode-${episode.key}'),
+                              child: panelGroup(
+                                titles[episode.key] ?? episode.key,
+                                [
+                                  if (episode.value.every(
+                                    (u) => u.kind == SyncChangeKind.identical,
+                                  ))
+                                    const Text(
+                                      'Écoute et favori identiques : aucune modification nécessaire.',
+                                    ),
+                                  for (final unit in episode.value.where(
+                                    (u) => u.kind != SyncChangeKind.identical,
+                                  ))
+                                    comparison(unit),
+                                ],
+                                c,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Cet appareil : ${syncValueLabel(change.field, change.local.value)}',
-                              ),
-                              Text(
-                                'Fichier importé : ${syncValueLabel(change.field, change.incoming.value)}',
-                              ),
-                              if (change.kind == SyncChangeKind.conflict) ...[
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 6,
-                                  children: [
-                                    for (final choice in SyncChoice.values)
-                                      OutlinedButton(
-                                        key: ValueKey(
-                                          'sync-${change.key}-${choice.name}',
-                                        ),
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor:
-                                              _choices[change.key] == choice
-                                              ? Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
-                                              : c.controls,
-                                          foregroundColor:
-                                              _choices[change.key] == choice
-                                              ? Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary
-                                              : c.ink,
-                                        ),
-                                        onPressed: m.busy
-                                            ? null
-                                            : () => setState(
-                                                () => _choices[change.key] =
-                                                    choice,
-                                              ),
-                                        child: Text(
-                                          choice == SyncChoice.local
-                                              ? 'Conserver cet appareil'
-                                              : 'Utiliser le fichier importé',
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ] else
-                                Text(switch (change.kind) {
-                                  SyncChangeKind.merged =>
-                                    'Valeurs identiques : versions réunies.',
-                                  SyncChangeKind.retained => 'La version locale est plus récente : suivi conservé.',
-                                  SyncChangeKind.identical =>
-                                    'Aucune modification nécessaire.',
-                                  _ => 'Modification non conflictuelle à importer.',
-                                }),
-                            ], c),
+                            ),
                           if (plan != null &&
                               (_filter == 'all' || _filter == 'unknown'))
                             for (final id in plan.unknown)

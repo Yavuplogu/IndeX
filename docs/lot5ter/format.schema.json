@@ -5,7 +5,7 @@
       "const": "index-listening-sync"
     },
     "schema_version": {
-      "const": 1,
+      "const": 2,
       "type": "integer"
     },
     "export_id": {
@@ -240,6 +240,13 @@
         ],
         "additionalProperties": false
       }
+    },
+    "source_platform": {
+      "enum": [
+        "windows",
+        "android",
+        "unknown"
+      ]
     }
   },
   "required": [
@@ -249,11 +256,12 @@
     "exported_at",
     "source_device_id",
     "catalog_version",
-    "episodes"
+    "episodes",
+    "source_platform"
   ],
   "additionalProperties": false,
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:index:listening-sync:1",
+  "$id": "urn:index:listening-sync:2",
   "$comment": "Validation additionnelle hors schéma : fichier UTF-8 de 5 Mio maximum, profondeur 12, identités canoniques et uniques, dates calendaires UTC valides, position <= durée connue, causalité. Aucun chargement réseau de ce schéma par IndeX.",
   "$defs": {
     "clock": {

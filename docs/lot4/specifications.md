@@ -628,3 +628,17 @@ et le contrat du Lot 5 ter. Aucune modification de la maquette HTML historique.
   attendre le vrai signal ended pour valider Écouté, même sans delta de position
   supplémentaire. En pause, un seek programmatique ou un simple placement sans
   fin moteur ne valide rien ; une nouvelle manipulation annule la demande précédente.
+
+
+### Révision du 1er novembre 2026 — transfert et présentation
+
+Le transfert fusionne l’écoute comme un ensemble : état, position, durée et dates
+proviennent de la même source. Le favori reste indépendant. Un cadre par épisode
+remplace les cadres par champ ; les filtres comptent des épisodes, avec priorité
+conflit > modification > versions réunies > conservé > identique. Le choix par
+défaut reste le fichier importé et la confirmation globale reste obligatoire.
+Les nouveaux JSON v2 indiquent Windows/Android ; les anciens v1 sont acceptés avec
+plateforme non renseignée. Mettre à jour les deux installations avant d’échanger
+des v2. Voir [le contrat](../lot5ter/format.md). Aucun changement SQLite/seed.
+Le panneau de renommage conserve ses dimensions quand on filtre. Le liseré
+du lecteur entoure uniquement le titre et sa date, dans la largeur disponible.

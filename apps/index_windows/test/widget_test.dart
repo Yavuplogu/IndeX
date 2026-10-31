@@ -257,6 +257,25 @@ void main() {
         tester.getCenter(find.byKey(const ValueKey('player-episode-title'))),
       );
       await tester.pumpAndSettle();
+      final richFinder = find.descendant(
+        of: find.byKey(const ValueKey('player-episode-title')),
+        matching: find.byType(RichText),
+      );
+      final rich = tester.widget<RichText>(richFinder);
+      final measured = TextPainter(
+        text: rich.text,
+        textDirection: rich.textDirection ?? TextDirection.ltr,
+        textScaler: rich.textScaler,
+        locale: rich.locale,
+        maxLines: 1,
+      )..layout();
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('player-title-outline')))
+            .width,
+        closeTo(measured.width + 10, 1.1),
+      );
+      measured.dispose();
       final outline =
           tester
                   .widget<Container>(

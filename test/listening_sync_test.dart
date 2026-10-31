@@ -116,7 +116,7 @@ void main() {
     state(b, 'position_ms=20000');
     final remote = sb.exportDocument();
     final plan = sa.preview(remote);
-    expect(plan.conflicts.single.field, 'position');
+    expect(plan.conflicts.single.field, 'listening');
     await expectLater(
       sa.apply(
         plan,
@@ -160,7 +160,7 @@ void main() {
     state(a, "position_ms=1000,last_played_at='2099-01-01T00:00:00Z'");
     state(b, "position_ms=5000,last_played_at='1999-01-01T00:00:00Z'");
     final plan = sa.preview(sb.exportDocument());
-    expect(plan.conflicts.single.field, 'position');
+    expect(plan.conflicts.single.field, 'listening');
     expect(row(a)['position_ms'], 1000, reason: 'L’aperçu n’applique rien.');
   });
 
@@ -460,7 +460,7 @@ void main() {
     sa.markExplicit(id, ['status', 'position']);
     state(b, "listening_status='ECOUTE',position_ms=120000,duration_ms=120000");
     final plan = sa.preview(sb.exportDocument());
-    expect(plan.conflicts.map((c) => c.field).toSet(), {'status', 'position'});
+    expect(plan.conflicts.map((c) => c.field).toSet(), {'listening'});
     expect(row(a)['listening_status'], 'NON_ECOUTE');
   });
 
@@ -505,8 +505,7 @@ void main() {
     final plan = sa.preview(sb.exportDocument());
     expect(plan.conflicts.map((c) => c.field).toSet(), {
       'favorite',
-      'status',
-      'position',
+      'listening',
     });
     expect(a.database.select('SELECT * FROM user_episode_state'), isEmpty);
   });
@@ -518,4 +517,101 @@ void main() {
     expect(document.episodes.single.id, id);
     expect(document.episodes.single.fields['favorite']!.value, isTrue);
   });
+  for (final choice in SyncChoice.values) {
+    test(
+      'Écoute couplée : statut et reprise proviennent toujours de la même source (${choice.name})',
+      () async {
+        state(
+          a,
+          "is_favorite=1,listening_status='ECOUTE',position_ms=120000,duration_ms=120000,completed_at='2026-10-31T20:00:00Z'",
+        );
+        await transfer(sa, sb);
+        state(a, 'position_ms=119000');
+        state(
+          b,
+          "is_favorite=0,listening_status='EN_COURS',position_ms=1200,completed_at=NULL",
+        );
+        final plan = sa.preview(sb.exportDocument());
+        expect(plan.conflicts, hasLength(1));
+        final conflict = plan.conflicts.single;
+        expect(conflict.field, 'listening');
+        await expectLater(
+          sa.apply(plan, {
+            '$id|position': SyncChoice.file,
+            '$id|status': SyncChoice.local,
+          }, backup: () async => fail('Choix séparés interdits')),
+          throwsStateError,
+        );
+        await sa.apply(plan, {conflict.key: choice}, backup: () async {});
+        expect(
+          row(a)['listening_status'],
+          choice == SyncChoice.file ? 'EN_COURS' : 'ECOUTE',
+        );
+        expect(
+          row(a)['position_ms'],
+          choice == SyncChoice.file ? 1200 : 119000,
+        );
+        expect(
+          row(a)['completed_at'],
+          choice == SyncChoice.file ? isNull : '2026-10-31T20:00:00Z',
+        );
+        expect(
+          row(a)['is_favorite'],
+          0,
+          reason: 'Le favori peut évoluer indépendamment de l’écoute.',
+        );
+        await transfer(sa, sb);
+        expect(row(b)['listening_status'], row(a)['listening_status']);
+        expect(row(b)['position_ms'], row(a)['position_ms']);
+      },
+    );
+  }
+
+  test('Versions croisées sans conflit par champ : demander un choix global d’écoute', () async {
+    state(
+      a,
+      "listening_status='EN_COURS',position_ms=50000,duration_ms=120000",
+    );
+    final baseline = sa.exportDocument();
+    await sb.apply(sb.preview(baseline), {}, backup: () async {});
+    // A est plus récent pour le statut ; B est plus récent pour la reprise.
+    state(a, "listening_status='ECOUTE',completed_at='2026-10-31T20:00:00Z'");
+    state(b, 'position_ms=1000');
+    final plan = sa.preview(sb.exportDocument());
+    expect(plan.conflicts.single.field, 'listening');
+    await sa.apply(plan, {
+      plan.conflicts.single.key: SyncChoice.file,
+    }, backup: () async {});
+    expect(row(a)['listening_status'], 'EN_COURS');
+    expect(row(a)['position_ms'], 1000);
+  });
+
+  test(
+    'Provenance v2 Windows/Android et anciens exports v1 sans plateforme',
+    () async {
+      state(a, 'is_favorite=1');
+      for (final platform in ['windows', 'android', 'unknown']) {
+        final data = payload();
+        expect(data['schema_version'], 2);
+        data['source_platform'] = platform;
+        final doc = SyncDocument.decode(utf8.encode(jsonEncode(data)));
+        expect(doc.sourcePlatform, platform);
+        expect(doc.schemaVersion, 2);
+      }
+      final invalid = payload()..['source_platform'] = 'plateforme-inconnue';
+      expect(
+        () => SyncDocument.decode(utf8.encode(jsonEncode(invalid))),
+        throwsFormatException,
+      );
+      final old = payload()..remove('source_platform');
+      old['schema_version'] = 1;
+      final legacy = SyncDocument.decode(utf8.encode(jsonEncode(old)));
+      expect(legacy.sourcePlatform, 'unknown');
+      expect(legacy.schemaVersion, 1);
+      expect(SyncDocument.decode(sa.encode(legacy)).digest, legacy.digest);
+      await sb.apply(sb.preview(legacy), {}, backup: () async {});
+      expect(sb.preview(legacy).alreadyImported, isTrue);
+      expect(row(b)['is_favorite'], 1);
+    },
+  );
 }
