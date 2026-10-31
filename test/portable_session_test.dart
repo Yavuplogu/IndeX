@@ -44,6 +44,60 @@ void main() {
     return s;
   }
 
+  test('Journal de renommage interrompu réconcilié après déplacement de la racine portable', () async {
+    final session = await start();
+    final mp3 = Directory('${root.path}/MP3')..createSync();
+    final source = File('${mp3.path}/mr_x_1997_01_04.mp3')
+      ..writeAsStringSync('contenu conservé');
+    final episode = session.episodes().firstWhere(
+      (e) => e.originalName == 'mr_x_1997_01_04.mp3',
+    );
+    session.store.recordManualLink(
+      episode.id,
+      source.uri.toString(),
+      episode.originalName,
+    );
+    session.favorite(episode.id, true);
+    session.checkpoint(
+      episode.id,
+      positionMs: 23000,
+      durationMs: 120000,
+      progressed: true,
+      completed: false,
+      playbackStatus: 'paused',
+    );
+    final renamer = Mp3Renamer(session.store);
+    final plan = await renamer.preview(mp3, recursive: false);
+    final run = await renamer.execute(
+      plan,
+      move: (from, to) async {
+        await from.rename(to.path);
+        throw StateError('interruption avant mise à jour du lien');
+      },
+    );
+    await session.dispose();
+    root = await root.rename('${root.path}-déplacé');
+    portable = Directory('${root.path}/application');
+    data = PortableSession.configuredDirectory(portable)!;
+    final reopened = await start(existing: true);
+    final state = reopened.episodes().firstWhere((e) => e.id == episode.id);
+    final target = File('${root.path}/MP3/${episode.systemName}');
+    expect(
+      FileSystemEntity.identicalSync(
+        File.fromUri(Uri.parse(state.audioRef!)).path,
+        target.path,
+      ),
+      isTrue,
+    );
+    expect(state.favorite, isTrue);
+    expect(state.positionMs, 23000);
+    expect(
+      Mp3Renamer(reopened.store).report(run).single['status'],
+      'succeeded',
+    );
+    expect(Mp3Renamer(reopened.store).unresolved, isFalse);
+  });
+
   test('Déplacement de toute la racine : suivi, liens manuels et exclusions conservés sans scan', () async {
     final s = await start();
     final entries = s.episodes();
@@ -274,7 +328,7 @@ void main() {
     expect(missing.existsSync(), isFalse);
   });
 
-  test('Migration utilisateur réelle v4 vers v5 conserve favori, statut et progression', () async {
+  test('Migration utilisateur réelle v4 vers v6 conserve favori, statut et progression', () async {
     final copy = File('${data.path}/index-utilisateur.sqlite');
     await copy.writeAsBytes(seed);
     final old = sqlite3.open(copy.path);
@@ -289,7 +343,7 @@ void main() {
     final s = await start(existing: true);
     expect(
       s.store.database.select('PRAGMA user_version').single.values.single,
-      5,
+      6,
     );
     final state = s.listeningState(id)!;
     expect(state['position_ms'], 42000);

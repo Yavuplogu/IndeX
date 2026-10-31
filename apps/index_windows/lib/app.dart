@@ -2522,10 +2522,16 @@ class _SettingsDialogState extends State<SettingsDialog> {
                             ),
                             const SizedBox(height: 10),
                             OutlinedButton(
-                              onPressed: () => future(
-                                'Renommage des MP3 — Lot 5 bis',
-                                'Le renommage contrôlé sera développé au Lot 5 bis. Aucun fichier n’est modifié dans ce lot.',
-                              ),
+                              onPressed: m.android
+                                  ? null
+                                  : () => unawaited(
+                                      showDialog<void>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) =>
+                                            Mp3RenameDialog(model: m),
+                                      ),
+                                    ),
                               child: const Text(
                                 'Prévisualiser le renommage des MP3',
                               ),
@@ -3172,6 +3178,193 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                 ),
               ),
           ],
+        ),
+      );
+    },
+  );
+}
+
+class Mp3RenameDialog extends StatefulWidget {
+  const Mp3RenameDialog({super.key, required this.model});
+  final AppModel model;
+  @override
+  State<Mp3RenameDialog> createState() => _Mp3RenameDialogState();
+}
+
+class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
+  bool _showReport = false;
+  @override
+  void initState() {
+    super.initState();
+    widget.model.renamePlan = null;
+    widget.model.renameReport = [];
+    scheduleMicrotask(() => unawaited(widget.model.previewRename()));
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.model,
+    builder: (context, _) {
+      final m = widget.model;
+      final c = EditorialColors(m.dark);
+      final plan = _showReport ? null : m.renamePlan;
+      final report = m.renameReport;
+      final counts = <String, int>{};
+      for (final e in plan?.entries ?? <RenameEntry>[]) {
+        counts.update(e.status, (v) => v + 1, ifAbsent: () => 1);
+      }
+      return PopScope(
+        canPop: !m.busy,
+        child: Dialog(
+          backgroundColor: c.panel,
+          surfaceTintColor: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 850, maxHeight: 760),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Renommer les MP3',
+                          style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: m.busy ? null : () => Navigator.pop(context),
+                        child: const Text('Fermer'),
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'Conversion globale facultative du nom historique vers le titre système du catalogue, dans le même dossier. Aucun audio ni tag modifié. Les favoris et le suivi sont conservés. Aucun fichier existant n’est écrasé.',
+                  ),
+                  const SizedBox(height: 10),
+                  if (m.busy) ...[
+                    const LinearProgressIndicator(),
+                    Text(
+                      m.renameProgress.isEmpty ? m.message : m.renameProgress,
+                    ),
+                  ],
+                  if (m.error.isNotEmpty)
+                    SelectableText(m.error, style: TextStyle(color: c.alert)),
+                  if (plan != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        '${plan.entries.length} analysés · ${plan.planned} à renommer · ${counts['unchanged'] ?? 0} déjà conformes · ${counts['ignored'] ?? 0} ignorés · ${counts['conflict'] ?? 0} conflits',
+                      ),
+                    ),
+                  if (plan == null && !m.busy && report.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Text('Journal de la dernière opération'),
+                    ),
+                  Flexible(
+                    child: SelectionArea(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          if (plan != null)
+                            for (final e in plan.entries)
+                              panelGroup(
+                                e.planned
+                                    ? 'Prévu'
+                                    : switch (e.status) {
+                                        'unchanged' => 'Déjà conforme',
+                                        'conflict' => 'Conflit',
+                                        _ => 'Ignoré',
+                                      },
+                                [
+                                  Text(displayDiagnosticPath(e.before)),
+                                  if (e.planned)
+                                    Text('→ ${displayDiagnosticPath(e.after)}'),
+                                  if (e.reason.isNotEmpty) Text(e.reason),
+                                ],
+                                c,
+                              ),
+                          if (plan == null)
+                            for (final r in report)
+                              panelGroup(
+                                switch (r['status']) {
+                                  'succeeded' => 'Renommé',
+                                  'failed' => 'Échec',
+                                  'skipped' => 'Non effectué',
+                                  _ => 'À réconcilier',
+                                },
+                                [
+                                  Text(
+                                    displayDiagnosticPath(
+                                      r['before_ref'] as String,
+                                    ),
+                                  ),
+                                  Text(
+                                    '→ ${displayDiagnosticPath(r['after_ref'] as String)}',
+                                  ),
+                                  if (r['error'] != null)
+                                    Text(
+                                      r['error'] as String,
+                                      style: TextStyle(color: c.alert),
+                                    ),
+                                ],
+                                c,
+                              ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      if (m.renamePlan != null && report.isNotEmpty)
+                        OutlinedButton(
+                          onPressed: m.busy
+                              ? null
+                              : () =>
+                                    setState(() => _showReport = !_showReport),
+                          child: Text(
+                            _showReport
+                                ? 'Revenir à l’aperçu'
+                                : 'Voir le dernier journal',
+                          ),
+                        ),
+                      if (m.playback.reference != null)
+                        OutlinedButton(
+                          onPressed: m.busy
+                              ? null
+                              : () => unawaited(m.releaseAudioForRename()),
+                          child: const Text(
+                            'Mettre en pause et libérer la piste',
+                          ),
+                        ),
+                      OutlinedButton(
+                        onPressed: m.busy
+                            ? null
+                            : () => unawaited(m.previewRename()),
+                        child: const Text('Actualiser l’aperçu'),
+                      ),
+                      FilledButton(
+                        key: const ValueKey('confirm-mp3-rename'),
+                        onPressed: m.busy || plan == null || plan.planned == 0
+                            ? null
+                            : () => unawaited(m.executeRename()),
+                        child: Text(
+                          'Confirmer les ${plan?.planned ?? 0} renommages',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     },

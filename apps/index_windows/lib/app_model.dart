@@ -50,6 +50,12 @@ Object? diagnosticForDisplay(Object? value) {
   return value;
 }
 
+Future<void> renameNativeMp3(File source, File target) =>
+    const MethodChannel('index/local_folders').invokeMethod<void>('renameMp3', {
+      'source': source.path,
+      'target': target.path,
+    });
+
 enum CatalogSort {
   relevance,
   dateNew,
@@ -86,6 +92,7 @@ final class AppModel extends ChangeNotifier {
     bool pollAudio = true,
     Random? audioRandom,
     this.downloadPublisher = publishDownloadedMp3,
+    this.renameFile = renameNativeMp3,
     this.android = false,
   }) : _audioRandom = audioRandom ?? Random(),
        defaultDataDirectory =
@@ -120,6 +127,73 @@ final class AppModel extends ChangeNotifier {
       flush: true,
     );
   }
+
+  final RenameFile renameFile;
+  RenamePlan? renamePlan;
+  List<Map<String, Object?>> renameReport = [];
+  String renameProgress = '';
+  Future<void> previewRename() =>
+      runWork('Préparation du renommage…', () async {
+        renamePlan = null;
+        if (android) throw UnsupportedError('Renommage Android en pause.');
+        if (mp3Path.isEmpty)
+          throw StateError(
+            'Choisissez un dossier MP3 dans Fichiers et associations.',
+          );
+        final renamer = Mp3Renamer(session!.store);
+        await renamer.recover();
+        final runs = session!.store.database.select(
+          'SELECT id FROM rename_runs ORDER BY id DESC LIMIT 1',
+        );
+        renameReport = runs.isEmpty
+            ? []
+            : renamer.report(runs.single['id'] as int);
+        renamePlan = await renamer.preview(
+          Directory(mp3Path),
+          recursive: recursive,
+          inUse: playback.reference,
+          onProgress: (done, total) {
+            renameProgress = 'Vérification des fichiers : $done / $total';
+            changed();
+          },
+        );
+        renameProgress = '';
+      });
+
+  Future<void> releaseAudioForRename() async {
+    await runWork('Sauvegarde et libération de la piste…', () async {
+      await playback.unload();
+      renamePlan = null;
+    });
+    if (!busy && error.isEmpty) await previewRename();
+  }
+
+  Future<void> executeRename() => runWork('Renommage en cours…', () async {
+    final plan = renamePlan;
+    if (plan == null || plan.planned == 0) return;
+    renamePlan = null; // Un aperçu confirmé n’est jamais réutilisé.
+    final renamer = Mp3Renamer(session!.store);
+    final run = await renamer.execute(
+      plan,
+      move: renameFile,
+      inUse: () => playback.reference,
+      onProgress: (done, total) {
+        renameProgress = 'Renommage : $done / $total';
+        changed();
+      },
+    );
+    await renamer.recover();
+    renameReport = renamer.report(run);
+    renameProgress = '';
+    _lastReport();
+    _refreshAssociationReport();
+    reload();
+    final succeeded = renameReport
+        .where((r) => r['status'] == 'succeeded')
+        .length;
+    message = '$succeeded fichier(s) renommé(s).';
+    if (renamer.unresolved) error = 'Un résultat est à réconcilier. Consultez le journal du renommage ; aucun autre fichier n’a été déplacé.';
+  });
 
   final DownloadPublisher downloadPublisher;
   Mp3Download? activeDownload;
@@ -467,7 +541,10 @@ final class AppModel extends ChangeNotifier {
       await _open(known, true);
       // Le profil existe : ne jamais réafficher le formulaire pendant le scan.
       needsSetup = false;
-      if (mp3Path.isNotEmpty && !skipStartupScan) await _scan(mp3Path);
+      if (mp3Path.isNotEmpty &&
+          !skipStartupScan &&
+          !Mp3Renamer(session!.store).unresolved)
+        await _scan(mp3Path);
     } finally {
       opening = false;
     }
@@ -510,6 +587,9 @@ final class AppModel extends ChangeNotifier {
       requireExisting: existing,
     );
     dataPath = session!.dataDirectory.path;
+    if (Mp3Renamer(session!.store).unresolved) {
+      error = 'Renommage interrompu : réconciliation en attente. Consultez Paramètres → Fichiers audio.';
+    }
     mp3Path = session!.setting('mp3_directory') ?? '';
     dark = session!.setting('theme') == 'dark';
     _restoreListing();
@@ -625,6 +705,8 @@ final class AppModel extends ChangeNotifier {
       });
 
   Future<void> _scan(String path) async {
+    if (Mp3Renamer(session!.store).unresolved)
+      throw StateError('Réconciliez le renommage interrompu avant de scanner.');
     message = 'Association par noms d’origine et système du journal…';
     changed();
     mp3Path = android ? path : Directory(path).absolute.path;

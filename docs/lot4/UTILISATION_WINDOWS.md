@@ -257,3 +257,28 @@ le sous-titre de la marque ; la barre latérale le conserve.
 Les MP3 téléchargés sont enregistrés sous le **titre système** du catalogue, avec
 l’extension `.mp3`. Une cible déjà présente est conservée et le téléchargement
 est refusé ; les MP3 existants ne sont pas renommés.
+
+
+## Renommer les MP3 historiques — à partir de 0.6.0
+
+Dans **Paramètres → Fichiers audio**, cliquer **Prévisualiser le renommage des MP3**.
+IndeX examine le dossier MP3 configuré, avec les sous-dossiers si l’option est active.
+La vérification lit les fichiers et calcule leurs empreintes ; elle peut être longue
+sur une grosse collection. Consulter les comptes et les chemins avant/après. Fermer
+ce panneau avant confirmation ne modifie aucun MP3.
+
+**Confirmer les N renommages** transforme uniquement les noms historiques reconnus
+(`mr_x_1997_01_04.mp3`) en titres système du catalogue
+(`1997-01-04 La 5ème Colonne.mp3`), dans le même dossier. Aucun autre modèle ni sens
+inverse. Les MP3 déjà au nom système restent tels quels. Fichiers inconnus, doublons,
+conflits, associations retirées ou autre choix manuel sont ignorés. Un fichier chargé
+dans le lecteur est exclu : pour l’inclure, cliquer **Mettre en pause et libérer la
+piste** dans le panneau ; la position est sauvegardée et l’aperçu recalculé.
+Les tags et l’audio restent inchangés, ainsi que favoris et progression.
+
+Le bilan est sélectionnable. En cas d’interruption, le prochain démarrage vérifie
+les chemins et le contenu puis réconcilie les liens. Si le résultat est ambigu ou
+le dossier inaccessible, aucun choix n’est imposé : rétablir le dossier, consulter
+le journal puis **Actualiser l’aperçu** pour retenter la réconciliation. Ne pas
+renommer manuellement d’autres fichiers pendant l’opération. Aucun écrasement ni
+retour global automatique au nom historique n’est proposé.

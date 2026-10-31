@@ -12,7 +12,7 @@ if (-not $env:INDEX_VERSION) {
 } else {
   $version = [PSCustomObject]@{ display = $env:INDEX_VERSION; build_name = $env:INDEX_BUILD_NAME; build_number = $env:INDEX_BUILD_NUMBER }
 }
-if ($version.display -notmatch '^[01]\.\d+\.\d{2,}$' -or -not $version.build_name -or -not $version.build_number) { throw 'Version de build invalide.' }
+if ($version.display -notmatch '^[01]\.\d+\.\d+$' -or -not $version.build_name -or -not $version.build_number) { throw 'Version de build invalide.' }
 & python (Join-Path $PSScriptRoot 'prepare_assets.py')
 if ($LASTEXITCODE -ne 0) { throw 'Préparation des assets échouée.' }
 Push-Location $app

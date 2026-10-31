@@ -566,3 +566,16 @@ Conserver les contrôles, l’association et le suivi/favoris.
 Les textes des cadres Paramètres partagent la taille du corps de texte d’À propos.
 La description Lecture et reprise est placée sous son libellé, alignée après la
 case comme dans Analyse au démarrage. Dispositions communes aux deux thèmes.
+
+
+### Lot 5 bis lancé — 31 octobre 2026
+
+Le bouton Prévisualiser le renommage des MP3 de Paramètres → Fichiers audio ouvre
+un panneau de renommage Windows fonctionnel, en clair et sombre. Analyse du
+dossier MP3 et sous-dossiers selon le réglage ; tableau global avant/après,
+comptes des prévus/déjà conformes/ignorés/conflits. Fermer l’aperçu ne modifie rien.
+Seul Confirmer les N renommages exécute les conversions ; bilan sélectionnable
+et journal SQLite persistant. Les MP3 utilisés par le lecteur sont ignorés.
+Le panneau permet d’actualiser l’aperçu et de consulter le journal précédent.
+Blocage du scan si une interruption laisse une réconciliation ambiguë.
+Description technique et recette : ../lot5bis/bilan.md. Version initiale 0.6.0.

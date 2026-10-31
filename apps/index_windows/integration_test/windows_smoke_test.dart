@@ -84,6 +84,29 @@ void main() {
           await staging.delete(recursive: true);
           await target.delete();
         });
+        await tester.runAsync(() async {
+          final source = File('${root.path}/mr_x_1997_01_04.mp3')
+            ..writeAsStringSync('octets et tags inchangés');
+          final target = File('${root.path}/1997-01-04 La 5ème Colonne.mp3');
+          await renameNativeMp3(source, target);
+          expect(source.existsSync(), isFalse);
+          expect(target.readAsStringSync(), 'octets et tags inchangés');
+          source.writeAsStringSync('source à conserver');
+          await expectLater(
+            renameNativeMp3(source, target),
+            throwsA(isA<PlatformException>()),
+          );
+          expect(source.readAsStringSync(), 'source à conserver');
+          expect(target.readAsStringSync(), 'octets et tags inchangés');
+          final other = Directory('${root.path}/autre dossier')..createSync();
+          await expectLater(
+            renameNativeMp3(source, File('${other.path}/interdit.mp3')),
+            throwsA(isA<PlatformException>()),
+          );
+          source.deleteSync();
+          target.deleteSync();
+          other.deleteSync();
+        });
         await tester.runAsync(() => model.configure(data.path, '', true));
         expect(model.error, isEmpty);
         expect(model.catalog, hasLength(716));

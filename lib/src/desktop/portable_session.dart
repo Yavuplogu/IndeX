@@ -15,6 +15,7 @@ import '../search/sqlite_search_engine.dart';
 import '../storage/catalog_store.dart';
 import 'episode.dart';
 import 'portable_paths.dart';
+import 'mp3_rename.dart';
 
 String _token() => List.generate(
   12,
@@ -156,6 +157,7 @@ final class PortableSession {
         ))
           _layoutRoot(portableDirectory.absolute).path,
       });
+      await Mp3Renamer(store).recover();
       await _writePointer(portableDirectory, data);
       return PortableSession._(portableDirectory, data, store, lock);
     } catch (_) {
@@ -272,6 +274,8 @@ final class PortableSession {
         ('local_audio_links', 'episode_id', ['audio_ref', 'evidence_json']),
         ('audio_scan_runs', 'id', ['scope', 'summary_json']),
         ('audio_scan_items', 'rowid', ['audio_ref', 'decision_json']),
+        ('rename_runs', 'id', ['scope']),
+        ('rename_items', 'id', ['before_ref', 'after_ref']),
       ]) {
         for (final row in db.select(
           'SELECT ${table.$2} AS identity,${table.$3.join(',')} FROM ${table.$1}',

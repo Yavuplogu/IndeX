@@ -216,6 +216,7 @@ final class CatalogStore {
             2,
             3,
             4,
+            5,
             schemaVersion,
           }.contains(source.select('PRAGMA user_version').single.values.single))
         throw const FormatException('Catalogue de référence non reconnu.');
@@ -237,6 +238,13 @@ final class CatalogStore {
               .isNotEmpty) {
         throw const FormatException(
           'Un seed documentaire sans données personnelles est requis.',
+        );
+      }
+      if ((source.select('PRAGMA user_version').single.values.single as int) >=
+              6 &&
+          source.select('SELECT 1 FROM rename_runs LIMIT 1').isNotEmpty) {
+        throw const FormatException(
+          'Un seed ne doit pas contenir de renommages personnels.',
         );
       }
       final version = source.select('SELECT * FROM catalog_versions').single;

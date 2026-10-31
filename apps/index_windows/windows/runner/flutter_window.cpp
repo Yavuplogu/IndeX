@@ -1,5 +1,6 @@
 #include "flutter_window.h"
 #include <filesystem>
+#include <cwchar>
 #include <system_error>
 
 #include <optional>
@@ -35,7 +36,8 @@ bool FlutterWindow::OnCreate() {
   folder_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-        if (call.method_name() == "publishDownload") {
+        if (call.method_name() == "publishDownload" || call.method_name() == "renameMp3") {
+          const bool renaming = call.method_name() == "renameMp3";
           const auto* args = call.arguments() ? std::get_if<flutter::EncodableMap>(call.arguments()) : nullptr;
           auto path = [args](const char* key) -> std::wstring {
             if (!args) return {};
@@ -49,21 +51,28 @@ bool FlutterWindow::OnCreate() {
             MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value->data(), static_cast<int>(value->size()), converted.data(), size);
             return converted;
           };
-          const auto source = std::filesystem::path(path("partial"));
+          const auto source = std::filesystem::path(path(renaming ? "source" : "partial"));
           const auto target = std::filesystem::path(path("target"));
           std::error_code directory_error;
           if (!source.is_absolute() || !target.is_absolute() ||
-              source.filename() != L"payload.part" ||
-              source.parent_path().filename().wstring().find(L".index-download-") != 0 ||
-              !std::filesystem::equivalent(source.parent_path().parent_path(), target.parent_path(), directory_error)) {
-            result->Error("invalid_download", "Chemins de publication invalides.");
+              (!renaming && (source.filename() != L"payload.part" ||
+                source.parent_path().filename().wstring().find(L".index-download-") != 0)) ||
+              (renaming && (_wcsicmp(source.extension().c_str(), L".mp3") != 0)) ||
+              (renaming && _wcsicmp(target.extension().c_str(), L".mp3") != 0) ||
+              !std::filesystem::equivalent(renaming ? source.parent_path() : source.parent_path().parent_path(), target.parent_path(), directory_error)) {
+            result->Error(renaming ? "invalid_rename" : "invalid_download", "Chemins de publication invalides.");
+            return;
+          }
+          const DWORD attributes = GetFileAttributesW(source.c_str());
+          if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY))) {
+            result->Error("invalid_source", "Le fichier source est inaccessible ou non regulier.");
             return;
           }
           // Aucun MOVEFILE_REPLACE_EXISTING : une cible concurrente est conservée.
           if (!MoveFileExW(source.c_str(), target.c_str(), MOVEFILE_WRITE_THROUGH)) {
             const DWORD error = GetLastError();
             result->Error(error == ERROR_FILE_EXISTS || error == ERROR_ALREADY_EXISTS ? "target_exists" : "publish_failed",
-                          "Publication du MP3 impossible, aucun fichier existant remplace.");
+                          "Operation du MP3 impossible (code Windows " + std::to_string(error) + "). Aucun fichier existant remplace.");
           } else {
             result->Success();
           }

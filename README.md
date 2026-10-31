@@ -1,19 +1,20 @@
 # IndeX
 
-Version de départ **0.5.01** (bêta) ; numéro mineur réservé automatiquement à
+Version de départ **0.6.0** (bêta, Lot 5 bis) ; numéro mineur réservé automatiquement à
 chaque construction Windows distribuable. [Politique et compteur](tools/versioning/README.md).
 
-[Lot 5 : architecture, contrôles et recette native restante](docs/lot5/bilan.md).
+[Lot 5 : architecture et lecteur](docs/lot5/bilan.md).
+[Lot 5 bis : renommage, contrôles et recette Windows](docs/lot5bis/bilan.md).
 
 Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 5 en cours — priorité à la finalisation Windows ; Android en pause.**
+**État : Lot 5 bis lancé — renommage global Windows ; Android en pause.**
 Décision du 27 octobre 2026 : conserver le socle partagé et tous les objectifs
 fonctionnels du futur portage Android. Voir l’[avenant au cahier des charges](docs/Cahier_des_charges_IndeX_Codex_V1.4.md#avenant-du-27-octobre-2026--priorité-windows-android-en-pause).
 Le code Android existant est conservé ; le workflow APK se lance uniquement à la
-main. Les Lots 5 bis et 5 ter nécessitent toujours leur lancement explicite.
+main. Le Lot 5 bis est lancé le 31 octobre ; le Lot 5 ter reste non lancé.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème

@@ -486,3 +486,20 @@ Une erreur ou annulation ne doit pas créer d’association vers un fichier part
 
 Aucun MP3 n’est livré avec l’application. Le partage du cœur est conservé, mais
 la destination SAF et la recette physique Android restent en attente du portage.
+
+
+## Avenant du 31 octobre 2026 — lancement du Lot 5 bis et version 0.6.0
+
+L’utilisateur valide le fonctionnement du dernier build Windows puis lance
+explicitement le Lot 5 bis. La nouvelle série est **0.6.0**, puis incrément du
+mineur à chaque build distribuable, sans remise à zéro des compteurs historiques.
+Le majeur 6 et la présentation du mineur à partir de 0 sont autorisés par cette
+demande ; tout autre changement de majeur ou passage en finale reste explicite.
+
+Implémenter le §5.5 pour Windows : conversion historique → TITRE SYSTEME seulement,
+aperçu et confirmation globale, collisions/permissions, journal de reprise, liens
+actualisés sans perte de suivi/favoris. Le téléchargement déjà livré publie ses
+nouveaux fichiers directement au nom système ; il reste indépendant de ce lot.
+Aucun fichier audio embarqué. Tests sur copies temporaires, jamais sur le corpus
+original. Android demeure en pause ; interface de renommage isolée pour SAF.
+Le Lot 5 ter (JSON) n’est pas lancé. Voir docs/lot5bis/bilan.md.

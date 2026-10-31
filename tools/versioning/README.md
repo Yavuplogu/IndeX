@@ -1,7 +1,22 @@
-# Numérotation IndeX à compter du 28 octobre 2026
+# Numérotation IndeX
+
+## Série actuelle — décision du 31 octobre 2026
+
+Le Lot 5 bis est lancé avec **0.6.0**, puis 0.6.1, 0.6.2, etc.
+État 0 bêta, majeur 6 autorisé explicitement ; ne pas modifier à nouveau le majeur
+ou passer en finale sans ordre utilisateur. `first_minor: 0` et `minor_width: 1`
+fixent cette nouvelle série, sans réinitialiser les compteurs 0.5 historiques.
+Le premier build distribuable réserve 0.6.0, même s’il échoue. Les suivants
+incrémentent le mineur comme auparavant. Le numéro technique de build vaut
+mineur + 1 pour cette série afin de rester strictement positif.
+
+Archive : `IndeX_0.6.0_windows_x64_portable.zip` ; artefact
+`IndeX-0.6.0-windows-x64-portable`. À propos reçoit la même version.
+
+## Historique — décision du 28 octobre 2026
 
 Version initiale : **0.5.01**. Format `état.majeur.mineur` : état 0 (bêta) ou 1
-(finale), majeur 5 tant que l’utilisateur n’a pas explicitement demandé de le
+(finale), majeur alors fixé à 5 tant que l’utilisateur n’a pas explicitement demandé de le
 changer, mineur incrémenté et affiché sur au moins deux chiffres (01…99,100…).
 `version.json` fixe l’état, le majeur et le premier mineur ; aucun changement
 automatique d’état ou de majeur. La forme Flutter/SemVer enlève le zéro initial

@@ -24,7 +24,7 @@ et l'archive portable, utiliser PowerShell 7 depuis la racine :
 ./tools/lot4/test_runtime_windows.ps1
 ./tools/lot4/check.ps1
 ./tools/lot4/package_windows.ps1
-./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.5.01_windows_x64_portable.zip
+./tools/lot4/smoke_archive.ps1 -Archive ./dist/IndeX_0.6.0_windows_x64_portable.zip
 ```
 
 L'archive comprend les DLL Flutter/plugins/SQLite et le runtime C++ app-local,
@@ -69,7 +69,7 @@ par Git. Le workflow Android conserve cet APK comme artefact ; la signature de
 production et une publication en magasin ne font pas partie de cette construction.
 Recette audio réelle sur Windows avec sortie audio : `tools/lot5/check_windows_audio.ps1`.
 
-Le numéro de l’archive varie à chaque build. Remplacer `0.5.01` dans l’exemple
+Le numéro de l’archive varie à chaque build. Remplacer `0.6.0` dans l’exemple
 par la version produite. Voir [la politique de version](../../tools/versioning/README.md).
 
 
@@ -89,3 +89,13 @@ Le journal local est dans `<données utilisateur>/logs/lecteur-audio.log`, JSONL
 avec rotation à 512 Kio (un précédent conservé), aucun envoi. En cas d’échec,
 conserver ce journal et préciser quel MP3 est concerné. La commande audio native
 existante teste maintenant aussi les huit MP3_Bugs, en lecture seule.
+
+
+## Lot 5 bis — Windows 0.6.0
+
+Le bouton Paramètres → Fichiers audio ouvre un aperçu réel du renommage global,
+avec confirmation et journal de reprise. Cœur `Mp3Renamer` commun ; publication
+Windows `renameMp3` via MoveFileExW sans remplacement. Le schéma utilisateur v6
+ajoute le journal, le seed documentaire v4 reste inchangé. Voir le
+[bilan Lot 5 bis](../../docs/lot5bis/bilan.md) et la recette Windows restante.
+Android reste en pause ; pas de renommage SAF ni de transfert JSON livré.

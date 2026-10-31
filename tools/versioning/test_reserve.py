@@ -27,6 +27,25 @@ class Versions(unittest.TestCase):
         policy.write_text('{"stage":1,"major":5,"first_minor":1}')
         self.assertEqual(reserve.reserve()['display'], '1.5.01')
 
+    def test_authorized_major_six_starts_at_zero_and_preserves_old_counter(self):
+        self.assertEqual(reserve.reserve()['display'], '0.5.01')
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}')
+        first = reserve.reserve()
+        self.assertEqual(first, {'display': '0.6.0', 'build_name': '0.6.0', 'build_number': 1})
+        self.assertEqual(reserve.reserve()['display'], '0.6.1')
+        self.assertEqual(json.loads((reserve.ROOT / 'dist/build-version-counter.json').read_text()), {'0.5': 1, '0.6': 1})
+
+    def test_ci_major_six_does_not_reset_historical_counter(self):
+        self.init_remote()
+        self.assertEqual(reserve.reserve(True)['display'], '0.5.01')
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}')
+        self.assertEqual(reserve.reserve(True)['display'], '0.6.0')
+        self.assertEqual(reserve.reserve(True)['display'], '0.6.1')
+        reserve.git('fetch', 'origin', reserve.BRANCH)
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:counters.json')), {'0.5': 1, '0.6': 1})
+
     def init_remote(self):
         remote = Path(self.temporary.name) / 'origin.git'
         subprocess.run(['git', 'init', '--bare', str(remote)], check=True, capture_output=True)

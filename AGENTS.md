@@ -2,13 +2,13 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 5**, lancé explicitement par l'utilisateur.
+- Périmètre actuellement autorisé : **Lot 5 bis Windows**, lancé explicitement le 31 octobre 2026.
   GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
   Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
   Priorité du 27 octobre 2026 : finaliser Windows ; développement et recette Android
   en pause. Conserver le code Android et la portabilité de toutes les fonctionnalités
   essentielles (interfaces de plateforme, cœur et données communs). Voir l’avenant
-  au cahier des charges et docs/lot5/bilan.md. Renommage/JSON restent aux Lots 5 bis/5 ter.
+  au cahier des charges et docs/lot5/bilan.md. Renommage autorisé au Lot 5 bis ; JSON reste au Lot 5 ter, non lancé.
   Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
@@ -207,3 +207,13 @@
   depuis le serveur public. Préserver suivi/favoris ; remplacement d’un lien manuel
   indisponible confirmé dans l’UI. Android en pause : publication SAF à porter.
   Ne pas changer le majeur 5. About Brand.showSubtitle=false uniquement dans À propos.
+
+- Décision du 31 octobre : Lot 5 bis lancé, nouveau majeur explicitement autorisé
+  **0.6.0**, puis mineur +1 à chaque build ; minor_width=1, first_minor=0.
+  Ne pas réinitialiser le compteur historique 0.5. Voir docs/lot5bis/bilan.md.
+  Schéma utilisateur v6 (rename_runs/items), seed v4 conservé. Renommage seulement
+  historique → nom système du journal, aperçu/confirmation globale ; MoveFileExW
+  sans remplacement, même dossier. Journal avant tentative et réconciliation avant
+  scan au démarrage ; SHA-256 en lecture seule, pas de réécriture ID3/audio.
+  Tests uniquement sur copies temporaires. Android reste en pause, adaptateur
+  RenameFile commun ; export/import JSON non lancé.
