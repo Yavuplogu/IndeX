@@ -1302,11 +1302,8 @@ class _LibraryPageState extends State<LibraryPage> {
           Row(
             children: [
               Expanded(
-                child: InkWell(
+                child: HoverOutlinedAction(
                   key: const ValueKey('player-episode-title'),
-                  mouseCursor: episode == null
-                      ? SystemMouseCursors.basic
-                      : SystemMouseCursors.click,
                   onTap: episode == null
                       ? null
                       : () => openPlayerEpisode(episode),
@@ -2339,6 +2336,38 @@ class _SettingsDialogState extends State<SettingsDialog> {
     }
   }
 
+  Future<void> resetListening() async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remettre toutes les écoutes à zéro ?'),
+        content: const SelectableText(
+          'Tous les épisodes du catalogue repasseront à Non écouté, avec une progression à zéro. Les favoris, MP3 et associations sont conservés. Une sauvegarde sera créée avant cette opération.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-reset-all-listening'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Tout remettre à zéro'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) {
+      await m.resetAllListening();
+      if (mounted && m.error.isEmpty)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Écoutes remises à zéro. Favoris conservés.'),
+          ),
+        );
+    }
+  }
+
   Future<void> exportSync() async {
     final file = await m.exportListeningSync();
     if (file == null || !mounted) return;
@@ -2506,6 +2535,15 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 );
                                 m.changed();
                               },
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              key: const ValueKey('reset-all-listening'),
+                              onPressed: () => unawaited(resetListening()),
+                              icon: const Icon(Icons.restart_alt),
+                              label: const Text(
+                                'Remettre toutes les écoutes à zéro',
+                              ),
                             ),
                           ], c),
                           panelGroup('Analyse au démarrage', [
@@ -3178,7 +3216,7 @@ class _PlayerSeekBarState extends State<PlayerSeekBar> {
                           hoverTime = null;
                         }
                       });
-                      await p.seek(v.round());
+                      await p.seekFromPlayer(v.round());
                       if (mounted)
                         setState(() {
                           preview = null;
@@ -3228,6 +3266,7 @@ class Mp3RenameDialog extends StatefulWidget {
 
 class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
   bool _showReport = false;
+  String _resultFilter = 'all';
   @override
   void initState() {
     super.initState();
@@ -3248,6 +3287,40 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
       for (final e in plan?.entries ?? <RenameEntry>[]) {
         counts.update(e.status, (v) => v + 1, ifAbsent: () => 1);
       }
+      final filterLabels = plan != null
+          ? const {
+              'all': 'Tous les résultats',
+              'planned': 'À renommer',
+              'unchanged': 'Déjà conformes',
+              'ignored': 'Ignorés',
+              'conflict': 'Conflits',
+            }
+          : const {
+              'all': 'Tous les résultats',
+              'succeeded': 'Renommés',
+              'failed': 'Échecs',
+              'skipped': 'Non effectués',
+              'blocked': 'À réconcilier',
+            };
+      String reportStatus(Map<String, Object?> r) =>
+          ['moving', 'planned', 'blocked'].contains(r['status'])
+          ? 'blocked'
+          : r['status'] as String;
+      final filterCounts = <String, int>{
+        'all': plan?.entries.length ?? report.length,
+      };
+      if (plan != null) {
+        for (final e in plan.entries) {
+          filterCounts.update(e.status, (v) => v + 1, ifAbsent: () => 1);
+        }
+      } else {
+        for (final r in report) {
+          filterCounts.update(reportStatus(r), (v) => v + 1, ifAbsent: () => 1);
+        }
+      }
+      final activeFilter = filterLabels.containsKey(_resultFilter)
+          ? _resultFilter
+          : 'all';
       return PopScope(
         canPop: !m.busy,
         child: Dialog(
@@ -3299,13 +3372,26 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                       padding: EdgeInsets.symmetric(vertical: 10),
                       child: Text('Journal de la dernière opération'),
                     ),
+                  ResultFilters(
+                    prefix: 'rename-filter',
+                    labels: filterLabels,
+                    counts: filterCounts,
+                    selected: activeFilter,
+                    onSelected: (value) =>
+                        setState(() => _resultFilter = value),
+                    colors: c,
+                  ),
                   Flexible(
                     child: SelectionArea(
                       child: ListView(
                         shrinkWrap: true,
                         children: [
                           if (plan != null)
-                            for (final e in plan.entries)
+                            for (final e in plan.entries.where(
+                              (e) =>
+                                  activeFilter == 'all' ||
+                                  e.status == activeFilter,
+                            ))
                               panelGroup(
                                 e.planned
                                     ? 'Prévu'
@@ -3323,7 +3409,11 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                                 c,
                               ),
                           if (plan == null)
-                            for (final r in report)
+                            for (final r in report.where(
+                              (r) =>
+                                  activeFilter == 'all' ||
+                                  reportStatus(r) == activeFilter,
+                            ))
                               panelGroup(
                                 switch (r['status']) {
                                   'succeeded' => 'Renommé',
@@ -3362,8 +3452,10 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                         OutlinedButton(
                           onPressed: m.busy
                               ? null
-                              : () =>
-                                    setState(() => _showReport = !_showReport),
+                              : () => setState(() {
+                                  _showReport = !_showReport;
+                                  _resultFilter = 'all';
+                                }),
                           child: Text(
                             _showReport
                                 ? 'Revenir à l’aperçu'
@@ -3374,7 +3466,13 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                         OutlinedButton(
                           onPressed: m.busy
                               ? null
-                              : () => unawaited(m.releaseAudioForRename()),
+                              : () {
+                                  setState(() {
+                                    _showReport = false;
+                                    _resultFilter = 'all';
+                                  });
+                                  unawaited(m.releaseAudioForRename());
+                                },
                           child: const Text(
                             'Mettre en pause et libérer la piste',
                           ),
@@ -3382,7 +3480,13 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                       OutlinedButton(
                         onPressed: m.busy
                             ? null
-                            : () => unawaited(m.previewRename()),
+                            : () {
+                                setState(() {
+                                  _showReport = false;
+                                  _resultFilter = 'all';
+                                });
+                                unawaited(m.previewRename());
+                              },
                         child: const Text('Actualiser l’aperçu'),
                       ),
                       FilledButton(
@@ -3406,18 +3510,31 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
   );
 }
 
+String syncDateLabel(String value) {
+  final d = DateTime.parse(value).toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
+}
+
 String syncValueLabel(String field, Object? value) {
   if (field == 'favorite') return value == true ? 'Favori' : 'Non favori';
   final data = value as Map;
   if (field == 'status') {
-    return '${statusLabel(data['listening_status'] as String)}${data['completed_at'] == null ? '' : ' · terminé le ${data['completed_at']}'}';
+    return '${statusLabel(data['listening_status'] as String)}${data['completed_at'] == null ? '' : ' · terminé le ${syncDateLabel(data['completed_at'] as String)}'}';
   }
   String time(int ms) {
     final seconds = ms ~/ 1000;
     return '${seconds ~/ 3600}:${(seconds ~/ 60 % 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
   }
 
-  return '${time(data['position_ms'] as int)} / ${data['duration_ms'] == null ? 'durée inconnue' : time(data['duration_ms'] as int)}${data['last_played_at'] == null ? '' : '\nDernière écoute : ${data['last_played_at']}'}';
+  final duration = data['duration_ms'] as int?;
+  final percentage = duration == null
+      ? '—'
+      : ((data['position_ms'] as int) * 100 / duration)
+            .clamp(0, 100)
+            .round()
+            .toString();
+  return '${time(data['position_ms'] as int)} / ${duration == null ? 'durée inconnue' : time(duration)} ($percentage %)${data['last_played_at'] == null ? '' : '\nDernière écoute : ${syncDateLabel(data['last_played_at'] as String)}'}';
 }
 
 class ListeningImportDialog extends StatefulWidget {
@@ -3434,7 +3551,18 @@ class ListeningImportDialog extends StatefulWidget {
 
 class _ListeningImportDialogState extends State<ListeningImportDialog> {
   final _choices = <String, SyncChoice>{};
+  SyncImportPlan? _choicePlan;
   bool _applied = false;
+  String _filter = 'all';
+  static const labels = {
+    'all': 'Tous les résultats',
+    'conflict': 'Conflits',
+    'incoming': 'Modifications',
+    'merged': 'Versions réunies',
+    'retained': 'Conservés sur cet appareil',
+    'identical': 'Déjà identiques',
+    'unknown': 'Inconnus',
+  };
   @override
   void initState() {
     super.initState();
@@ -3445,12 +3573,19 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
   }
 
   Future<void> refresh({bool release = false}) async {
+    _choicePlan = null;
     _choices.clear();
+    _filter = 'all';
     if (release) await widget.model.pauseForSync();
     if (!release || widget.model.error.isEmpty)
       await widget.model.previewListeningSync(widget.path);
   }
 
+  void chooseAll(SyncImportPlan plan, SyncChoice choice) => setState(() {
+    for (final change in plan.conflicts) {
+      _choices[change.key] = choice;
+    }
+  });
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.model,
@@ -3458,9 +3593,53 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
       final m = widget.model;
       final plan = m.syncPlan;
       final c = EditorialColors(m.dark);
+      if (_applied)
+        return Dialog(
+          backgroundColor: c.panel,
+          surfaceTintColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const SelectableText(
+                  'Import terminé. Le suivi a été fusionné et la bibliothèque actualisée.',
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fermer'),
+                ),
+              ],
+            ),
+          ),
+        );
+      if (plan != null && !identical(plan, _choicePlan)) {
+        _choicePlan = plan;
+        _choices.clear();
+        for (final change in plan.conflicts) {
+          _choices[change.key] = SyncChoice.file;
+        }
+      }
       final titles = {
         for (final e in m.catalog) e.id: '${e.title} · ${dateLabel(e.date)}',
       };
+      final changes =
+          List<SyncChange>.from(plan?.changes ?? const <SyncChange>[])
+            ..sort((a, b) {
+              final rankA = a.kind == SyncChangeKind.conflict ? 0 : 1;
+              final rankB = b.kind == SyncChangeKind.conflict ? 0 : 1;
+              final rank = rankA.compareTo(rankB);
+              return rank != 0 ? rank : a.key.compareTo(b.key);
+            });
+      final counts = <String, int>{
+        'all': changes.length + (plan?.unknown.length ?? 0),
+        'unknown': plan?.unknown.length ?? 0,
+      };
+      for (final change in changes) {
+        counts.update(change.kind.name, (v) => v + 1, ifAbsent: () => 1);
+      }
       return PopScope(
         canPop: !m.busy,
         child: Dialog(
@@ -3488,122 +3667,144 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
                       ),
                     ],
                   ),
-                  const Text(
-                    'L’aperçu ne modifie pas le suivi. Choisissez pour chaque conflit, puis confirmez. Une sauvegarde est créée avant la fusion. Aucun MP3, dossier, lien audio ou réglage local n’est importé.',
-                  ),
-                  if (m.busy) ...[
-                    const SizedBox(height: 10),
-                    const LinearProgressIndicator(),
-                    Text(m.message),
-                  ],
-                  if (_applied)
-                    const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SelectableText(
-                        'Import terminé. Le suivi a été fusionné et la bibliothèque actualisée.',
-                      ),
-                    ),
-                  if (plan != null) ...[
-                    const SizedBox(height: 12),
-                    SelectableText(
-                      'Export du ${plan.document.exportedAt}\nAppareil source : ${plan.document.sourceDevice}',
-                    ),
-                    if (plan.alreadyImported)
-                      const Text(
-                        'Cet export a déjà été importé : aucune modification à appliquer.',
-                      ),
-                    Text(
-                      '${plan.newEpisodes} nouveaux suivis · ${plan.modifications} modifications de champs · ${plan.conflicts.length} conflits · ${plan.unknown.length} épisodes inconnus',
-                    ),
-                  ],
-                  const SizedBox(height: 10),
                   Flexible(
                     child: SelectionArea(
                       child: ListView(
+                        key: const ValueKey('sync-results-list'),
                         shrinkWrap: true,
                         children: [
+                          const Text(
+                            'L’aperçu ne modifie pas le suivi. Les conflits proposent par défaut le fichier importé ; vous pouvez choisir au cas par cas ou pour tous les conflits. Une confirmation globale et une sauvegarde précèdent la fusion.',
+                          ),
+                          if (m.busy) ...[
+                            const SizedBox(height: 10),
+                            const LinearProgressIndicator(),
+                            Text(m.message),
+                          ],
+                          if (plan != null) ...[
+                            const SizedBox(height: 10),
+                            SelectableText(
+                              'Export du ${syncDateLabel(plan.document.exportedAt)}\nAppareil source : ${plan.document.sourceDevice}',
+                            ),
+                            if (plan.alreadyImported)
+                              const Text(
+                                'Cet export a déjà été importé : aucune modification à appliquer.',
+                              ),
+                            Text(
+                              '${plan.newEpisodes} nouveaux suivis · ${plan.modifications} modifications de champs · ${plan.conflicts.length} conflits · ${plan.unknown.length} épisodes inconnus',
+                            ),
+                            ResultFilters(
+                              prefix: 'sync-filter',
+                              labels: labels,
+                              counts: counts,
+                              selected: _filter,
+                              onSelected: (value) =>
+                                  setState(() => _filter = value),
+                              colors: c,
+                            ),
+                            if (plan.conflicts.isNotEmpty) ...[
+                              const Text(
+                                'Choix pour tous les conflits, y compris ceux masqués par les filtres :',
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  for (final choice in SyncChoice.values)
+                                    OutlinedButton(
+                                      key: ValueKey('sync-all-${choice.name}'),
+                                      onPressed: m.busy
+                                          ? null
+                                          : () => chooseAll(plan, choice),
+                                      child: Text(
+                                        choice == SyncChoice.local
+                                            ? 'Conserver cet appareil'
+                                            : 'Utiliser le fichier importé',
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
+                          const SizedBox(height: 8),
+
                           if (m.error.isNotEmpty)
                             SelectableText(
                               m.error,
                               style: TextStyle(color: c.alert),
                             ),
-                          if (plan != null)
-                            for (final change in plan.changes.where(
-                              (e) =>
-                                  e.kind == SyncChangeKind.incoming ||
-                                  e.kind == SyncChangeKind.conflict ||
-                                  e.kind == SyncChangeKind.merged,
-                            ))
-                              panelGroup(
-                                titles[change.episodeId] ?? change.episodeId,
-                                [
-                                  Text(
-                                    switch (change.field) {
-                                      'favorite' => 'Favori',
-                                      'status' => 'État d’écoute',
-                                      _ => 'Reprise',
-                                    },
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Cet appareil : ${syncValueLabel(change.field, change.local.value)}',
-                                  ),
-                                  Text(
-                                    'Fichier : ${syncValueLabel(change.field, change.incoming.value)}',
-                                  ),
-                                  if (change.kind ==
-                                      SyncChangeKind.conflict) ...[
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 10,
-                                      runSpacing: 6,
-                                      children: [
-                                        for (final choice in SyncChoice.values)
-                                          OutlinedButton(
-                                            key: ValueKey(
-                                              'sync-${change.key}-${choice.name}',
-                                            ),
-                                            style: OutlinedButton.styleFrom(
-                                              backgroundColor:
-                                                  _choices[change.key] == choice
-                                                  ? Theme.of(context)
-                                                        .colorScheme
-                                                        .primary
-                                                  : c.controls,
-                                              foregroundColor:
-                                                  _choices[change.key] == choice
-                                                  ? Theme.of(context)
-                                                        .colorScheme
-                                                        .onPrimary
-                                                  : c.ink,
-                                            ),
-                                            onPressed: m.busy
-                                                ? null
-                                                : () => setState(
-                                                    () => _choices[change.key] =
-                                                        choice,
-                                                  ),
-                                            child: Text(
-                                              choice == SyncChoice.local
-                                                  ? 'Conserver cet appareil'
-                                                  : 'Utiliser le fichier',
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ] else
-                                    Text(
-                                      change.kind == SyncChangeKind.merged
-                                          ? 'Valeurs identiques : versions réunies.'
-                                          : 'Modification non conflictuelle à importer.',
-                                    ),
-                                ],
-                                c,
+                          for (final change in changes.where(
+                            (e) => _filter == 'all' || e.kind.name == _filter,
+                          ))
+                            panelGroup(titles[change.episodeId] ?? change.episodeId, [
+                              Text(
+                                '${labels[change.kind.name]} · ${switch (change.field) {
+                                  'favorite' => 'Favori',
+                                  'status' => 'État d’écoute',
+                                  _ => 'Reprise',
+                                }}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                          if (plan != null)
+                              const SizedBox(height: 6),
+                              Text(
+                                'Cet appareil : ${syncValueLabel(change.field, change.local.value)}',
+                              ),
+                              Text(
+                                'Fichier importé : ${syncValueLabel(change.field, change.incoming.value)}',
+                              ),
+                              if (change.kind == SyncChangeKind.conflict) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (final choice in SyncChoice.values)
+                                      OutlinedButton(
+                                        key: ValueKey(
+                                          'sync-${change.key}-${choice.name}',
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          backgroundColor:
+                                              _choices[change.key] == choice
+                                              ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                              : c.controls,
+                                          foregroundColor:
+                                              _choices[change.key] == choice
+                                              ? Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary
+                                              : c.ink,
+                                        ),
+                                        onPressed: m.busy
+                                            ? null
+                                            : () => setState(
+                                                () => _choices[change.key] =
+                                                    choice,
+                                              ),
+                                        child: Text(
+                                          choice == SyncChoice.local
+                                              ? 'Conserver cet appareil'
+                                              : 'Utiliser le fichier importé',
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ] else
+                                Text(switch (change.kind) {
+                                  SyncChangeKind.merged =>
+                                    'Valeurs identiques : versions réunies.',
+                                  SyncChangeKind.retained => 'La version locale est plus récente : suivi conservé.',
+                                  SyncChangeKind.identical =>
+                                    'Aucune modification nécessaire.',
+                                  _ => 'Modification non conflictuelle à importer.',
+                                }),
+                            ], c),
+                          if (plan != null &&
+                              (_filter == 'all' || _filter == 'unknown'))
                             for (final id in plan.unknown)
                               panelGroup('Épisode absent du catalogue', [
                                 Text(id),
@@ -3630,11 +3831,10 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
                             'Mettre en pause et libérer la piste',
                           ),
                         ),
-                      if (!_applied)
-                        OutlinedButton(
-                          onPressed: m.busy ? null : () => unawaited(refresh()),
-                          child: const Text('Actualiser l’aperçu'),
-                        ),
+                      OutlinedButton(
+                        onPressed: m.busy ? null : () => unawaited(refresh()),
+                        child: const Text('Actualiser l’aperçu'),
+                      ),
                       FilledButton(
                         key: const ValueKey('confirm-listening-import'),
                         onPressed:
@@ -3664,5 +3864,77 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
         ),
       );
     },
+  );
+}
+
+class HoverOutlinedAction extends StatefulWidget {
+  const HoverOutlinedAction({super.key, required this.child, this.onTap});
+  final Widget child;
+  final VoidCallback? onTap;
+  @override
+  State<HoverOutlinedAction> createState() => _HoverOutlinedActionState();
+}
+
+class _HoverOutlinedActionState extends State<HoverOutlinedAction> {
+  bool hovering = false;
+  @override
+  Widget build(BuildContext context) => InkWell(
+    mouseCursor: widget.onTap == null
+        ? SystemMouseCursors.basic
+        : SystemMouseCursors.click,
+    onTap: widget.onTap,
+    onHover: (value) => setState(() => hovering = value),
+    borderRadius: BorderRadius.circular(4),
+    child: Container(
+      key: const ValueKey('player-title-outline'),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: hovering && widget.onTap != null
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+        ),
+      ),
+      child: widget.child,
+    ),
+  );
+}
+
+class ResultFilters extends StatelessWidget {
+  const ResultFilters({
+    super.key,
+    required this.prefix,
+    required this.labels,
+    required this.counts,
+    required this.selected,
+    required this.onSelected,
+    required this.colors,
+  });
+  final String prefix, selected;
+  final Map<String, String> labels;
+  final Map<String, int> counts;
+  final ValueChanged<String> onSelected;
+  final EditorialColors colors;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        for (final e in labels.entries)
+          ChoiceChip(
+            key: ValueKey('$prefix-${e.key}'),
+            mouseCursor: SystemMouseCursors.click,
+            backgroundColor: colors.controls,
+            selectedColor: colors.controls,
+            surfaceTintColor: Colors.transparent,
+            selected: selected == e.key,
+            label: Text('${e.value} (${counts[e.key] ?? 0})'),
+            onSelected: (_) => onSelected(e.key),
+          ),
+      ],
+    ),
   );
 }

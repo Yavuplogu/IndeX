@@ -318,7 +318,9 @@ void main() {
     final data = await Directory.systemTemp.createTemp('index-sync-export-');
     addTearDown(() => data.delete(recursive: true));
     final before = row(a);
-    final result = await sa.exportFile(
+    var now = DateTime.utc(2026, 10, 31, 21, 51, 34);
+    final exporter = ListeningSync(a, now: () => now);
+    final result = await exporter.exportFile(
       data,
       publish: (part, target) async {
         expect(target.existsSync(), isFalse);
@@ -333,12 +335,25 @@ void main() {
       isTrue,
       reason: 'Le JSON doit être publié dans le dossier exports réel, quel que soit le séparateur ou alias Windows.',
     );
-    expect(result.uri.pathSegments.last, startsWith('IndeX_suivi_'));
+    expect(
+      result.uri.pathSegments.last,
+      matches(RegExp(r'^IndeX_suivi_[0-9]{8}_[0-9]{6}\.json$')),
+    );
     expect(result.uri.pathSegments.last, isNot(contains(' ')));
     expect((await ListeningSync.readFile(result)).episodes.single.id, id);
     expect(row(a), before);
+    final content = result.readAsStringSync();
     await expectLater(
-      sa.exportFile(
+      exporter.exportFile(
+        data,
+        publish: (_, _) async => fail('Ne jamais écraser un export existant'),
+      ),
+      throwsStateError,
+    );
+    expect(result.readAsStringSync(), content);
+    now = now.add(const Duration(seconds: 1));
+    await expectLater(
+      exporter.exportFile(
         data,
         publish: (_, _) async =>
             throw const FileSystemException('Accès refusé'),

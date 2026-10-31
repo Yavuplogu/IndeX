@@ -287,7 +287,7 @@ retour global automatique au nom historique n’est proposé.
 ## Transférer le suivi par JSON
 
 Dans **Paramètres → Transfert du suivi**, **Exporter le suivi JSON** crée un fichier
-`IndeX_suivi_<date_UTC>_<identifiant_unique>.json` sous **exports/** dans le dossier
+`IndeX_suivi_AAAAMMJJ_HHMMSS.json` sous **exports/** dans le dossier
 de données utilisateur. Le chemin est affiché et le dossier peut être ouvert.
 L’export contient les favoris, statuts, positions/durées et versions nécessaires
 à la fusion ; il ne modifie pas votre suivi. La position exportée est celle du
@@ -309,3 +309,29 @@ inverse : aucune synchronisation automatique ni connexion réseau. Le transfert
 Android sera activé lors du portage. Utiliser un profil propre par installation
 indépendante ; copier simultanément le même profil sur deux machines n’est pas
 équivalent à une fusion JSON.
+
+
+### Filtres, choix d’import et remise à zéro
+
+Les panneaux Renommer les MP3 et Importer et fusionner le suivi proposent des
+filtres par type de résultat. Les compteurs et les confirmations portent toujours
+sur l’ensemble du lot, y compris les résultats masqués. Dans l’import, les conflits
+sont affichés en premier et **Utiliser le fichier importé** est sélectionné par
+défaut. Vous pouvez modifier chaque choix ou utiliser les deux commandes globales
+pour tous les conflits, puis confirmer la fusion. Les horodatages sont en heure
+locale, les positions connues indiquent leur pourcentage. Après réussite, Fermer
+quitte le message de confirmation.
+
+Les noms d’exports utilisent l’heure locale à la seconde, par exemple
+**IndeX_suivi_20261031_215134.json**. Si un export existe déjà à cette seconde,
+il est conservé et il faut réessayer une seconde plus tard.
+
+Dans Paramètres → Lecture et reprise, **Remettre toutes les écoutes à zéro**
+redonne le statut Non écouté et la position zéro à tout le catalogue après
+confirmation. Les favoris, fichiers et associations sont conservés ; une sauvegarde
+précède l’opération. Le reset se retrouve dans le prochain export JSON.
+
+L’enchaînement automatique ignore les épisodes déjà Écoutés. Pour les réécouter,
+utiliser les commandes manuelles. Un glissement jusqu’au bout d’une piste en cours
+se valide à la fin réellement signalée par le moteur. Le titre du lecteur affiche
+un liseré au survol pour indiquer son accès cliquable à la fiche.

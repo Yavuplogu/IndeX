@@ -533,3 +533,20 @@ le moyen de transfert du suivi, pas une copie concurrente d’une même base ouv
 Cette présentation vaut pour À propos, les archives et les artefacts. Le compteur
 existant et ses numéros consommés sont conservés ; le nom SemVer fourni au
 compilateur reste sans zéro initial. Aucun changement de majeur ni reset.
+
+
+### Révision des parcours — 31 octobre 2026
+
+Demande utilisateur : liseré au survol du titre lecteur ; filtres par diagnostic
+dans le renommage et l’import ; conflits en tête, fichier importé présélectionné,
+choix au cas par cas ou pour tous les conflits avant confirmation ; dates locales
+lisibles et pourcentages. Après import réussi, conserver seulement le message et
+Fermer. Le nom externe des exports devient IndeX_suivi_AAAAMMJJ_HHMMSS.json,
+heure locale à la seconde, sans suffixe aléatoire ni écrasement de cible. Cette
+révision remplace les précédentes conventions de nom et d’absence de présélection.
+
+Exclure les épisodes déjà Écoutés de l’enchaînement automatique. Ajouter un reset
+global du suivi (positions/statuts) dans Paramètres, avec confirmation/sauvegarde
+et conservation des favoris/MP3/liens. Lors d’un glissement en lecture au terme,
+le signal de fin moteur confirme Écouté même sans progression mesurée après seek.
+Voir les spécifications natives actualisées ; le majeur reste 0.6.

@@ -747,3 +747,16 @@ analyses statiques et formatage conformes. Les tests À propos couvrent les deux
 thèmes et la fenêtre étroite ; l’alignement de la description de reprise est
 vérifié. Publication native et téléchargement réel restent à confirmer dans le
 prochain build Windows.
+
+
+## Révision lecteur — 31 octobre 2026
+
+Un glissement utilisateur pendant lecture vers le terme ou la dernière seconde
+arme une validation à réception de la fin moteur, comme l’avance clavier au terme.
+Playback.seekFromPlayer est distinct de seek (programmatique), et ne valide ni
+le placement seul ni un déplacement en pause. Un nouveau seek réinitialise
+la demande de fin. L’enchaînement automatique exclut les épisodes ECOUTE dans
+l’ordre visible, y compris en aléatoire ; les commandes manuelles restent libres.
+Reset global : pause/libération, backup, transaction complète des positions et
+états, marqueurs causaux de reset et favoris préservés. Un abandon avant confirmation
+ne modifie rien ; une erreur SQLite annule les états et versions ensemble.

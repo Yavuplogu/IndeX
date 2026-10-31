@@ -480,6 +480,33 @@ final class PortableSession {
     }
   }
 
+  /// Reset global explicite, atomique et causal, sans modifier les favoris.
+  void resetAllListening() {
+    if (_closed) throw StateError('Session fermée.');
+    final db = store.database;
+    db.execute('BEGIN IMMEDIATE');
+    try {
+      final sync = ListeningSync(store);
+      for (final row in db.select('SELECT id FROM episodes ORDER BY id')) {
+        final id = row['id'] as String;
+        db.execute(
+          'INSERT OR IGNORE INTO user_episode_state(episode_id) VALUES(?)',
+          [id],
+        );
+        db.execute(
+          "UPDATE user_episode_state SET position_ms=0,listening_status='NON_ECOUTE',completed_at=NULL,last_played_at=NULL,playback_status='stopped',updated_at=? WHERE episode_id=?",
+          [DateTime.now().toUtc().toIso8601String(), id],
+        );
+        sync.markExplicit(id, ['status', 'position']);
+      }
+      db.execute("DELETE FROM local_settings WHERE key='last_played_episode'");
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
   /// Un checkpoint ne change jamais un favori ni un statut Écouté explicite.
   void checkpoint(
     String id, {

@@ -316,28 +316,37 @@ final class Playback extends ChangeNotifier {
 
   Future<void> seek(int position) => _seek(position);
 
-  Future<void> _seek(int position, {bool finishAtEnd = false}) =>
-      _command(() async {
-        if (episodeId == null) return;
-        await _waitPoll();
-        final playing = state.playing;
-        final target = position.clamp(
-          0,
-          state.duration > 0 ? state.duration : 2147483647,
-        );
-        final finishOnEnd =
-            finishAtEnd &&
-            playing &&
-            state.duration > 0 &&
-            state.position < state.duration &&
-            target == state.duration;
-        await port.seek(target);
-        if (playing) await port.play();
-        state = AudioSnapshot(target, state.duration, playing);
-        guard.discontinuity(target, finishOnEnd: finishOnEnd);
-        _endedHandled = false;
-        flush(playing ? 'playing' : 'paused');
-      });
+  /// Geste utilisateur : la fin moteur après une avance dans la dernière seconde
+  /// vaut fin d’écoute, y compris si le moteur arrondit la position de fin.
+  Future<void> seekFromPlayer(int position) =>
+      _seek(position, finishAtEnd: true, endWindowMs: 1000);
+
+  Future<void> _seek(
+    int position, {
+    bool finishAtEnd = false,
+    int endWindowMs = 0,
+  }) => _command(() async {
+    if (episodeId == null) return;
+    await _waitPoll();
+    final playing = state.playing;
+    final target = position.clamp(
+      0,
+      state.duration > 0 ? state.duration : 2147483647,
+    );
+    final finishOnEnd =
+        finishAtEnd &&
+        playing &&
+        state.duration > 0 &&
+        state.position < state.duration &&
+        target > state.position &&
+        target >= state.duration - endWindowMs;
+    await port.seek(target);
+    if (playing) await port.play();
+    state = AudioSnapshot(target, state.duration, playing);
+    guard.discontinuity(target, finishOnEnd: finishOnEnd);
+    _endedHandled = false;
+    flush(playing ? 'playing' : 'paused');
+  });
   Future<void> setVolume(double value) => _command(() async {
     level = value.clamp(0, 1);
     if (episodeId != null) await port.volume(level);

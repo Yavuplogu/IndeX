@@ -22,8 +22,10 @@ auparavant. Android reste en pause ; Lot 6 non lancé. Aucun nouveau package run
   complet avant publication. Aucun dossier externe proposé par défaut et aucun MP3
   transféré. Nettoyage des temporaires à erreur ; résidu éventuel jamais importé automatiquement.
 - Import depuis sélecteur de fichier JSON. Panneau commun clair/sombre : provenance,
-  date, comptes, valeurs locales/importées et conflits sans présélection ; inconnus
-  signalés. Confirmation désactivée tant que des conflits restent sans réponse.
+  date, comptes, valeurs locales/importées et conflits (présélection fichier importé
+  depuis la nouvelle demande du 31 octobre) ; inconnus
+  signalés. Tous les conflits ont un choix visible, modifiable ; la confirmation
+  globale reste obligatoire.
   Fermer avant confirmation ne modifie pas les états importés.
 - Piste chargée : pause/sauvegarde/libération explicite avant préparation d’un import.
   Cela évite un checkpoint du moteur écrasant la reprise fraîchement importée.
@@ -107,3 +109,34 @@ Vérification locale de cette correction : analyse Dart sans problème, **18 tes
 ciblés du transfert réussis** et **7 tests Python du versionnement réussis**.
 Une nouvelle exécution Windows demeure nécessaire ; la suite Flutter n’est pas
 rejouée pour ce seul changement d’assertion dans les tests du cœur.
+
+
+## Révision des panneaux et des exports — 31 octobre 2026
+
+Les conflits sont triés avant les autres résultats. Filtres par type, valeurs
+libellées Cet appareil / Fichier importé, pourcentages et dates locales lisibles.
+L’utilisateur demande explicitement la présélection **Utiliser le fichier importé**
+pour tous les conflits ; cette règle remplace la présentation initiale sans
+présélection. Les commandes globales changent tous les conflits, même filtrés.
+La fusion conserve une confirmation globale et journalise les réponses effectives ;
+le contrat causal et les contrôles d’aperçu périmé ne changent pas.
+
+Après succès, afficher seulement le message de réussite et Fermer. La liste de
+résultats défile avec ses informations et filtres pour rester utilisable dans une
+fenêtre étroite. Le nom d’export est désormais IndeX_suivi_AAAAMMJJ_HHMMSS.json
+en heure locale ; le contenu garde son identifiant unique et ses dates UTC.
+Une collision à la seconde est refusée, y compris par publication native atomique
+sans remplacement ; le JSON existant reste intact. Le reset global de progression
+conserve les favoris et écrit les versions de reset dans la transaction entière.
+
+
+Vérification de la révision lecteur/panneaux : `bash tools/lot4/check.sh` réussit
+sur Linux avec **239 tests Dart, 61 tests Flutter et 7 tests Python**, analyses
+statiques et formatage conformes. Couverture ajoutée : glissements à 119000,
+119900 et 120000 ms avec attente du vrai ended (pause exclue), saut des épisodes
+écoutés dans les deux modes automatiques, arrêt sans candidat, reset global
+confirmé/annulé et rollback en milieu de transaction, filtres des panneaux,
+commandes globales sur plusieurs conflits, bilan minimal après import, nom court
+et collision d’export, liseré réel au survol du titre lecteur. La recette Windows
+sur MP3 réels, notamment le glissement au terme, reste nécessaire après build.
+Aucun changement de majeur ou du contrat JSON et aucune modification du corpus.

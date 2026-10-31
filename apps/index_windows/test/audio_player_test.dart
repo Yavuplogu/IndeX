@@ -4,6 +4,37 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  for (final position in [119000, 119900, 120000]) {
+    test(
+      'Glissement souris au terme $position : fin réelle requise et validée',
+      () async {
+        final native = FakeAudio();
+        final p = Playback(native, (_, _, _, _) {}, autoPoll: false);
+        try {
+          await p.start('a', 'local-a', 0);
+          await p.seekFromPlayer(position);
+          expect(p.guard.completed, isFalse);
+          native.value = AudioSnapshot(position, 120000, false, ended: true);
+          await p.poll();
+          expect(p.guard.completed, isTrue);
+          await p.start('a', 'local-a', 0);
+          await p.toggle();
+          await p.seekFromPlayer(position);
+          native.value = AudioSnapshot(position, 120000, false, ended: true);
+          await p.poll();
+          expect(
+            p.guard.completed,
+            isFalse,
+            reason: 'Un glissement en pause ne valide pas une écoute.',
+          );
+        } finally {
+          await p.release();
+          p.dispose();
+        }
+      },
+    );
+  }
+
   test('Avance clavier au terme : fin confirmée requise, pause et nouveau seek exclus', () async {
     final native = FakeAudio();
     final p = Playback(native, (_, _, _, _) {}, autoPoll: false);

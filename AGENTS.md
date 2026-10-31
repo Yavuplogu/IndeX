@@ -244,3 +244,13 @@
   affichage public 0.6.03…0.6.09, 0.6.10…0.6.99, 0.6.100. Continuer le compteur
   existant sans reset ; build_name SemVer non complété, INDEX_VERSION public
   complété pour À propos et les noms d’archive/artefact. Majeur 6 conservé.
+
+- Révision utilisateur du 31 octobre : filtres renommage/import, conflits d’abord,
+  présélection fichier importé (remplace l’ancienne absence de présélection),
+  commandes pour tous les conflits y compris filtrés, confirmation globale maintenue.
+  Export court IndeX_suivi_AAAAMMJJ_HHMMSS.json en heure locale ; refuser une collision
+  à la seconde sans écraser. Dates JSON UTC/identifiant unique inchangés.
+  Auto-suivant/aléatoire automatique exclut ECOUTE. Seek souris en lecture dans
+  la dernière seconde exige le vrai ended pour valider, sans validation en pause
+  ou sur seek programmatique seul. Reset global confirmé et sauvegardé, atomique,
+  marqueurs de reset transférables, favoris/MP3/associations conservés. Majeur 0.6.

@@ -88,3 +88,15 @@ Les préférences, associations et fichiers locaux ne sont jamais remplacés.
 
 Le format et la fusion sont indépendants de Flutter. Windows est activé ; Android
 nécessitera le sélecteur SAF, la publication locale et une recette physique séparée.
+
+
+## Présentation et nom de fichier — révision du 31 octobre
+
+Le nom externe est IndeX_suivi_AAAAMMJJ_HHMMSS.json (date/heure locales, seconde),
+sans UUID. Cela ne change pas export_id, les dates UTC ni schema_version=1 du
+contenu. Un export déjà présent à la même seconde est conservé : réessayer une
+seconde plus tard. Les conflits restent causaux ; le panneau sélectionne désormais
+le fichier importé par défaut selon la demande utilisateur, avec modification
+individuelle/globale possible et confirmation globale toujours obligatoire.
+Un reset général ne modifie pas les favoris et marque tous les états/reprises
+NON_ECOUTE/0 comme changements explicites, même pour les épisodes jamais commencés.

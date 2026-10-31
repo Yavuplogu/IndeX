@@ -45,6 +45,24 @@ void main() {
         a.favorite(a.catalog.first);
         b.favorite(b.catalog.first);
         b.favorite(b.catalog.first);
+        a.session!.checkpoint(
+          id,
+          positionMs: 60000,
+          durationMs: 120000,
+          progressed: true,
+          completed: false,
+          playbackStatus: 'paused',
+        );
+        b.session!.checkpoint(
+          id,
+          positionMs: 30000,
+          durationMs: 120000,
+          progressed: true,
+          completed: false,
+          playbackStatus: 'paused',
+        );
+        a.reload();
+        b.reload();
         final file = await tester.runAsync(a.exportListeningSync);
         expect(file, isNotNull);
         expect(
@@ -80,7 +98,7 @@ void main() {
           );
           await tester.pumpAndSettle();
           final plan = b.syncPlan!;
-          expect(plan.conflicts, hasLength(1));
+          expect(plan.conflicts, hasLength(2));
           expect(b.catalog.first.favorite, isFalse);
           expect(
             b.session!.store.database.select('SELECT * FROM sync_imports'),
@@ -99,9 +117,55 @@ void main() {
             final confirm = find.byKey(
               const ValueKey('confirm-listening-import'),
             );
-            expect(tester.widget<FilledButton>(confirm).onPressed, isNull);
+            expect(tester.widget<FilledButton>(confirm).onPressed, isNotNull);
+            await tester.tap(find.byKey(const ValueKey('sync-all-local')));
+            await tester.pumpAndSettle();
+            final localChoice = find.byKey(
+              ValueKey('sync-${plan.conflicts.first.key}-local'),
+            );
+            await tester.ensureVisible(localChoice);
+            expect(
+              tester
+                  .widget<OutlinedButton>(localChoice)
+                  .style!
+                  .backgroundColor!
+                  .resolve({}),
+              Theme.of(tester.element(localChoice)).colorScheme.primary,
+            );
+            final allFile = find.byKey(const ValueKey('sync-all-file'));
+            await tester.ensureVisible(allFile);
+            await tester.tap(allFile);
+            await tester.pumpAndSettle();
+            tester
+                .state<ScrollableState>(
+                  find.descendant(
+                    of: find.byKey(const ValueKey('sync-results-list')),
+                    matching: find.byType(Scrollable),
+                  ),
+                )
+                .position
+                .jumpTo(0);
+            await tester.pumpAndSettle();
+            final identicalFilter = find.byKey(
+              const ValueKey('sync-filter-identical'),
+            );
+            await tester.ensureVisible(identicalFilter);
+            await tester.tap(identicalFilter);
+            await tester.pumpAndSettle();
+            expect(
+              find.byKey(ValueKey('sync-${plan.conflicts.first.key}-file')),
+              findsNothing,
+            );
+            await tester.ensureVisible(
+              find.byKey(const ValueKey('sync-filter-conflict')),
+            );
+            await tester.pumpAndSettle();
+            await tester.tap(
+              find.byKey(const ValueKey('sync-filter-conflict')),
+            );
+            await tester.pumpAndSettle();
             final choice = find.byKey(
-              ValueKey('sync-${plan.conflicts.single.key}-file'),
+              ValueKey('sync-${plan.conflicts.first.key}-file'),
             );
             await tester.ensureVisible(choice);
             await tester.tap(choice);
@@ -113,8 +177,26 @@ void main() {
               'fusion terminée',
             );
             await tester.pumpAndSettle();
+            expect(
+              find.byKey(const ValueKey('confirm-listening-import')),
+              findsNothing,
+            );
+            expect(
+              find.descendant(
+                of: find.byType(ListeningImportDialog),
+                matching: find.widgetWithText(FilledButton, 'Fermer'),
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.text(
+                'Import terminé. Le suivi a été fusionné et la bibliothèque actualisée.',
+              ),
+              findsOneWidget,
+            );
             expect(b.error, isEmpty);
             expect(b.catalog.first.favorite, isTrue);
+            expect(b.catalog.first.positionMs, 60000);
             expect(b.session!.setting('theme'), 'dark');
             expect(
               File('${b.dataPath}/sauvegardes/IndeX_derniere_sauvegarde.sqlite')

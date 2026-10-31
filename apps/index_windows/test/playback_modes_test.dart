@@ -6,13 +6,242 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
+import 'package:index_core/index_desktop.dart';
 import 'package:index_windows/app_model.dart';
 import 'package:index_windows/audio_player.dart';
 
 import 'support/fake_audio.dart';
+import 'support/app_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+    'Remise à zéro globale : annulation sans effet puis confirmation obligatoire',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final root = Directory.systemTemp.createTempSync('index-reset-ui-');
+      final model = AppModel(portableDirectory: root, audioPort: FakeAudio());
+      try {
+        await tester.runAsync(
+          () => model.configure('${root.path}/user', '', true),
+        );
+        final id = model.catalog.first.id;
+        model.favorite(model.catalog.first);
+        model.session!.checkpoint(
+          id,
+          positionMs: 40000,
+          durationMs: 120000,
+          progressed: true,
+          completed: false,
+          playbackStatus: 'paused',
+        );
+        model.reload();
+        await tester.pumpWidget(IndeXApp(model: model, window: FakeWindow()));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Paramètres'));
+        await tester.pumpAndSettle();
+        final reset = find.byKey(const ValueKey('reset-all-listening'));
+        await tester.ensureVisible(reset);
+        await tester.tap(reset);
+        await tester.pumpAndSettle();
+        expect(model.catalog.firstWhere((e) => e.id == id).positionMs, 40000);
+        await tester.tap(find.text('Annuler'));
+        await tester.pumpAndSettle();
+        expect(model.catalog.firstWhere((e) => e.id == id).positionMs, 40000);
+        await tester.tap(reset);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('confirm-reset-all-listening')),
+        );
+        await waitForCondition(
+          tester,
+          () =>
+              !model.busy &&
+              model.catalog.every(
+                (e) => e.positionMs == 0 && e.status == 'NON_ECOUTE',
+              ),
+          'reset global confirmé',
+        );
+        await tester.pumpAndSettle();
+        expect(model.catalog.firstWhere((e) => e.id == id).favorite, isTrue);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.runAsync(model.release);
+        model.dispose();
+        root.deleteSync(recursive: true);
+      }
+    },
+  );
+
+  for (final shuffled in [false, true]) {
+    test(
+      'Enchaînement automatique : épisodes écoutés exclus, aléatoire=$shuffled',
+      () async {
+        final root = Directory.systemTemp.createTempSync(
+          'index-skip-listened-',
+        );
+        final audio = FakeAudio();
+        final model = AppModel(
+          portableDirectory: root,
+          audioPort: audio,
+          pollAudio: false,
+          audioRandom: FirstChoiceRandom(),
+        );
+        try {
+          await model.configure(
+            '${root.path}/user',
+            Directory('../../MP3_Files').absolute.path,
+            false,
+          );
+          final queue = model.visible.where((e) => e.audioAvailable).toList();
+          final skipped = queue[1];
+          model.session!.listened(skipped.id, true);
+          model.reload();
+          if (shuffled) model.session!.setSetting('shuffle', 'true');
+          await model.playEpisode(queue.first);
+          await model.playback.seekFromPlayer(120000);
+          audio.value = const AudioSnapshot(120000, 120000, false, ended: true);
+          await model.playback.poll();
+          expect(model.playingEpisode!.id, queue[2].id);
+          expect(
+            model.catalog.firstWhere((e) => e.id == skipped.id).status,
+            'ECOUTE',
+          );
+          for (final e in model.catalog.where((e) => e.audioAvailable)) {
+            model.session!.listened(e.id, true);
+          }
+          model.reload();
+          final current = model.playback.episodeId;
+          await model.nextAudio(1, automatic: true);
+          expect(
+            model.playback.episodeId,
+            current,
+            reason: 'Tous écoutés : ne pas lancer une nouvelle écoute.',
+          );
+        } finally {
+          await model.release();
+          model.dispose();
+          root.deleteSync(recursive: true);
+        }
+      },
+    );
+  }
+
+  test('Remise à zéro globale : sauvegarde, catalogue complet, favoris et resets transférables', () async {
+    final root = Directory.systemTemp.createTempSync('index-reset-all-');
+    final model = AppModel(
+      portableDirectory: root,
+      audioPort: FakeAudio(),
+      pollAudio: false,
+    );
+    try {
+      await model.configure(
+        '${root.path}/user',
+        Directory('../../MP3_Files').absolute.path,
+        false,
+      );
+      final e = model.catalog.first;
+      model.favorite(e);
+      model.session!.checkpoint(
+        e.id,
+        positionMs: 40000,
+        durationMs: 120000,
+        progressed: true,
+        completed: false,
+        playbackStatus: 'paused',
+      );
+      model.reload();
+      model.search('zzzintrouvable');
+      await model.resetAllListening();
+      expect(model.error, isEmpty);
+      expect(
+        model.catalog.every(
+          (e) => e.positionMs == 0 && e.status == 'NON_ECOUTE',
+        ),
+        isTrue,
+      );
+      expect(model.catalog.firstWhere((v) => v.id == e.id).favorite, isTrue);
+      expect(
+        File('${model.dataPath}/sauvegardes/IndeX_derniere_sauvegarde.sqlite')
+            .existsSync(),
+        isTrue,
+      );
+      final exported = ListeningSync(model.session!.store).exportDocument();
+      expect(exported.episodes.length, model.catalog.length);
+      expect(
+        exported.episodes.every(
+          (e) =>
+              e.fields['position']!.clock.isNotEmpty &&
+              e.fields['status']!.clock.isNotEmpty,
+        ),
+        isTrue,
+      );
+    } finally {
+      await model.release();
+      model.dispose();
+      root.deleteSync(recursive: true);
+    }
+  });
+
+  test('Reset global interrompu par une erreur SQLite : suivi et versions conservés', () async {
+    final root = Directory.systemTemp.createTempSync('index-reset-rollback-');
+    final model = AppModel(
+      portableDirectory: root,
+      audioPort: FakeAudio(),
+      pollAudio: false,
+    );
+    try {
+      await model.configure('${root.path}/user', '', true);
+      final id = 'mrx:mr_x_1997_01_04.mp3';
+      model.session!.favorite(id, true);
+      model.session!.checkpoint(
+        id,
+        positionMs: 12345,
+        durationMs: 120000,
+        progressed: true,
+        completed: false,
+        playbackStatus: 'paused',
+      );
+      final db = model.session!.store.database;
+      final before = db
+          .select('SELECT * FROM user_episode_state')
+          .map((r) => Map<String, Object?>.from(r))
+          .toList();
+      final clocks = db
+          .select('SELECT * FROM sync_fields')
+          .map((r) => Map<String, Object?>.from(r))
+          .toList();
+      db.execute(
+        "CREATE TRIGGER fail_bulk_reset BEFORE UPDATE ON user_episode_state WHEN NEW.episode_id='mrx:mr_x_1997_01_11.mp3' BEGIN SELECT RAISE(ABORT,'reset interrompu'); END;",
+      );
+      await model.resetAllListening();
+      expect(model.error, contains('reset interrompu'));
+      expect(
+        db
+            .select('SELECT * FROM user_episode_state')
+            .map((r) => Map<String, Object?>.from(r))
+            .toList(),
+        before,
+      );
+      expect(
+        db
+            .select('SELECT * FROM sync_fields')
+            .map((r) => Map<String, Object?>.from(r))
+            .toList(),
+        clocks,
+      );
+      db.execute('DROP TRIGGER fail_bulk_reset');
+    } finally {
+      await model.release();
+      model.dispose();
+      root.deleteSync(recursive: true);
+    }
+  });
+
   for (final autoNext in [true, false]) {
     for (final keyboard in [false, true]) {
       test(

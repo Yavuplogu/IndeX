@@ -140,12 +140,13 @@ Créer le JSON **dans le dossier dédié aux données utilisateur**, sous `expor
 avec un nom explicite **sans espace**, par exemple :
 
 ```text
-IndeX_suivi_20261025T143000Z_a1b2c3d4.json
+IndeX_suivi_20261031_215134.json
 ```
 
-Le timestamp UTC sert à nommer le fichier, pas à résoudre les conflits. Ajouter un
-suffixe unique et créer sans écraser un export existant ; écrire temporairement
-puis publier après validation. Afficher le chemin final et permettre d'ouvrir son
+Le nom utilise la date et l’heure locales à la seconde, sans suffixe aléatoire.
+Créer sans écraser un export existant ; si un export existe à cette seconde,
+inviter à réessayer une seconde plus tard. Écrire temporairement puis publier
+après validation. Les dates ne décident pas de la fusion. Afficher le chemin final et permettre d'ouvrir son
 dossier. Ne pas demander une destination extérieure comme choix par défaut.
 L'utilisateur copie ensuite ce fichier vers l'autre appareil et l'importe.
 Si le dossier n'est pas inscriptible, afficher un échec sans annonce d'export réussi.
@@ -588,8 +589,8 @@ vers exports/ sous le dossier utilisateur, nom explicite sans espaces, publicati
 complète sans écrasement et notification avec chemin sélectionnable/ouverture du
 dossier. Import : sélecteur JSON, panneau d’aperçu (source, date, comptes, changements
 et inconnus), choix par conflit Conserver cet appareil / Utiliser le fichier, puis
-confirmation globale. Aucun choix de conflit présélectionné et aucune fusion avant
-confirmation ; Fermer annule sans effet sur le suivi importé. Les erreurs sont
+confirmation globale. Selon la révision utilisateur suivante, les conflits
+présélectionnent le fichier importé ; Fermer annule sans effet sur le suivi importé. Les erreurs sont
 sélectionnables. Couleurs/cadres communs aux thèmes clair et sombre.
 
 Lecteur chargé : proposer Mettre en pause et libérer la piste, sauvegarder la
@@ -597,3 +598,33 @@ position, puis préparer l’aperçu. Sauvegarde SQLite avant fusion, suivi loca
 depuis aperçu = nouvel aperçu requis. JSON déjà importé = annonce sans application.
 Android demeure désactivé pour ce parcours, format partagé préparé. Voir le bilan
 et le contrat du Lot 5 ter. Aucune modification de la maquette HTML historique.
+
+
+### Révision lecteur et panneaux — 31 octobre 2026
+
+- Titre du lecteur : liseré au survol, main et accès à la fiche sans modifier le listing.
+- Renommer les MP3 : filtres Tous/À renommer/Déjà conformes/Ignorés/Conflits dans
+  l’aperçu ; Tous/Renommés/Échecs/Non effectués/À réconcilier dans le journal.
+  Le filtre n’altère pas le lot global soumis à confirmation.
+- Import : filtres par type, conflits en premier, dont tous les choix sont initialisés
+  à Utiliser le fichier importé. Choix au cas par cas et deux commandes pour tous les
+  conflits (y compris masqués). La confirmation globale reste obligatoire et le
+  moteur de fusion exige une réponse pour chaque conflit. Aucune comparaison de
+  dates ou de position maximale pour décider. Les dates s’affichent en heure locale
+  AAAA-MM-JJ HH:mm:ss, la reprise indique son pourcentage (— si durée inconnue).
+- Après fusion réussie, le panneau contient seulement le message Import terminé et
+  un bouton Fermer. Aucun bouton Confirmer grisé ni ancien aperçu conservé à l’écran.
+- Export : IndeX_suivi_AAAAMMJJ_HHMMSS.json, heure locale, sans UUID dans le nom.
+  Un export existant n’est pas remplacé ; même seconde = message demandant de réessayer.
+  Le contenu JSON conserve son export_id unique et ses dates UTC.
+- Enchaînement automatique, séquentiel ou aléatoire : exclure ECOUTE. S’arrêter
+  sans redémarrer un épisode terminé si aucun candidat admissible ne reste. Les
+  commandes manuelles conservent la possibilité de réécouter un épisode.
+- Paramètres, cadre Lecture et reprise : remise à zéro de tout le catalogue, après
+  confirmation explicite et sauvegarde. Position=0, NON_ECOUTE, dates d’écoute/fin
+  effacées, favoris/durées connues/MP3/associations conservés. Une transaction et
+  marqueurs causaux par épisode rendent le reset transférable et atomique.
+- Glissement du lecteur pendant lecture vers le terme ou la dernière seconde :
+  attendre le vrai signal ended pour valider Écouté, même sans delta de position
+  supplémentaire. En pause, un seek programmatique ou un simple placement sans
+  fin moteur ne valide rien ; une nouvelle manipulation annule la demande précédente.

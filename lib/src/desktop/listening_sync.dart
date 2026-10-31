@@ -247,7 +247,9 @@ final class SyncImportPlan {
 typedef SyncPublisher = Future<void> Function(File partial, File target);
 
 final class ListeningSync {
-  ListeningSync(this.store);
+  ListeningSync(this.store, {DateTime Function()? now})
+    : _now = now ?? DateTime.now;
+  final DateTime Function() _now;
   final CatalogStore store;
   String get deviceId {
     final existing = store.database.select(
@@ -342,7 +344,7 @@ final class ListeningSync {
       'format': 'index-listening-sync',
       'schema_version': 1,
       'export_id': _token('e_'),
-      'exported_at': _stamp(),
+      'exported_at': _now().toUtc().toIso8601String(),
       'source_device_id': device,
       'catalog_version':
           store.database
@@ -392,13 +394,16 @@ final class ListeningSync {
     if (bytes.length > syncMaxBytes) _invalid('export supérieur à 5 Mio.');
     final directory = await Directory('${data.path}/exports')
         .create(recursive: true);
-    final stamp = document.exportedAt.replaceAll(RegExp('[-:.]'), '');
-    final target = File(
-      '${directory.path}/IndeX_suivi_${stamp}_${document.exportId.substring(2)}.json',
-    );
+    final time = DateTime.parse(document.exportedAt).toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final stamp =
+        '${time.year.toString().padLeft(4, '0')}${two(time.month)}${two(time.day)}_${two(time.hour)}${two(time.minute)}${two(time.second)}';
+    final target = File('${directory.path}/IndeX_suivi_$stamp.json');
     if (await FileSystemEntity.type(target.path, followLinks: false) !=
         FileSystemEntityType.notFound)
-      throw StateError('Un export de ce nom existe déjà.');
+      throw StateError(
+        'Un export a déjà été créé à cette seconde. Réessayez dans une seconde ; le fichier existant est conservé.',
+      );
     final staging = await directory.createTemp('.index-export-');
     try {
       final partial = File('${staging.path}/payload.part');

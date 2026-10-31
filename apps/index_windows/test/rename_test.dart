@@ -24,6 +24,7 @@ void main() {
           ? folder
           : Directory('${root.path}/MP3-alias');
       if (!Platform.isWindows) Link(configured.path).createSync(folder.path);
+      File('${folder.path}/inconnu.mp3').writeAsStringSync('inconnu');
       var moves = 0;
       final model = AppModel(
         portableDirectory: root,
@@ -71,6 +72,15 @@ void main() {
           expect(source.existsSync(), isTrue);
           expect(moves, 0);
           if (cancel) {
+            await tester.tap(
+              find.byKey(const ValueKey('rename-filter-ignored')),
+            );
+            await tester.pumpAndSettle();
+            expect(find.text('Prévu'), findsNothing);
+            expect(find.text('Ignoré'), findsOneWidget);
+            await tester.tap(find.byKey(const ValueKey('rename-filter-all')));
+            await tester.pumpAndSettle();
+            expect(find.text('Prévu'), findsOneWidget);
             await tester.tap(
               find.descendant(
                 of: find.byType(Mp3RenameDialog),

@@ -251,6 +251,26 @@ void main() {
       controller.jumpTo(150.0.clamp(0.0, controller.position.maxScrollExtent));
       await tester.pump();
       final offset = controller.offset;
+      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await pointer.addPointer(location: Offset.zero);
+      await pointer.moveTo(
+        tester.getCenter(find.byKey(const ValueKey('player-episode-title'))),
+      );
+      await tester.pumpAndSettle();
+      final outline =
+          tester
+                  .widget<Container>(
+                    find.byKey(const ValueKey('player-title-outline')),
+                  )
+                  .decoration
+              as BoxDecoration;
+      expect(
+        (outline.border as Border).top.color,
+        Theme.of(
+          tester.element(find.byKey(const ValueKey('player-title-outline'))),
+        ).colorScheme.primary,
+      );
+      await pointer.removePointer();
       await tester.tap(find.byKey(const ValueKey('player-episode-title')));
       await tester.pumpAndSettle();
       expect(model.selected!.id, episode.id);
@@ -594,6 +614,8 @@ void main() {
         lessThan(1),
       );
       expect(tester.widget<CheckboxListTile>(skip).value, isTrue);
+      await tester.ensureVisible(skip);
+      await tester.pumpAndSettle();
       await tester.tap(skip);
       await tester.pump();
       expect(model.skipStartupScan, isTrue);

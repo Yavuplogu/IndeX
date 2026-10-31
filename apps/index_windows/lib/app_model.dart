@@ -461,10 +461,26 @@ final class AppModel extends ChangeNotifier {
     final queue = visible.where((e) => e.audioAvailable).toList();
     if (queue.isEmpty) return;
     final current = queue.indexWhere((e) => e.id == playback.episodeId);
+    if (automatic) {
+      final candidates = useRandom
+          ? queue
+                .where(
+                  (e) => e.id != playback.episodeId && e.status != 'ECOUTE',
+                )
+                .toList()
+          : queue
+                .skip(current < 0 ? 0 : current + 1)
+                .where((e) => e.status != 'ECOUTE')
+                .toList();
+      if (candidates.isEmpty) return;
+      await playEpisode(
+        candidates[useRandom ? _audioRandom.nextInt(candidates.length) : 0],
+      );
+      return;
+    }
     final alternatives = queue
         .where((e) => e.id != playback.episodeId)
         .toList();
-    if (automatic && !useRandom && current == queue.length - 1) return;
     if (useRandom && alternatives.isEmpty && current >= 0) return;
     final episode = useRandom && alternatives.isNotEmpty
         ? alternatives[_audioRandom.nextInt(alternatives.length)]
@@ -484,6 +500,15 @@ final class AppModel extends ChangeNotifier {
       1.0,
     );
   }
+
+  Future<void> resetAllListening() =>
+      runWork('Sauvegarde puis remise à zéro du suivi…', () async {
+        await playback.unload();
+        await session!.backup();
+        session!.resetAllListening();
+        reload();
+        message = 'Tous les épisodes sont non écoutés, avec une progression à zéro. Favoris conservés.';
+      });
 
   Future<void> stopAudio() async {
     final id = playback.episodeId;
