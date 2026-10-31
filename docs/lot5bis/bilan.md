@@ -89,3 +89,44 @@ aucune compilation/recette native Windows revendiquée. Le test Flutter couvre
 également la libération explicite du lecteur, avec maintien de la reprise, puis le
 renommage confirmé. Le test de session couvre la récupération d’un journal après
 déplacement de toute la racine portable, sans scan préalable.
+
+## Premier build 0.6 — correction des chemins Windows
+
+Les logs `logs_111706072299.zip` du commit `7f54161` arrêtent les contrôles du cœur
+avec **211 réussites, 1 test ignoré (SIGKILL POSIX), 4 échecs**. Les tests Flutter,
+la compilation native et la production du paquet ne sont pas atteints.
+
+Le plan de renommage résout le dossier MP3 vers son chemin canonique ; les liens
+et exclusions existants peuvent conserver un alias Windows court `RUNNER~1` du
+même dossier. La comparaison textuelle traitait alors ce lien comme un autre choix
+manuel (zéro renommage proposé) ou ne reconnaissait pas une exclusion. Les erreurs
+des scénarios d’interruption/déplacement en découlaient : aucun fichier n’avait
+été déplacé avant l’assertion suivante.
+
+Correction dans Mp3Renamer : clé de comparaison obtenue en résolvant le **parent**
+du fichier, avec casse Windows appliquée avant encodage URI. Le parent reste
+résoluble après la disparition du nom source, ce qui permet aussi de terminer la
+réconciliation. Cache de parents limité à une opération ; références non-file ou
+dossiers inaccessibles traités conservativement. Une comparaison ne réécrit pas
+les références stockées. La réussite met toujours à jour le lien et le diagnostic
+courant dans la même transaction, y compris si ceux-ci contenaient un alias.
+
+Le contrôle de la cible examine également les liens d’autres épisodes avec cette
+clé ; aucun relâchement de la protection des choix manuels ou des collisions.
+Les tests de réussite comparent l’identité physique du fichier, pas une URI courte
+contre une URI longue. Trois régressions couvrent parent aliasé : lien manuel et
+diagnostic après interruption, exclusion inchangée, cible déjà réservée à un autre
+épisode toujours refusée. Sous POSIX, un lien de dossier crée effectivement deux
+chemins distincts ; sous Windows, les scénarios exploitent les chemins temporaires
+et leur résolution canonique. Les fixtures MP3 du dépôt restent intactes.
+
+La réservation du build échoué reste consommée. Ne pas remettre le compteur à
+zéro ; le prochain build distribuable prendra le mineur suivant automatiquement.
+Une nouvelle exécution Windows est nécessaire pour confirmer ce correctif sur
+cette plateforme et atteindre la compilation native.
+
+Vérification du correctif sur Linux : `bash tools/lot4/check.sh` réussit avec
+**219 tests Dart, 52 tests Flutter et 6 tests Python** ; analyses statiques et
+formatage conformes. Les 32 tests ciblés renommage/session passent également.
+Le backend Windows natif n’est pas modifié par ce correctif. Aucun MP3 source,
+seed, suivi utilisateur ou compteur de distribution modifié pendant les contrôles.

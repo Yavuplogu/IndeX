@@ -217,3 +217,9 @@
   scan au démarrage ; SHA-256 en lecture seule, pas de réécriture ID3/audio.
   Tests uniquement sur copies temporaires. Android reste en pause, adaptateur
   RenameFile commun ; export/import JSON non lancé.
+
+- Correction du premier build 0.6 : dans le renommage, comparer liens/exclusions et
+  cibles avec une clé de parent canonique (aliases Windows 8.3 inclus), même après
+  disparition de la feuille source. Ne pas modifier les références pour une simple
+  comparaison. Préserver le refus d’une cible liée à un autre épisode ; diagnostics
+  actualisés après succès. Tests : identité physique plutôt qu’URI courte/longue.

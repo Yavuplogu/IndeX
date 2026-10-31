@@ -56,6 +56,32 @@ bool _safeName(String value) =>
 final class Mp3Renamer {
   Mp3Renamer(this.store);
   final CatalogStore store;
+  final _parents = <String, String>{};
+
+  // Canonicaliser le parent permet aussi de comparer l’ancien nom après le move.
+  // La feuille elle-même peut alors ne plus exister. Ne pas toucher aux URI stockées
+  // pour une simple comparaison ; les chemins externes inaccessibles restent opaques.
+  String _referenceKey(String reference) {
+    final uri = Uri.tryParse(reference);
+    if (uri?.scheme != 'file') return reference;
+    final file = File.fromUri(uri!);
+    final parent = _parents.putIfAbsent(file.parent.absolute.path, () {
+      try {
+        return file.parent.resolveSymbolicLinksSync();
+      } on FileSystemException {
+        return file.parent.absolute.path;
+      }
+    });
+    final path = File('$parent/${file.uri.pathSegments.last}').path;
+    // Abaisser les caractères décodés, pas les séquences %xx d’une URI.
+    return File(Platform.isWindows ? path.toLowerCase() : path).uri.toString();
+  }
+
+  bool _excluded(String reference) {
+    final key = _referenceKey(reference);
+    return store.unlinkedAudioReferences.any((r) => _referenceKey(r) == key);
+  }
+
   bool get unresolved => store.database
       .select(
         "SELECT 1 FROM rename_items WHERE status IN ('planned','moving','blocked') LIMIT 1",
@@ -68,6 +94,7 @@ final class Mp3Renamer {
     String? inUse,
     void Function(int done, int total)? onProgress,
   }) async {
+    _parents.clear();
     if (unresolved)
       throw StateError(
         'Un renommage interrompu doit être réconcilié avant une nouvelle opération.',
@@ -92,7 +119,7 @@ final class Mp3Renamer {
       if (d.status != MatchStatus.confirmed || episode == null) {
         status = d.status == MatchStatus.conflict ? 'conflict' : 'ignored';
         reason = d.reason;
-      } else if (store.unlinkedAudioReferences.contains(d.audio.reference)) {
+      } else if (_excluded(d.audio.reference)) {
         status = 'ignored';
         reason = 'Association retirée par l’utilisateur.';
       } else if (d.method != 'original_filename') {
@@ -111,7 +138,9 @@ final class Mp3Renamer {
           'SELECT audio_ref FROM local_audio_links WHERE episode_id=?',
           [episode.id],
         );
-        if (link.isNotEmpty && link.single['audio_ref'] != d.audio.reference) {
+        if (link.isNotEmpty &&
+            _referenceKey(link.single['audio_ref'] as String) !=
+                _referenceKey(d.audio.reference)) {
           status = 'ignored';
           reason = 'Une autre association est conservée pour cet épisode.';
         } else if (inUse != null &&
@@ -194,6 +223,7 @@ final class Mp3Renamer {
     String? Function()? inUse,
     void Function(int done, int total)? onProgress,
   }) async {
+    _parents.clear();
     if (unresolved) throw StateError('Réconciliation requise.');
     final freshScan = await scanAudioDirectory(
       Directory.fromUri(Uri.parse(plan.scope)),
@@ -270,7 +300,7 @@ final class Mp3Renamer {
                 MatchingEngine.filenameKey(episode.originalName))
           throw StateError('Le catalogue a changé : refaire l’aperçu.');
         _checkLink(row);
-        if (store.unlinkedAudioReferences.contains(source.uri.toString()))
+        if (_excluded(source.uri.toString()))
           throw StateError('Association retirée depuis l’aperçu.');
         if (!await _unchanged(
               source,
@@ -312,6 +342,7 @@ final class Mp3Renamer {
 
   /// Au démarrage : ne renomme rien ; constate les fichiers puis répare SQLite.
   Future<void> recover() async {
+    _parents.clear();
     for (final row in store.database.select(
       "SELECT * FROM rename_items WHERE status IN ('planned','moving','blocked') ORDER BY id",
     )) {
@@ -361,14 +392,19 @@ final class Mp3Renamer {
   }
 
   void _checkLink(Map<String, Object?> row) {
-    final links = store.database.select(
-      'SELECT audio_ref FROM local_audio_links WHERE episode_id=? OR audio_ref=?',
-      [row['episode_id'], row['after_ref']],
-    );
-    if (links.any((l) => l['audio_ref'] != row['before_ref']))
-      throw StateError(
-        'Association modifiée ou cible déjà associée : intervention nécessaire.',
-      );
+    final before = _referenceKey(row['before_ref'] as String);
+    final after = _referenceKey(row['after_ref'] as String);
+    for (final link in store.database.select(
+      'SELECT episode_id,audio_ref FROM local_audio_links',
+    )) {
+      final reference = _referenceKey(link['audio_ref'] as String);
+      if ((link['episode_id'] == row['episode_id'] && reference != before) ||
+          (link['episode_id'] != row['episode_id'] && reference == after)) {
+        throw StateError(
+          'Association modifiée ou cible déjà associée : intervention nécessaire.',
+        );
+      }
+    }
   }
 
   void _finish(Map<String, Object?> row) {
@@ -394,9 +430,11 @@ final class Mp3Renamer {
       );
       // Les diagnostics courants suivent le chemin, sans changer l’identité documentaire.
       for (final item in db.select(
-        'SELECT rowid,decision_json FROM audio_scan_items WHERE audio_ref=?',
-        [row['before_ref']],
+        'SELECT rowid,audio_ref,decision_json FROM audio_scan_items',
       )) {
+        if (_referenceKey(item['audio_ref'] as String) !=
+            _referenceKey(row['before_ref'] as String))
+          continue;
         final decision =
             jsonDecode(item['decision_json'] as String) as Map<String, dynamic>;
         decision['audio_reference'] = row['after_ref'];

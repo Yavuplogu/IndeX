@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:index_core/index_desktop.dart';
 import 'package:index_core/index_storage.dart';
+import 'package:index_core/src/io/catalog_sources.dart';
 import 'package:test/test.dart';
 
 // Réservé aux copies de test. La production utilise MoveFileExW sans remplacement.
@@ -41,6 +42,112 @@ void main() {
     await root.delete(recursive: true);
   });
 
+  Future<File> aliasSource() async {
+    // Windows CI fournit déjà le parent court RUNNER~1 et son équivalent long.
+    // Sous POSIX, créer un alias explicite pour reproduire la différence.
+    if (Platform.isWindows) return source;
+    final alias = Link('${root.path}-alias');
+    await alias.create(root.path);
+    addTearDown(() => alias.delete());
+    return File('${alias.path}/$name');
+  }
+
+  test('Alias du parent : association et diagnostic réparés même après disparition du nom source', () async {
+    final alias = await aliasSource();
+    store.applyAudioScan(await scanAudioDirectory(alias.parent));
+    store.recordManualLink(id, alias.uri.toString(), name);
+    final plan = await renamer.preview(root, recursive: false);
+    expect(
+      plan.planned,
+      1,
+      reason: plan.entries.map((e) => e.reason).join(' ; '),
+    );
+    final run = await renamer.execute(
+      plan,
+      move: (from, to) async {
+        await testMove(from, to);
+        throw StateError('interruption avec ancien chemin aliasé');
+      },
+    );
+    expect(alias.existsSync(), isFalse);
+    await renamer.recover();
+    expect(renamer.report(run).single['status'], 'succeeded');
+    final target = File('${root.path}/$system');
+    final link = store.database
+        .select('SELECT * FROM local_audio_links')
+        .single;
+    expect(link['manual'], 1);
+    expect(
+      FileSystemEntity.identicalSync(
+        File.fromUri(Uri.parse(link['audio_ref'] as String)).path,
+        target.path,
+      ),
+      isTrue,
+    );
+    final diagnostic = jsonDecode(
+      store.database
+              .select('SELECT decision_json FROM audio_scan_items')
+              .single['decision_json']
+          as String,
+    ) as Map;
+    expect(diagnostic['current_name'], system);
+    expect(
+      FileSystemEntity.identicalSync(
+        File.fromUri(Uri.parse(diagnostic['audio_reference'] as String)).path,
+        target.path,
+      ),
+      isTrue,
+    );
+  });
+
+  test(
+    'Alias du parent : une exclusion reste respectée et inchangée',
+    () async {
+      final alias = await aliasSource();
+      store.recordManualLink(id, alias.uri.toString(), name);
+      store.unlinkAudio(alias.uri.toString());
+      final plan = await renamer.preview(root, recursive: false);
+      expect(plan.planned, 0);
+      expect(plan.entries.single.reason, contains('retirée'));
+      expect(store.unlinkedAudioReferences, contains(alias.uri.toString()));
+      expect(source.existsSync(), isTrue);
+    },
+  );
+
+  test(
+    'Alias du parent : cible déjà associée à un autre épisode toujours refusée',
+    () async {
+      final alias = await aliasSource();
+      final otherId =
+          store.database.select('SELECT id FROM episodes WHERE id<>? LIMIT 1', [
+                id,
+              ]).single['id']
+              as String;
+      final reservedName = Platform.isWindows ? system.toUpperCase() : system;
+      final reserved = File('${alias.parent.path}/$reservedName');
+      store.recordManualLink(otherId, reserved.uri.toString(), system);
+      final plan = await renamer.preview(root, recursive: false);
+      expect(plan.planned, 1);
+      final run = await renamer.execute(
+        plan,
+        move: (_, _) async =>
+            fail('Une cible liée à un autre épisode est protégée'),
+      );
+      expect(renamer.report(run).single['status'], 'failed');
+      expect(
+        renamer.report(run).single['error'],
+        contains('cible déjà associée'),
+      );
+      expect(source.existsSync(), isTrue);
+      expect(
+        store.database
+            .select('SELECT audio_ref FROM local_audio_links')
+            .single['audio_ref'],
+        reserved.uri.toString(),
+      );
+    },
+  );
+
   test('Aperçu sans effet, copie MP3 réelle, conservation des liens manuels/suivi et idempotence', () async {
     // Aucun octet des fixtures du dépôt n’est modifié.
     final real = File("MP3_Files/2013-04-27 'Le Masque de fer' israélien.mp3");
@@ -64,7 +171,13 @@ void main() {
     final link = store.database
         .select('SELECT * FROM local_audio_links')
         .single;
-    expect(link['audio_ref'], target.uri.toString());
+    expect(
+      FileSystemEntity.identicalSync(
+        File.fromUri(Uri.parse(link['audio_ref'] as String)).path,
+        target.path,
+      ),
+      isTrue,
+    );
     expect(link['manual'], 1);
     final state = store.database
         .select('SELECT * FROM user_episode_state')
@@ -179,10 +292,18 @@ void main() {
     await renamer.recover();
     expect(renamer.report(run).single['status'], 'succeeded');
     expect(
-      store.database
-          .select('SELECT audio_ref FROM local_audio_links')
-          .single['audio_ref'],
-      File('${root.path}/$system').uri.toString(),
+      FileSystemEntity.identicalSync(
+        File.fromUri(
+          Uri.parse(
+            store.database
+                    .select('SELECT audio_ref FROM local_audio_links')
+                    .single['audio_ref']
+                as String,
+          ),
+        ).path,
+        File('${root.path}/$system').path,
+      ),
+      isTrue,
     );
     expect(
       store.database
