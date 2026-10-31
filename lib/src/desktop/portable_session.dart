@@ -8,6 +8,7 @@ import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../io/catalog_sources.dart';
+import '../io/local_audio_paths.dart';
 import '../catalog/models.dart';
 import '../matching/matching_engine.dart';
 import '../search/search_engine.dart';
@@ -374,6 +375,7 @@ final class PortableSession {
         : root.startsWith('content://')
         ? root
         : Directory(root).absolute.uri.toString();
+    final paths = LocalAudioPaths();
     final sources = <String, List<Map<String, Object?>>>{},
         music = <String, List<Map<String, Object?>>>{};
     for (final row in store.database.select(
@@ -420,7 +422,7 @@ final class PortableSession {
                 scope != null &&
                 row['available'] == 1 &&
                 (row['manual'] == 1 ||
-                    (row['audio_ref'] as String).startsWith(scope)),
+                    paths.contains(scope, row['audio_ref'] as String)),
             positionMs: row['position_ms'] as int? ?? 0,
             durationMs: row['duration_ms'] as int? ?? 0,
             excerpt: hits[row['id']]?.excerpt ?? '',

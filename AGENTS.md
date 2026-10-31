@@ -223,3 +223,8 @@
   disparition de la feuille source. Ne pas modifier les références pour une simple
   comparaison. Préserver le refus d’une cible liée à un autre épisode ; diagnostics
   actualisés après succès. Tests : identité physique plutôt qu’URI courte/longue.
+
+- Disponibilité après renommage : LocalAudioPaths partagé pour les comparaisons de
+  parents et de périmètre. PortableSession.episodes doit reconnaître un dossier MP3
+  configuré via alias court/long et conserver la frontière du dossier (MP3-autre
+  reste extérieur à MP3/). Ne pas remplacer ce contrôle par available=1 seul.

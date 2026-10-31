@@ -20,6 +20,10 @@ void main() {
       final folder = Directory('${root.path}/MP3')..createSync();
       final source = File('${folder.path}/mr_x_1997_01_04.mp3')
         ..writeAsStringSync('contenu audio et tags');
+      final configured = Platform.isWindows
+          ? folder
+          : Directory('${root.path}/MP3-alias');
+      if (!Platform.isWindows) Link(configured.path).createSync(folder.path);
       var moves = 0;
       final model = AppModel(
         portableDirectory: root,
@@ -33,7 +37,7 @@ void main() {
       );
       try {
         await tester.runAsync(
-          () => model.configure('${root.path}/user', folder.path, false),
+          () => model.configure('${root.path}/user', configured.path, false),
         );
         final episode = model.catalog.firstWhere(
           (e) => e.originalName == 'mr_x_1997_01_04.mp3',

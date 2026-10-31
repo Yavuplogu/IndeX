@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 
 import '../io/catalog_sources.dart';
+import '../io/local_audio_paths.dart';
 import '../matching/matching_engine.dart';
 import '../storage/catalog_store.dart';
 
@@ -56,26 +57,8 @@ bool _safeName(String value) =>
 final class Mp3Renamer {
   Mp3Renamer(this.store);
   final CatalogStore store;
-  final _parents = <String, String>{};
-
-  // Canonicaliser le parent permet aussi de comparer l’ancien nom après le move.
-  // La feuille elle-même peut alors ne plus exister. Ne pas toucher aux URI stockées
-  // pour une simple comparaison ; les chemins externes inaccessibles restent opaques.
-  String _referenceKey(String reference) {
-    final uri = Uri.tryParse(reference);
-    if (uri?.scheme != 'file') return reference;
-    final file = File.fromUri(uri!);
-    final parent = _parents.putIfAbsent(file.parent.absolute.path, () {
-      try {
-        return file.parent.resolveSymbolicLinksSync();
-      } on FileSystemException {
-        return file.parent.absolute.path;
-      }
-    });
-    final path = File('$parent/${file.uri.pathSegments.last}').path;
-    // Abaisser les caractères décodés, pas les séquences %xx d’une URI.
-    return File(Platform.isWindows ? path.toLowerCase() : path).uri.toString();
-  }
+  final _paths = LocalAudioPaths();
+  String _referenceKey(String reference) => _paths.referenceKey(reference);
 
   bool _excluded(String reference) {
     final key = _referenceKey(reference);
@@ -94,7 +77,7 @@ final class Mp3Renamer {
     String? inUse,
     void Function(int done, int total)? onProgress,
   }) async {
-    _parents.clear();
+    _paths.clear();
     if (unresolved)
       throw StateError(
         'Un renommage interrompu doit être réconcilié avant une nouvelle opération.',
@@ -223,7 +206,7 @@ final class Mp3Renamer {
     String? Function()? inUse,
     void Function(int done, int total)? onProgress,
   }) async {
-    _parents.clear();
+    _paths.clear();
     if (unresolved) throw StateError('Réconciliation requise.');
     final freshScan = await scanAudioDirectory(
       Directory.fromUri(Uri.parse(plan.scope)),
@@ -342,7 +325,7 @@ final class Mp3Renamer {
 
   /// Au démarrage : ne renomme rien ; constate les fichiers puis répare SQLite.
   Future<void> recover() async {
-    _parents.clear();
+    _paths.clear();
     for (final row in store.database.select(
       "SELECT * FROM rename_items WHERE status IN ('planned','moving','blocked') ORDER BY id",
     )) {

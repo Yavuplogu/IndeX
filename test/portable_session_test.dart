@@ -44,6 +44,79 @@ void main() {
     return s;
   }
 
+  test('Après renommage : MP3 disponible via dossier configuré aliasé, y compris après réouverture sans scan', () async {
+    final s = await start();
+    final mp3 = Directory('${root.path}/MP3')..createSync();
+    final source = File('${mp3.path}/mr_x_1997_01_04.mp3')
+      ..writeAsStringSync('audio conservé');
+    final configured = Platform.isWindows
+        ? mp3
+        : Directory('${root.path}/MP3-alias');
+    if (!Platform.isWindows) Link(configured.path).createSync(mp3.path);
+    await s.scan(configured.path);
+    final episode = s.episodes().firstWhere(
+      (e) => e.originalName == source.uri.pathSegments.last,
+    );
+    expect(episode.audioAvailable, isTrue);
+    final renamer = Mp3Renamer(s.store);
+    final plan = await renamer.preview(configured, recursive: false);
+    expect(plan.planned, 1);
+    await renamer.execute(
+      plan,
+      move: (from, to) async {
+        await from.rename(to.path);
+      },
+    );
+    final after = s.episodes().firstWhere((e) => e.id == episode.id);
+    expect(after.audioAvailable, isTrue);
+    expect(s.setting('mp3_directory'), configured.absolute.path);
+    final stored = after.audioRef;
+    expect(
+      FileSystemEntity.identicalSync(
+        File.fromUri(Uri.parse(stored!)).path,
+        File('${mp3.path}/${episode.systemName}').path,
+      ),
+      isTrue,
+    );
+    expect(s.episodes().firstWhere((e) => e.id == episode.id).audioRef, stored);
+    await s.dispose();
+    final reopened = await start(existing: true);
+    expect(
+      reopened.episodes().firstWhere((e) => e.id == episode.id).audioAvailable,
+      isTrue,
+    );
+  });
+
+  test(
+    'Un ancien MP3 dans un dossier voisin reste hors du dossier configuré',
+    () async {
+      final s = await start();
+      final selected = Directory('${root.path}/MP3')..createSync();
+      final other = Directory('${root.path}/MP3-autre')..createSync();
+      final source = File('${other.path}/mr_x_1997_01_04.mp3')
+        ..writeAsStringSync('autre collection');
+      await s.scan(other.path);
+      final id = s
+          .episodes()
+          .firstWhere((e) => e.originalName == source.uri.pathSegments.last)
+          .id;
+      expect(s.episodes().firstWhere((e) => e.id == id).audioAvailable, isTrue);
+      s.setSetting('mp3_directory', selected.path);
+      expect(
+        s.episodes().firstWhere((e) => e.id == id).audioAvailable,
+        isFalse,
+      );
+      expect(
+        s.store.database.select(
+          'SELECT available FROM local_audio_links WHERE episode_id=?',
+          [id],
+        ).single['available'],
+        1,
+        reason: 'Le périmètre de consultation ne réécrit pas les métadonnées du dernier scan.',
+      );
+    },
+  );
+
   test('Journal de renommage interrompu réconcilié après déplacement de la racine portable', () async {
     final session = await start();
     final mp3 = Directory('${root.path}/MP3')..createSync();

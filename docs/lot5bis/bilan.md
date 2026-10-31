@@ -130,3 +130,36 @@ Vérification du correctif sur Linux : `bash tools/lot4/check.sh` réussit avec
 formatage conformes. Les 32 tests ciblés renommage/session passent également.
 Le backend Windows natif n’est pas modifié par ce correctif. Aucun MP3 source,
 seed, suivi utilisateur ou compteur de distribution modifié pendant les contrôles.
+
+## Deuxième build 0.6 — disponibilité après renommage
+
+Les logs `logs_111710111183.zip` du commit `aab1628` confirment la réussite des
+**218 tests du cœur exécutables sous Windows (1 ignoré)** : les quatre erreurs
+précédentes ont disparu. Les tests Flutter comptent **51 réussites et 1 échec**, à
+`rename_test.dart:107`. Le déplacement et son nom cible sont corrects ; seule la
+propriété `audioAvailable` reste fausse. Compilation/recette native non atteintes.
+
+Cause : PortableSession.episodes() imposait encore un préfixe textuel entre le
+chemin du MP3 et celui du dossier configuré. Après renommage, le lien est canonique,
+alors que le paramètre peut conserver l’alias court Windows du dossier. Le fichier
+était donc affiché indisponible malgré un renommage réussi et available=1 en base.
+
+La comparaison des chemins est désormais partagée dans `LocalAudioPaths` (dart:io,
+sans dépendance supplémentaire). Mp3Renamer conserve sa règle de parent canonique ;
+la consultation résout aussi le dossier configuré avant de vérifier le préfixe avec
+sa frontière de dossier. Un voisin tel que `MP3-autre` reste exclu de `MP3/`.
+Aucune modification des références persistées pour une simple comparaison, ni
+suppression du filtre de périmètre. Les URI SAF restent opaques comme auparavant.
+
+Régression reproduite sous Linux avec un alias réel du dossier MP3 : renommage
+puis disponibilité, maintien après réouverture sans scan ; ancien lien dans un
+dossier voisin toujours indisponible. Le test Flutter garde ses assertions et
+utilise aussi cet alias, afin de couvrir le parcours complet localement. Aucune
+modification du backend de renommage natif, des données documentaires ou du compteur
+CI. Le build échoué reste consommé ; le prochain numéro est attribué automatiquement.
+
+Vérification locale du second correctif : `bash tools/lot4/check.sh` réussit avec
+**221 tests Dart, 52 tests Flutter et 6 tests Python**, analyses et formatage
+conformes. Les 34 tests ciblés renommage/session passent aussi. Le test Flutter
+reproduisant l’alias du dossier MP3 réussit sans retirer son contrôle de disponibilité.
+Le prochain passage sur Windows doit encore atteindre la compilation/recette native.
