@@ -253,3 +253,7 @@ Fermer IndeX annule un transfert en cours et nettoie le temporaire avant sauvega
 Une fois la publication engagée, attendre la fin de cette opération. L’import JSON,
 le renommage et Android ne sont pas livrés par cet ajout. À propos n’affiche plus
 le sous-titre de la marque ; la barre latérale le conserve.
+
+Les MP3 téléchargés sont enregistrés sous le **titre système** du catalogue, avec
+l’extension `.mp3`. Une cible déjà présente est conservée et le téléchargement
+est refusé ; les MP3 existants ne sont pas renommés.

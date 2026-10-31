@@ -27,6 +27,7 @@ final class DesktopEpisode {
     required this.audioAvailable,
     required this.positionMs,
     this.downloadUrl,
+    this.systemName,
     this.durationMs = 0,
     this.excerpt = '',
     this.markedExcerpt = '',
@@ -40,7 +41,7 @@ final class DesktopEpisode {
       musicText,
       originalName,
       status;
-  final String? date, audioRef, downloadUrl;
+  final String? date, audioRef, downloadUrl, systemName;
   final bool favorite, audioAvailable;
   final int positionMs, durationMs;
   final String excerpt, markedExcerpt;

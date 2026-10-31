@@ -182,6 +182,21 @@ void main() {
         expect(model.downloading, isFalse);
         final downloaded = model.catalog.firstWhere((e) => e.id == episode.id);
         expect(downloaded.audioAvailable, isTrue);
+        final expectedName =
+            model.session!.store.database.select(
+                  'SELECT system_name FROM episodes WHERE id=?',
+                  [episode.id],
+                ).single['system_name']
+                as String;
+        expect(downloaded.systemName, expectedName);
+        expect(
+          File.fromUri(Uri.parse(downloaded.audioRef!)).uri.pathSegments.last,
+          expectedName,
+        );
+        expect(
+          File('${folder.path}/${episode.originalName}').existsSync(),
+          isFalse,
+        );
         expect(
           File.fromUri(Uri.parse(downloaded.audioRef!)).readAsBytesSync(),
           bytes,
@@ -190,6 +205,23 @@ void main() {
         expect(downloaded.positionMs, 12000);
         expect(downloaded.status, 'EN_COURS');
         expect(folder.listSync().whereType<File>(), hasLength(1));
+        // Une cible système déjà présente ne doit jamais être écrasée,
+        // même si le lien n'est plus disponible dans le modèle.
+        model.session!.store.database.execute(
+          'UPDATE local_audio_links SET available=0 WHERE episode_id=?',
+          [episode.id],
+        );
+        model.reload();
+        await model.downloadEpisode(
+          model.catalog.firstWhere((e) => e.id == episode.id),
+          folder.path,
+        );
+        expect(model.error, contains('Téléchargement impossible'));
+        expect(requests, 1);
+        expect(
+          File.fromUri(Uri.parse(downloaded.audioRef!)).readAsBytesSync(),
+          bytes,
+        );
       } finally {
         await model.release();
         model.dispose();

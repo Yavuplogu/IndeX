@@ -548,3 +548,21 @@ et le message invite à relancer une analyse. Aucune cible préexistante n’est
 Dans À propos, supprimer le sous-titre seulement de la marque du panneau ; conserver
 celui de la barre latérale et de l’accueil. Adapter le texte hors ligne à l’exception
 explicite du téléchargement facultatif.
+
+
+### Ajustements du 31 octobre — présentation et nom des téléchargements
+
+Dans À propos, logo à gauche et groupe version puis bouton GitHub ancré à droite
+sur la même ligne. Le site rendezvousavecmrx.free.fr est mentionné dans Écouter vos
+MP3, en texte simple sans lien externe. Retirer la phrase relative au contact du
+serveur dans Vos données restent chez vous.
+
+Un téléchargement réussi est publié directement sous le nom complet TITRE SYSTEME
+du catalogue (extension .mp3 incluse), jamais sous le nom historique de l’URL.
+Nom système absent/invalide ou cible existante : refus sans écrasement. Cette règle
+concerne uniquement le nouveau fichier reçu ; aucun renommage des MP3 existants.
+Conserver les contrôles, l’association et le suivi/favoris.
+
+Les textes des cadres Paramètres partagent la taille du corps de texte d’À propos.
+La description Lecture et reprise est placée sous son libellé, alignée après la
+case comme dans Analyse au démarrage. Dispositions communes aux deux thèmes.

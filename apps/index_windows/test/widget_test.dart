@@ -77,7 +77,18 @@ void main() {
             final versionPosition = tester.getTopLeft(
               find.byKey(const ValueKey('about-version')),
             );
-            expect(githubPosition.dx, lessThan(versionPosition.dx));
+            expect(versionPosition.dx, lessThan(githubPosition.dx));
+            final brandCenter = tester.getCenter(
+              find.byKey(const ValueKey('about-brand')),
+            );
+            expect(
+              (brandCenter.dy -
+                      tester
+                          .getCenter(find.byKey(const ValueKey('about-github')))
+                          .dy)
+                  .abs(),
+              lessThan(1),
+            );
             expect(
               (githubPosition.dy - versionPosition.dy).abs(),
               lessThan(24),
@@ -569,6 +580,18 @@ void main() {
       final skip = find.widgetWithText(
         CheckboxListTile,
         'Scanner le dossier MP3 à chaque ouverture',
+      );
+      final resumeTitle = find.text(
+        'Reprendre à la dernière position sauvegardée',
+      );
+      final resumeDescription = find.text(
+        'La lecture en arrière-plan est mise en pause avec sauvegarde de la position.',
+      );
+      expect(
+        (tester.getTopLeft(resumeTitle).dx -
+                tester.getTopLeft(resumeDescription).dx)
+            .abs(),
+        lessThan(1),
       );
       expect(tester.widget<CheckboxListTile>(skip).value, isTrue);
       await tester.tap(skip);

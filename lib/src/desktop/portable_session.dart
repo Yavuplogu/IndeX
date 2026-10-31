@@ -397,6 +397,7 @@ final class PortableSession {
           DesktopEpisode(
             id: row['id'] as String,
             originalName: row['original_name'] as String,
+            systemName: row['system_name'] as String?,
             title: row['title'] as String,
             date: row['broadcast_date'] as String?,
             description: row['description'] as String,

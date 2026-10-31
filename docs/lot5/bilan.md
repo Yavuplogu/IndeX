@@ -678,7 +678,7 @@ Le nouveau champ DesktopEpisode.downloadUrl provient exclusivement du journal.
 Pas de migration, régénération de seed ni nouvelle dépendance. Majeur 5 inchangé.
 
 Service partagé Mp3Download (dart:io) : URL HTTP/HTTPS sans identifiants, nom de
-fichier historique validé (pas de traversée/ADS/nom Windows réservé), réception
+fichier système validé (pas de traversée/ADS/nom Windows réservé), réception
 streamée dans un sous-dossier .index-download-* du dossier cible. Taille limitée
 à 512 Mio, délais connexion/en-tête/inactivité de 20 s, annulation explicite.
 Redirections bornées à cinq, pas de schéma non HTTP(S) ni rétrogradation HTTPS→HTTP.
@@ -702,7 +702,7 @@ session, progression/annulation affichées dans LibraryPage. Réglages de stocka
 et scans bloqués pendant transfert, statuts/favoris restent utilisables. Fermeture :
 annulation puis attente avant sauvegarde, pas de nouveau job pendant la fermeture ;
 échec de sauvegarde rétablit la possibilité d’utiliser l’application. Pas d’auto-play.
-Le scan associe normalement le nom historique ; l’action explicite peut lever une
+Le scan associe normalement le nom système (révision du 31 octobre) ; l’action explicite peut lever une
 exclusion, avec confirmation UI si un ancien choix manuel indisponible est remplacé.
 Le suivi est conservé. Si l’association échoue après publication, garder le MP3 et
 l’indiquer. Android reste désactivé pour cette action en attendant la publication SAF ;
@@ -730,3 +730,20 @@ Le test UI couvre aussi le choix du dossier quand aucun MP3 n’est configuré.
 Publication native, HTTP réel et lecteur sur MP3 reçu restent à qualifier sur
 Windows : pas de compilation Windows ni de récupération depuis le serveur public
 sur cette machine Linux. Aucun build distribuable ni réservation de version ici.
+
+### Révision du 31 octobre — nom système et panneaux
+
+DesktopEpisode expose system_name du catalogue. Le téléchargement publie le fichier
+validé directement sous ce nom, avec la même publication atomique sans écrasement ;
+le nom d’origine reste une référence documentaire. Un nom système absent/invalide
+est refusé. Aucun fichier existant renommé et aucun lancement du Lot 5 bis.
+Le test modèle vérifie le nom système, le suivi conservé et le refus d’une cible
+existante sans nouvelle requête réseau. À propos : logo/version/GitHub sur une ligne,
+version avant GitHub, groupe ancré à droite ; site source en texte simple. Paramètres :
+taille du corps harmonisée et description de reprise alignée sous son libellé.
+
+Vérification Linux : 204 tests Dart, 51 tests Flutter et 4 tests Python réussis ;
+analyses statiques et formatage conformes. Les tests À propos couvrent les deux
+thèmes et la fenêtre étroite ; l’alignement de la description de reprise est
+vérifié. Publication native et téléchargement réel restent à confirmer dans le
+prochain build Windows.

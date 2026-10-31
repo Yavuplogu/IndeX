@@ -2121,49 +2121,6 @@ class IndexAboutDialog extends StatelessWidget {
                         panelGroup(
                           'IndeX',
                           [
-                            Row(
-                              key: const ValueKey('about-links-version'),
-                              children: [
-                                Flexible(
-                                  child: OutlinedButton.icon(
-                                    key: const ValueKey('about-github'),
-                                    icon: Image.asset(
-                                      'assets/icons/github-mark.png',
-                                      width: 20,
-                                      height: 20,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
-                                    ),
-                                    label: const FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text('Voir sur GitHub'),
-                                    ),
-                                    onPressed: () =>
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'Lien GitHub de démonstration : aucun site n’est ouvert.',
-                                                ),
-                                              ),
-                                            ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Version : $applicationVersion',
-                                      key: ValueKey('about-version'),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
                             const Text(
                               'J’ai construit cet utilitaire à partir d’une interrogation : serait-il possible de disposer d’un outil entièrement hors ligne permettant de gérer et d’écouter ma collection d’épisodes de Rendez-vous avec X ?\n\n'
                               'Cela faisait des années que l’idée me séduisait, en réalité depuis l’arrêt de l’émission en 2015. Puis, la mort de Patrick Pesnot en 2023 m’a remotivé et j’ai fait quelques tentatives, plutôt infructueuses, car je ne suis pas du tout développeur.\n\n'
@@ -2183,9 +2140,55 @@ class IndexAboutDialog extends StatelessWidget {
                             const Text('Bonne écoute,\n\nK.'),
                           ],
                           c,
-                          heading: const Brand(
-                            key: ValueKey('about-brand'),
-                            showSubtitle: false,
+                          heading: Row(
+                            key: const ValueKey('about-links-version'),
+                            children: [
+                              const Brand(
+                                key: ValueKey('about-brand'),
+                                showSubtitle: false,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerRight,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Version : $applicationVersion',
+                                        key: ValueKey('about-version'),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      OutlinedButton.icon(
+                                        key: const ValueKey('about-github'),
+                                        icon: Image.asset(
+                                          'assets/icons/github-mark.png',
+                                          width: 20,
+                                          height: 20,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                        label: const FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text('Voir sur GitHub'),
+                                        ),
+                                        onPressed: () =>
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Lien GitHub de démonstration : aucun site n’est ouvert.',
+                                                    ),
+                                                  ),
+                                                ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         panelGroup(
@@ -2214,7 +2217,7 @@ class IndexAboutDialog extends StatelessWidget {
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 TextSpan(
-                                  text: '. IndeX analyse le dossier et rapproche automatiquement les noms des fichiers du catalogue avec vos fichiers locaux, affiche un diagnostic complet et propose aussi des associations manuelles. L’analyse ne modifie pas vos fichiers MP3.\n\nAttention, l’association automatique en local fonctionne uniquement avec des noms type ',
+                                  text: '. IndeX analyse le dossier et rapproche automatiquement les noms des fichiers du catalogue avec vos fichiers locaux, affiche un diagnostic complet et propose aussi des associations manuelles. Si vous n’avez pas l’épisode, un bouton propose le téléchargement du MP3 sur le site rendezvousavecmrx.free.fr.\n\nAttention, l’association automatique en local fonctionne uniquement avec des noms type ',
                                 ),
                                 TextSpan(
                                   text: '1997-01-04 La 5ème Colonne.mp3',
@@ -2262,7 +2265,7 @@ class IndexAboutDialog extends StatelessWidget {
                         ], c),
                         panelGroup('Vos données restent chez vous', [
                           const Text(
-                            'Le catalogue et l’écoute locale fonctionnent hors ligne, sans compte ni synchronisation automatique. Le bouton Télécharger contacte le serveur source uniquement à votre demande. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
+                            'Le catalogue et l’écoute locale fonctionnent hors ligne, sans compte ni synchronisation automatique. Vos favoris, progressions, réglages et journaux restent dans le dossier de données utilisateur que vous avez spécifié. Il est possible d’exporter ces données afin de les importer sur un autre environnement, Windows ou Android. La version Windows est portable, sans installateur ni connexion Internet.',
                           ),
                           const SizedBox(height: 8),
                           const Text(
@@ -2436,10 +2439,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                             ),
                           ], c),
                           panelGroup('Données utilisateur', [
-                            SelectableText(
-                              m.dataPath,
-                              style: const TextStyle(fontSize: 12),
-                            ),
+                            SelectableText(m.dataPath),
                             const SizedBox(height: 8),
                             if (!m.android)
                               OutlinedButton(
@@ -2453,8 +2453,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
                             CheckboxListTile(
                               controlAffinity: ListTileControlAffinity.leading,
                               contentPadding: EdgeInsets.zero,
-                              title: const Text(
+                              subtitle: Text(
+                                'La lecture en arrière-plan est mise en pause avec sauvegarde de la position.',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              title: Text(
                                 'Reprendre à la dernière position sauvegardée',
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               value: m.resumePlayback,
                               onChanged: (value) {
@@ -2465,19 +2470,18 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 m.changed();
                               },
                             ),
-                            const Text(
-                              'La lecture en arrière-plan est mise en pause avec sauvegarde de la position.',
-                            ),
                           ], c),
                           panelGroup('Analyse au démarrage', [
                             CheckboxListTile(
                               contentPadding: EdgeInsets.zero,
                               controlAffinity: ListTileControlAffinity.leading,
-                              title: const Text(
+                              title: Text(
                                 'Scanner le dossier MP3 à chaque ouverture',
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
-                              subtitle: const Text(
+                              subtitle: Text(
                                 'Décochez pour conserver les derniers résultats sans analyse automatique. Vous pouvez toujours relancer une analyse dans Fichiers et associations.',
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               value: !m.skipStartupScan,
                               onChanged: (value) =>
@@ -2487,7 +2491,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           panelGroup('Transfert du suivi', [
                             const Text(
                               'Transfert manuel des favoris, statuts et progressions entre Windows et Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé sera créé dans le dossier "exports" du dossier des données utilisateur.',
-                              style: TextStyle(fontSize: 13, height: 1.6),
                             ),
                             const SizedBox(height: 10),
                             Wrap(
@@ -2516,7 +2519,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           panelGroup('Fichiers audio', [
                             const Text(
                               'Une seule conversion sera proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
-                              style: TextStyle(fontSize: 13, height: 1.6),
                             ),
                             const SizedBox(height: 10),
                             OutlinedButton(

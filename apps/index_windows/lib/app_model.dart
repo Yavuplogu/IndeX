@@ -165,7 +165,10 @@ final class AppModel extends ChangeNotifier {
       final folder = Directory(
         await Directory(destination).resolveSymbolicLinks(),
       );
-      final target = File('${folder.path}/${episode.originalName}');
+      final name = episode.systemName;
+      if (name == null || name.isEmpty)
+        throw StateError('Aucun titre système dans le catalogue intégré.');
+      final target = File('${folder.path}/$name');
       if (session!.store.database.select(
         'SELECT 1 FROM local_audio_links WHERE audio_ref=? AND episode_id<>?',
         [target.uri.toString(), episode.id],
@@ -181,7 +184,7 @@ final class AppModel extends ChangeNotifier {
       activeDownload = Mp3Download(
         source: source,
         folder: folder,
-        name: episode.originalName,
+        name: name,
         publish: downloadPublisher,
         onProgress: (received, total) {
           downloadReceived = received;
@@ -201,11 +204,7 @@ final class AppModel extends ChangeNotifier {
       if (refreshed.audioRef != file.uri.toString() ||
           !refreshed.audioAvailable) {
         // Action explicite de l'utilisateur : lève aussi une exclusion antérieure.
-        session!.store.recordManualLink(
-          episode.id,
-          file.uri.toString(),
-          episode.originalName,
-        );
+        session!.store.recordManualLink(episode.id, file.uri.toString(), name);
         _refreshAssociationReport();
         reload();
       }
