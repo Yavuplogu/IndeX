@@ -239,3 +239,8 @@
   SQLite puis transaction unique. Export dans user/exports, publication Windows
   publishExport sans remplacement. Android en pause, format/cœur partagés.
   Majeur reste 0.6, mineur réservé par le build. Lot 6 non lancé.
+
+- Nouvelle précision de version du 31 octobre : minor_width=2 pour la série 0.6,
+  affichage public 0.6.03…0.6.09, 0.6.10…0.6.99, 0.6.100. Continuer le compteur
+  existant sans reset ; build_name SemVer non complété, INDEX_VERSION public
+  complété pour À propos et les noms d’archive/artefact. Majeur 6 conservé.

@@ -325,7 +325,14 @@ void main() {
         await part.rename(target.path);
       },
     );
-    expect(result.parent.path, '${data.path}${Platform.pathSeparator}exports');
+    expect(
+      FileSystemEntity.identicalSync(
+        result.parent.path,
+        Directory('${data.path}/exports').path,
+      ),
+      isTrue,
+      reason: 'Le JSON doit être publié dans le dossier exports réel, quel que soit le séparateur ou alias Windows.',
+    );
     expect(result.uri.pathSegments.last, startsWith('IndeX_suivi_'));
     expect(result.uri.pathSegments.last, isNot(contains(' ')));
     expect((await ListeningSync.readFile(result)).episodes.single.id, id);

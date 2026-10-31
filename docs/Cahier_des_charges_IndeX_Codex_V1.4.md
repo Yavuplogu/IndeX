@@ -524,3 +524,12 @@ Le JSON v1 peut structurer les données sous episodes[].fields ; le contrat exac
 ses bornes et exemples sont dans docs/lot5ter/format.md et format.schema.json.
 Les installations indépendantes gardent des identifiants distincts ; le JSON est
 le moyen de transfert du suivi, pas une copie concurrente d’une même base ouverte.
+
+
+### Précision de version — 31 octobre 2026
+
+À partir de cette demande, afficher le mineur sur au moins deux chiffres :
+**0.6.03, …, 0.6.08, 0.6.09, 0.6.10, 0.6.11**, puis 0.6.100 après 0.6.99.
+Cette présentation vaut pour À propos, les archives et les artefacts. Le compteur
+existant et ses numéros consommés sont conservés ; le nom SemVer fourni au
+compilateur reste sans zéro initial. Aucun changement de majeur ni reset.

@@ -2,16 +2,21 @@
 
 ## Série actuelle — décision du 31 octobre 2026
 
-Le Lot 5 bis est lancé avec **0.6.0**, puis 0.6.1, 0.6.2, etc.
+La série 0.6 a commencé à **0.6.0**. À compter de la nouvelle décision du
+31 octobre, le mineur s’affiche sur **au moins deux chiffres** : 0.6.03, 0.6.08,
+0.6.09, 0.6.10, 0.6.11, puis 0.6.99, 0.6.100, etc.
 État 0 bêta, majeur 6 autorisé explicitement ; ne pas modifier à nouveau le majeur
-ou passer en finale sans ordre utilisateur. `first_minor: 0` et `minor_width: 1`
-fixent cette nouvelle série, sans réinitialiser les compteurs 0.5 historiques.
-Le premier build distribuable réserve 0.6.0, même s’il échoue. Les suivants
-incrémentent le mineur comme auparavant. Le numéro technique de build vaut
-mineur + 1 pour cette série afin de rester strictement positif.
+ou passer en finale sans ordre utilisateur. `first_minor: 0` est conservé et
+`minor_width: 2` fixe la largeur d’affichage minimale. Le compteur poursuit sa
+valeur actuelle, y compris les numéros consommés par les builds échoués ; aucun
+compteur historique n’est réinitialisé.
 
-Archive : `IndeX_0.6.0_windows_x64_portable.zip` ; artefact
-`IndeX-0.6.0-windows-x64-portable`. À propos reçoit la même version.
+Le numéro technique de build vaut mineur + 1 pour cette série afin de rester
+strictement positif. Flutter/SemVer reçoit la forme sans zéro initial (`0.6.3`),
+la version publique conserve le zéro (`0.6.03`).
+
+Exemple d’archive : `IndeX_0.6.03_windows_x64_portable.zip` ; artefact
+`IndeX-0.6.03-windows-x64-portable`. À propos reçoit la même version publique.
 
 ## Historique — décision du 28 octobre 2026
 

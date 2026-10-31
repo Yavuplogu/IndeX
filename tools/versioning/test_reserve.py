@@ -43,8 +43,25 @@ class Versions(unittest.TestCase):
         policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.0')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.1')
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}')
+        self.assertEqual(reserve.reserve(True)['display'], '0.6.02')
         reserve.git('fetch', 'origin', reserve.BRANCH)
-        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:counters.json')), {'0.5': 1, '0.6': 1})
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:counters.json')), {'0.5': 1, '0.6': 2})
+
+    def test_padding_boundaries_preserve_counter_and_semver(self):
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}')
+        counter = reserve.ROOT / 'dist/build-version-counter.json'
+        counter.parent.mkdir()
+        counter.write_text('{"0.5":42,"0.6":7}')
+        self.assertEqual(reserve.reserve(), {'display': '0.6.08', 'build_name': '0.6.8', 'build_number': 9})
+        self.assertEqual(reserve.reserve()['display'], '0.6.09')
+        self.assertEqual(reserve.reserve()['display'], '0.6.10')
+        self.assertEqual(reserve.reserve()['display'], '0.6.11')
+        self.assertEqual(json.loads(counter.read_text()), {'0.5':42,'0.6':11})
+        counter.write_text('{"0.5":42,"0.6":98}')
+        self.assertEqual(reserve.reserve()['display'], '0.6.99')
+        self.assertEqual(reserve.reserve()['display'], '0.6.100')
 
     def init_remote(self):
         remote = Path(self.temporary.name) / 'origin.git'

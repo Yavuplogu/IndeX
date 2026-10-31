@@ -86,3 +86,24 @@ par la suite existante. Aucun paquet runtime ni changement de majeur ajouté.
 Le backend de publication et le smoke test Windows ont été préparés, mais ne sont
 pas compilés/exécutés sur cet hôte Linux. La recette Windows décrite ci-dessus demeure
 nécessaire ; aucun export/import Android réel n’est revendiqué.
+
+## Premier build Lot 5 ter — assertion de chemin Windows
+
+Les logs `logs_111726673702.zip` du commit `cd361ad` concernent le build **0.6.3**.
+Les tests du cœur donnent **237 réussites, 1 ignoré (SIGKILL POSIX), 1 échec**.
+L’échec est l’assertion de dossier dans le test d’export JSON : le dossier retourné
+se termine par `/exports`, l’attente exige `\exports`. Windows accepte les deux
+séparateurs ; cette comparaison textuelle ne vérifiait pas correctement le dossier.
+Les tests Flutter et la compilation/recette native ne sont pas atteints.
+
+Le test compare désormais l’identité physique du parent de l’export avec le dossier
+exports attendu, en conservant toutes les assertions de contenu JSON, nom sans
+espaces, suivi inchangé et nettoyage après échec. Aucun code de production, format
+JSON, seed ou donnée utilisateur modifié par cette correction. La numérotation
+publique à deux chiffres demandée séparément reste en attente dans le même checkout ;
+le compteur des builds n’est pas réinitialisé et 0.6.3 reste consommé.
+
+Vérification locale de cette correction : analyse Dart sans problème, **18 tests
+ciblés du transfert réussis** et **7 tests Python du versionnement réussis**.
+Une nouvelle exécution Windows demeure nécessaire ; la suite Flutter n’est pas
+rejouée pour ce seul changement d’assertion dans les tests du cœur.
