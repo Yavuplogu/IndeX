@@ -34,6 +34,11 @@ jobs:
           cache: true
       - name: SDK Android 36 et NDK épinglé
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+      - name: Préparer les dépendances verrouillées avant les contrôles hors ligne
+        run: |
+          dart pub get --enforce-lockfile
+          cd apps/index_windows
+          flutter pub get --enforce-lockfile
       - name: Contrôles du coeur et de l'interface
         run: bash tools/lot4/check.sh
       - name: APK de test ARM64 (catalogue seul, aucun MP3)

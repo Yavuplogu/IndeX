@@ -140,3 +140,28 @@ build-tools 36.0.0 et NDK 28.2.13676358 restent explicitement installés à l’
 suivante. Aucun changement de code applicatif, lockfile, SDK cible ni compteur.
 Le mineur 09 reste consommé ; la prochaine réservation suit le compteur courant.
 Une relance CI sur la branche contenant le correctif reste nécessaire.
+
+
+## Deuxième échec CI Android — cache Pub incomplet
+
+Logs `logs_111986788898.zip`, version réservée **0.6.10** (code 11).
+L’installation SDK réussit. Les 7 tests Python passent, puis les contrôles
+s’arrêtent au premier `dart pub get --offline --enforce-lockfile` :
+`test 1.31.1 ... doesn't match any versions`. Ce message concerne les versions
+présentes dans le cache local, pas la disponibilité du paquet sur pub.dev.
+Le runner neuf n’a pas été préparé avant les scripts historiques hors ligne.
+
+Correction : ajouter avant les contrôles une récupération en ligne des dépendances
+du cœur (`dart pub get --enforce-lockfile`) puis de l’application Flutter
+(`flutter pub get --enforce-lockfile`). Les contrôles restent hors ligne après
+cette préparation, les deux lockfiles et toutes les versions sont conservés.
+Le cache de flutter-action est une optimisation, pas un prérequis de réussite.
+Le mineur 10 reste consommé ; relancer sur la branche contenant ce correctif.
+
+Validation locale du correctif : récupération des deux projets avec un PUB_CACHE
+temporaire initialement vide, puis récupération des deux projets avec
+`--offline --enforce-lockfile` dans ce même cache : quatre commandes réussies,
+aucune modification des lockfiles. Configuration YAML et ordre des étapes vérifiés.
+Le cache de développement habituel a ensuite été réactivé. Le workflow GitHub
+complet reste à relancer ; aucun changement applicatif ne nécessite de refaire
+la recette audio pour cette seule correction de préparation.
