@@ -98,7 +98,7 @@ avec confirmation et journal de reprise. Cœur `Mp3Renamer` commun ; publication
 Windows `renameMp3` via MoveFileExW sans remplacement. Le schéma utilisateur v6
 ajoute le journal, le seed documentaire v4 reste inchangé. Voir le
 [bilan Lot 5 bis](../../docs/lot5bis/bilan.md) et la recette Windows restante.
-Android reste en pause ; le renommage SAF n’est pas livré. Le transfert JSON
+Android est en audit Lot 6A ; le renommage SAF sera porté en 6B. Le transfert JSON
 Windows est décrit ci-dessous au Lot 5 ter.
 
 
@@ -110,3 +110,13 @@ JSON v2 (lecture v1 conservée) communs au futur Android ; sélection/publicatio
 Schéma utilisateur v7, seed documentaire v4 conservé. Le compteur de builds 0.6
 continue sans réinitialisation. Voir [le bilan](../../docs/lot5ter/bilan.md) et
 [le contrat](../../docs/lot5ter/format.md).
+
+
+## Lot 6A — diagnostic Android
+
+Lancement le 1er novembre 2026. APK ARM64 de diagnostic compilable, Android
+7.0 minimum (API 24), cible API 36. Le workflow Android manuel réserve une version
+dans le compteur commun Windows/Android. Renommage, JSON et téléchargement restent
+à porter en 6B ; la lecture continue écran éteint sera réalisée en 6C.
+Voir [audit et décisions](../../docs/lot6/audit-6A.md) et
+[recette sur téléphone](../../docs/lot6/RECETTE_ANDROID.md).

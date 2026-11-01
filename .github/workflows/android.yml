@@ -1,15 +1,24 @@
-name: Verification Android Lot 5
+name: Verification Android Lot 6A
 on:
-  # Android en pause : construction à la demande uniquement.
+  # APK de diagnostic Android : construction à la demande uniquement.
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+# Même verrou que Windows : le compteur est commun aux deux plateformes.
+concurrency:
+  group: index-windows-version-counter
+  cancel-in-progress: false
 jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Réserver la version de diagnostic dans le compteur partagé
+        run: python tools/versioning/reserve.py --ci
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -26,8 +35,16 @@ jobs:
         run: bash tools/lot4/check.sh
       - name: APK de test ARM64 (catalogue seul, aucun MP3)
         run: bash tools/lot5/build_android.sh
+      - name: Préparer le diagnostic versionné
+        run: |
+          mkdir -p dist
+          cp apps/index_windows/build/app/outputs/flutter-apk/app-debug.apk "dist/IndeX_${INDEX_VERSION}_android_arm64_diagnostic.apk"
+          cp docs/lot6/RECETTE_ANDROID.md dist/LISEZ-MOI_ANDROID.md
+          python tools/lot6/inspect_apk.py "dist/IndeX_${INDEX_VERSION}_android_arm64_diagnostic.apk" > dist/diagnostic-apk.json
+          cd dist
+          sha256sum *.apk > "IndeX_${INDEX_VERSION}_android_arm64_diagnostic.apk.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: IndeX-Android-arm64-test
-          path: apps/index_windows/build/app/outputs/flutter-apk/app-debug.apk
+          name: IndeX-${{ env.INDEX_VERSION }}-Android-arm64-test
+          path: dist/*
           if-no-files-found: error

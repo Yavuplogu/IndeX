@@ -9,7 +9,7 @@
   },
   {
     "component": "Android MediaPlayer / AudioManager / SAF",
-    "api": "minSdk 23, compileSdk et targetSdk 36",
+    "api": "minSdk 24 (Flutter 3.47.7), compileSdk et targetSdk 36",
     "usage": "Lecture content URI locale, permissions persistantes, priorité audio",
     "redistributed_binary": false,
     "license": "API Android système, code Kotlin du projet",

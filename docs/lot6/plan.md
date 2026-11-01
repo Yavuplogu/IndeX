@@ -1,8 +1,8 @@
 # Lot 6 — Portage Android et qualification
 
 Décision du 1er novembre 2026 : réaffecter le Lot 6 à la préparation puis au
-portage Android. Ce document prépare le travail ; aucune implémentation Android
-n’est lancée par cette seule décision. Le découpage documentaire a été validé par l’utilisateur le 1er novembre 2026.
+portage Android. Lancement explicite du Lot 6 le 1er novembre 2026 :
+étape 6A en cours (audit, compilation et preuve de faisabilité). Le découpage documentaire a été validé par l’utilisateur le 1er novembre 2026.
 Les étapes seront exécutées successivement, avec bilan et validation avant
 élargissement du périmètre.
 
@@ -102,4 +102,6 @@ peuvent préparer certaines tâches en parallèle, mais leurs portes restent ord
 Le majeur reste 0.6 tant qu’aucune nouvelle instruction explicite ne le change ;
 le portage ne vaut pas passage en version finale. Avant un APK distribuable,
 aligner son versionnement sur la politique du projet sans réinitialiser le compteur.
-iOS demeure exclu. Aucun nouveau package ni modification du code dans cette préparation.
+iOS demeure exclu. Aucun nouveau package ajouté en 6A ; les adaptateurs de
+production 6B/6C attendent la porte de validation physique. Voir [l’audit 6A](audit-6A.md)
+et [la recette](RECETTE_ANDROID.md).

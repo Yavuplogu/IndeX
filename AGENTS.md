@@ -2,17 +2,16 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuel : préparation documentaire du **Lot 6 — Portage Android**
-  demandée et validée le 1er novembre 2026 ; voir `docs/lot6/plan.md`.
-  Correctifs Windows autorisés : affichage gris sans dossier MP3 et avertissement
-  du dossier global avant téléchargement (précisions en fin de fichier). Aucun développement
-  Android lancé par la seule réaffectation du lot. Étapes proposées 6A audit,
-  6B SAF/fichiers/JSON, 6C interface/audio, 6D qualification/distribution.
-  L’utilisateur confirme la recette Windows vérifiée, hors Release GitHub.
-  Préserver Windows et le cœur commun, les acquis des Lots 5 bis/ter et la parité
-  fonctionnelle. La pause Android antérieure est levée pour la planification ;
-  implémentation sur demande de lancement. Ne pas publier automatiquement.
-  GUI dans `apps/index_windows` ; lire bilans/spécifications avant modifications.
+- Périmètre actuel : **Lot 6 lancé le 1er novembre 2026**, étape **6A**
+  audit Android/décisions/compilation et préparation de la recette physique.
+  Lire `docs/lot6/plan.md`, `audit-6A.md` et `RECETTE_ANDROID.md`. Les portes
+  successives du plan validé restent applicables : ne pas déclarer 6A qualifié
+  sur une compilation/Linux et ne pas engager les adaptateurs 6B/6C sans bilan
+  et validation. Windows est validé par l’utilisateur, Release GitHub restante.
+  Conserver le cœur partagé et la parité. Android minSdk réel 24/target 36,
+  premier diagnostic ARM64, identifiant historique conservé. Aucun nouveau
+  moteur/package audio ajouté en 6A. Workflow Android manuel avec réservation
+  du même compteur/verrou que Windows ; ne pas lancer/publier automatiquement.
   Majeur 0.6/bêta inchangés, iOS exclu. Aucun contournement HTML dans l’application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;

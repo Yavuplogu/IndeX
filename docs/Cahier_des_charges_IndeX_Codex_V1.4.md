@@ -587,3 +587,17 @@ téléchargements. Annuler cet avertissement ou le sélecteur ne change aucun do
 et ne lance aucun transfert. Un dossier choisi est analysé et mémorisé avant le
 téléchargement ; annuler ensuite le transfert conserve ce choix. Un dossier déjà
 configuré ne déclenche pas cet avertissement.
+
+
+## Avenant du 1er novembre 2026 — lancement du Lot 6
+
+L’utilisateur lance explicitement le Lot 6. Commencer par 6A : audit, décisions,
+compilation du socle et préparation de la preuve sur appareil réel. Voir
+[le bilan 6A](lot6/audit-6A.md) et [la recette Android](lot6/RECETTE_ANDROID.md).
+Les étapes 6B/6C/6D restent soumises aux portes du plan validé, sans régression
+Windows. Cible initiale Android 7.0/API 24 minimum, API 36 et ARM64. Préserver
+l’identité technique existante, le profil privé et les URI SAF. Objectif 6C :
+lecture écran éteint avec service média ; le socle actuel met en pause en arrière-plan.
+Le workflow de diagnostic est manuel, versionné par le compteur partagé Windows.
+Compilation locale intermédiaire distincte d’une distribution ; aucune publication
+Release, changement de majeur ou validation physique implicite.

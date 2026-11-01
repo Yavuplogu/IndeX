@@ -11,12 +11,14 @@ Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Windows validé par l’utilisateur ; préparation du Lot 6 Android.**
-La Release GitHub Windows reste à préparer. Le [Lot 6](docs/lot6/plan.md) est
-réaffecté au portage Android : audit, stockage SAF/fichiers/JSON, interface/audio,
-puis qualification et distribution. Ce découpage documentaire est validé ;
-l’implémentation Android n’est pas encore lancée. Le socle Android existant est conservé, son
-workflow APK reste manuel ; sa qualification physique reste à réaliser.
+**État : Lot 6 lancé — audit et diagnostic Android (6A).**
+Windows est validé par l’utilisateur ; sa Release GitHub reste à préparer.
+Le [plan Lot 6](docs/lot6/plan.md) couvre audit, stockage SAF/fichiers/JSON,
+interface/audio, puis qualification/distribution. L’[audit 6A](docs/lot6/audit-6A.md)
+et le [guide de recette Android](docs/lot6/RECETTE_ANDROID.md) précisent les limites.
+L’APK diagnostique ARM64 (Android 7.0 minimum) compile, sans MP3 embarqué ;
+la preuve sur appareil physique reste à effectuer avant les étapes suivantes.
+Le workflow Android reste manuel et partage la numérotation Windows.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
@@ -26,7 +28,7 @@ sont détaillées dans le bilan du Lot 5.
 
 Depuis le 28 octobre, le lecteur Windows utilise **just_audio + just_audio_windows**
 (WinRT MediaPlayer), en remplacement de MCI. Android conserve son moteur et reste
-en pause ; la réactivité native doit être confirmée sur Windows.
+en cours d’audit 6A ; les adaptations mobiles restent à qualifier.
 
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans

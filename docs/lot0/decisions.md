@@ -62,3 +62,11 @@ Le découpage documentaire Lot 6 est validé par l’utilisateur. Ajustement Win
 autorisé séparément : absence de dossier MP3 représentée en gris dans la liste,
 avertissement avant sélection du dossier global depuis Télécharger et conservation
 du dossier choisi même si le téléchargement est ensuite annulé.
+
+
+Lancement explicite Lot 6 le 1er novembre 2026 : 6A en cours, décisions dans
+[le bilan](../lot6/audit-6A.md). Android API 24 minimum observée dans le SDK,
+identifiant existant conservé, profil privé/SAF, MediaPlayer gardé pour mesure,
+service média prévu en 6C pour écran éteint. APK debug ARM64 compilé et contenu
+vérifié ; aucune qualification sur téléphone revendiquée. CI Android manuelle
+avec compteur de version partagé Windows. Aucun nouveau package runtime.

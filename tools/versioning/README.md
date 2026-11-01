@@ -84,3 +84,14 @@ Depuis le 29 octobre, le packaging Windows passe aussi
 affiche le même numéro que l’archive, avec le mineur complété de zéros. Sans cette
 valeur (lancement de développement), le panneau affiche « Développement ».
 Cela ne réserve aucun numéro supplémentaire et n’ajoute aucune dépendance.
+
+
+## Diagnostic Android — Lot 6A, 1er novembre 2026
+
+Le workflow Android manuel réserve désormais dans le même compteur et sous le
+même groupe de concurrence que Windows (`index-windows-version-counter`, nom
+historique conservé). Une exécution Android consomme un mineur même en échec.
+L’APK `IndeX_<version>_android_arm64_diagnostic.apk`, son artefact, À propos,
+versionName et versionCode utilisent les valeurs réservées. La compilation
+intermédiaire locale sans les variables INDEX_* ne produit pas une distribution
+numérotée. Aucun compteur n’est remis à zéro et aucun majeur n’est changé.
