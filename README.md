@@ -11,11 +11,12 @@ Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 5 ter lancé — export/import JSON du suivi Windows ; Android en pause.**
-Décision du 27 octobre 2026 : conserver le socle partagé et tous les objectifs
-fonctionnels du futur portage Android. Voir l’[avenant au cahier des charges](docs/Cahier_des_charges_IndeX_Codex_V1.4.md#avenant-du-27-octobre-2026--priorité-windows-android-en-pause).
-Le code Android existant est conservé ; le workflow APK se lance uniquement à la
-main. Les Lots 5 bis et 5 ter sont lancés explicitement le 31 octobre.
+**État : Windows validé par l’utilisateur ; préparation du Lot 6 Android.**
+La Release GitHub Windows reste à préparer. Le [Lot 6](docs/lot6/plan.md) est
+réaffecté au portage Android : audit, stockage SAF/fichiers/JSON, interface/audio,
+puis qualification et distribution. Ce découpage documentaire est validé ;
+l’implémentation Android n’est pas encore lancée. Le socle Android existant est conservé, son
+workflow APK reste manuel ; sa qualification physique reste à réaliser.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème

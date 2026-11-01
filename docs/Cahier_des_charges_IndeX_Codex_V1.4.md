@@ -437,7 +437,7 @@ Sélectionner des packages maintenus et vérifier **avant codage** leur licence,
 
 **Lot 5 ter — Export/import manuel du suivi.** Définir le format JSON versionné, implémenter les deux boutons, la fusion par champ, l’aperçu des conflits, la validation, les transactions et les essais Windows ↔ Android. **Livrable :** suivi portable, reprise et favoris conservés après transferts dans les deux sens.
 
-**Lot 6 — Recette et distribution.** Tests d’installation vierge avec SQLite embarqué, mise à jour conservant les liens, mode avion, corrections, packaging/signatures, procédure d'installation et guide utilisateur. **Livrable :** distributions Windows et Android.
+**Lot 6 — Portage Android et qualification** (révision du 1er novembre 2026). Préparer puis porter les fonctionnalités Windows sur Android en quatre étapes : 6A audit/décisions, 6B stockage SAF/fichiers/JSON, 6C interface mobile/lecture, 6D recette et distribution signée. Catalogue SQLite intégré sans MP3 et cœur partagés. Voir [le plan détaillé](lot6/plan.md). La recette Windows est déclarée vérifiée par l’utilisateur ; sa Release GitHub reste séparément à préparer. **Livrable :** version Android qualifiée et distribuable, sans régression Windows.
 
 **Lot ultérieur facultatif :** recherche sémantique **locale**, uniquement après mesure de la pertinence de FTS5 ; prévoir taille du modèle, performances et compatibilité Android. Aucune dépendance cloud.
 
@@ -559,3 +559,31 @@ Voir les spécifications natives actualisées ; le majeur reste 0.6.
   historiques conservées. Ancien lecteur v1 incompatible avec nouveaux exports.
   SQLite v7/seed v4/majeur 0.6 inchangés. Renommage : dimensions stables sous
   filtrage ; liseré lecteur limité au titre et à la date.
+
+
+## Avenant du 1er novembre 2026 — réaffectation du Lot 6 à Android
+
+L’utilisateur confirme tous les points de recette Windows vérifiés sauf la Release
+GitHub et demande de réaffecter le Lot 6 à la conversion Android. La préparation
+documentaire remplace donc la pause Android pour la planification ; elle ne lance
+pas encore l’implémentation. Le [plan Lot 6](lot6/plan.md) propose quatre étapes
+avec livrables et portes de validation : audit, stockage, UI/audio, qualification.
+Les Lots 5 bis/ter restent acquis sur Windows ; leurs adaptateurs SAF sont à porter.
+Conserver la parité fonctionnelle, JSON v2 avec lecture v1, absence de MP3 embarqué,
+identités et suivi. Distribution Windows et Android qualifiées séparément.
+Majeur 0.6 et statut bêta inchangés ; iOS reste hors périmètre.
+
+
+### Validation et ajustements du 1er novembre 2026
+
+Le plan documentaire Lot 6 Android en quatre étapes est validé ; cette validation
+ne lance pas encore le développement Android.
+Sans dossier MP3 configuré, la liste affiche les épisodes en MP3 absent, fond et
+texte gris comme après un scan sans fichier correspondant. Le bandeau « dossier
+MP3 non paramétré » est conservé. Un suivi existant n’est ni effacé ni modifié.
+Avant le sélecteur ouvert depuis Télécharger, un avertissement explique que le
+dossier choisi deviendra le dossier MP3 global, pour cet épisode et les futurs
+téléchargements. Annuler cet avertissement ou le sélecteur ne change aucun dossier
+et ne lance aucun transfert. Un dossier choisi est analysé et mémorisé avant le
+téléchargement ; annuler ensuite le transfert conserve ce choix. Un dossier déjà
+configuré ne déclenche pas cet avertissement.

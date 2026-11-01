@@ -32,6 +32,7 @@ void main() {
         for (final at in [0, 417])
           bytes.setRange(at, at + 4, [255, 251, 144, 0]);
         var requests = 0;
+        var directoryChoices = 0;
         server!.listen((request) {
           unawaited(
             () async {
@@ -74,12 +75,38 @@ void main() {
             IndeXApp(
               model: model,
               window: FakeWindow(),
-              pickDirectory: () async => folder.path,
+              pickDirectory: () async {
+                directoryChoices++;
+                return folder.path;
+              },
             ),
           );
           await tester.pumpAndSettle();
           expect(requests, 0);
+          expect(model.availability(model.selected!), 'MP3 absent');
+          final tile = find
+              .ancestor(
+                of: find.text(model.visible.first.title).first,
+                matching: find.byType(Material),
+              )
+              .first;
+          expect(
+            tester.widget<Material>(tile).color,
+            EditorialColors(false).missing,
+          );
           await tester.tap(find.byKey(const ValueKey('download-episode')));
+          await tester.pumpAndSettle();
+          expect(find.text('Choisir le dossier MP3 global'), findsOneWidget);
+          expect(directoryChoices, 0);
+          expect(requests, 0);
+          await tester.tap(find.text('Annuler'));
+          await tester.pumpAndSettle();
+          expect(directoryChoices, 0);
+          expect(model.mp3Path, isEmpty);
+          await tester.tap(find.byKey(const ValueKey('download-episode')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Choisir le dossier'));
+          await tester.pump();
           await waitForCondition(
             tester,
             () => model.downloadReceived > 0,
@@ -98,6 +125,9 @@ void main() {
           );
           await tester.pumpAndSettle();
           expect(folder.listSync(), isEmpty);
+          expect(model.mp3Path, folder.path);
+          expect(model.session!.setting('mp3_directory'), isNotEmpty);
+          expect(directoryChoices, 1);
           await tester.tap(find.byKey(const ValueKey('download-episode')));
           await waitForCondition(
             tester,

@@ -1108,7 +1108,9 @@ class _LibraryPageState extends State<LibraryPage> {
                   itemCount: m.visible.length,
                   itemBuilder: (context, index) {
                     final e = m.visible[index];
-                    final missing = m.audioKnown && !e.audioAvailable,
+                    final missing =
+                            (m.mp3Path.isEmpty || m.audioKnown) &&
+                            !e.audioAvailable,
                         heard = e.status == 'ECOUTE';
                     final color = missing
                         ? c.missingInk
@@ -1160,7 +1162,7 @@ class _LibraryPageState extends State<LibraryPage> {
                         },
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: !heard && m.progress(e) > 0
+                            gradient: !missing && !heard && m.progress(e) > 0
                                 ? LinearGradient(
                                     colors: [
                                       c.heard,
@@ -1251,7 +1253,9 @@ class _LibraryPageState extends State<LibraryPage> {
                                     ],
                                   ),
                                   Text(
-                                    compact && !m.audioKnown
+                                    compact &&
+                                            !m.audioKnown &&
+                                            m.mp3Path.isNotEmpty
                                         ? 'MP3 non vérifié'
                                         : m.availability(e),
                                     style: TextStyle(
@@ -1469,8 +1473,34 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
       );
       if (confirmed != true || !mounted) return;
     }
+    if (m.mp3Path.isEmpty) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Choisir le dossier MP3 global'),
+          content: const SelectableText(
+            'Le dossier que vous allez choisir deviendra le dossier MP3 global d’IndeX. Cet épisode et tous les futurs téléchargements y seront enregistrés. Vous pourrez changer ce dossier dans Fichiers et associations.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Choisir le dossier'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
     final path = m.mp3Path.isEmpty ? await widget.pickDirectory() : m.mp3Path;
     if (path == null || !mounted) return;
+    if (m.mp3Path.isEmpty) {
+      await m.scan(path);
+      if (!mounted || !m.audioKnown) return;
+    }
     unawaited(m.downloadEpisode(episode, path));
   }
 

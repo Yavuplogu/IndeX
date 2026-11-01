@@ -571,7 +571,9 @@ final class AppModel extends ChangeNotifier {
     AudioFolderState.ready => 'Dossier MP3 : $mp3Path',
   };
   bool get audioKnown => audioState == AudioFolderState.ready;
-  String availability(DesktopEpisode e) => audioKnown
+  String availability(DesktopEpisode e) => mp3Path.isEmpty
+      ? 'MP3 absent'
+      : audioKnown
       ? (e.audioAvailable ? 'MP3 disponible' : 'MP3 absent')
       : audioState == AudioFolderState.unconfigured
       ? 'Dossier MP3 non paramétré'

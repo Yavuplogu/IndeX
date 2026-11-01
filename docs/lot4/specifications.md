@@ -642,3 +642,24 @@ plateforme non renseignée. Mettre à jour les deux installations avant d’éch
 des v2. Voir [le contrat](../lot5ter/format.md). Aucun changement SQLite/seed.
 Le panneau de renommage conserve ses dimensions quand on filtre. Le liseré
 du lecteur entoure uniquement le titre et sa date, dans la largeur disponible.
+
+
+### Validation et ajustements du 1er novembre 2026
+
+Le plan documentaire Lot 6 Android en quatre étapes est validé ; cette validation
+ne lance pas encore le développement Android.
+Sans dossier MP3 configuré, la liste affiche les épisodes en MP3 absent, fond et
+texte gris comme après un scan sans fichier correspondant. Le bandeau « dossier
+MP3 non paramétré » est conservé. Un suivi existant n’est ni effacé ni modifié.
+Avant le sélecteur ouvert depuis Télécharger, un avertissement explique que le
+dossier choisi deviendra le dossier MP3 global, pour cet épisode et les futurs
+téléchargements. Annuler cet avertissement ou le sélecteur ne change aucun dossier
+et ne lance aucun transfert. Un dossier choisi est analysé et mémorisé avant le
+téléchargement ; annuler ensuite le transfert conserve ce choix. Un dossier déjà
+configuré ne déclenche pas cet avertissement.
+
+Vérification sous Linux : formatage conforme, analyse Flutter sans problème et
+61 tests Flutter réussis. Le test de téléchargement contrôle le fond gris sans
+dossier, l’avertissement avant sélecteur, l’annulation sans effet et la persistance
+du dossier après annulation du transfert. Recette du prochain paquet Windows à
+confirmer sur la cible ; aucun développement Android ni changement de version majeure.

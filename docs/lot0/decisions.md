@@ -47,3 +47,18 @@ explicitement lancé le 24 octobre 2026.
 Les versions observées sont des versions d'audit, pas un `pubspec.lock` résolu.
 L'implémentation devra d'abord résoudre l'ensemble avec un SDK Flutter/Dart épinglé,
 conserver le lockfile et les sommes des artefacts, puis franchir les essais natifs.
+
+
+## Décision du 1er novembre 2026 — Lot 6
+
+Réaffectation demandée du Lot 6 au portage Android, après confirmation utilisateur
+de la recette Windows (Release GitHub restante). Préparation documentaire seulement,
+sans lancement de code. Quatre étapes proposées : audit/décisions, SAF/fichiers/JSON,
+UI/audio, recette/distribution. Voir [le plan](../lot6/plan.md). Les précédentes
+mentions de pause Android restent historiques ; la planification est désormais
+autorisée. Pas de changement de majeur/statut bêta et pas de publication implicite.
+
+Le découpage documentaire Lot 6 est validé par l’utilisateur. Ajustement Windows
+autorisé séparément : absence de dossier MP3 représentée en gris dans la liste,
+avertissement avant sélection du dossier global depuis Télécharger et conservation
+du dossier choisi même si le téléchargement est ensuite annulé.

@@ -2,14 +2,18 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuellement autorisé : **Lot 5 ter Windows**, lancé explicitement le 31 octobre 2026.
-  GUI Windows portable dans `apps/index_windows`, stockage et recherche dans le cœur Dart.
-  Lire `docs/lot4/bilan.md`, `docs/lot4/specifications.md` et la référence UI avant de modifier.
-  Priorité du 27 octobre 2026 : finaliser Windows ; développement et recette Android
-  en pause. Conserver le code Android et la portabilité de toutes les fonctionnalités
-  essentielles (interfaces de plateforme, cœur et données communs). Voir l’avenant
-  au cahier des charges et docs/lot5/bilan.md. Renommage livré au Lot 5 bis ; export/import JSON autorisé au Lot 5 ter.
-  Ne pas engager un lot ultérieur sans demande. Aucun contournement HTML dans l'application.
+- Périmètre actuel : préparation documentaire du **Lot 6 — Portage Android**
+  demandée et validée le 1er novembre 2026 ; voir `docs/lot6/plan.md`.
+  Correctifs Windows autorisés : affichage gris sans dossier MP3 et avertissement
+  du dossier global avant téléchargement (précisions en fin de fichier). Aucun développement
+  Android lancé par la seule réaffectation du lot. Étapes proposées 6A audit,
+  6B SAF/fichiers/JSON, 6C interface/audio, 6D qualification/distribution.
+  L’utilisateur confirme la recette Windows vérifiée, hors Release GitHub.
+  Préserver Windows et le cœur commun, les acquis des Lots 5 bis/ter et la parité
+  fonctionnelle. La pause Android antérieure est levée pour la planification ;
+  implémentation sur demande de lancement. Ne pas publier automatiquement.
+  GUI dans `apps/index_windows` ; lire bilans/spécifications avant modifications.
+  Majeur 0.6/bêta inchangés, iOS exclu. Aucun contournement HTML dans l’application.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
   le Lot 4 a ensuite été lancé explicitement et son code est désormais implémenté.
@@ -263,3 +267,18 @@
   historiques conservées. Ancien lecteur v1 incompatible avec nouveaux exports.
   SQLite v7/seed v4/majeur 0.6 inchangés. Renommage : dimensions stables sous
   filtrage ; liseré lecteur limité au titre et à la date.
+
+
+### Validation et ajustements du 1er novembre 2026
+
+Le plan documentaire Lot 6 Android en quatre étapes est validé ; cette validation
+ne lance pas encore le développement Android.
+Sans dossier MP3 configuré, la liste affiche les épisodes en MP3 absent, fond et
+texte gris comme après un scan sans fichier correspondant. Le bandeau « dossier
+MP3 non paramétré » est conservé. Un suivi existant n’est ni effacé ni modifié.
+Avant le sélecteur ouvert depuis Télécharger, un avertissement explique que le
+dossier choisi deviendra le dossier MP3 global, pour cet épisode et les futurs
+téléchargements. Annuler cet avertissement ou le sélecteur ne change aucun dossier
+et ne lance aucun transfert. Un dossier choisi est analysé et mémorisé avant le
+téléchargement ; annuler ensuite le transfert conserve ce choix. Un dossier déjà
+configuré ne déclenche pas cet avertissement.
