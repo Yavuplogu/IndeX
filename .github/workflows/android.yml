@@ -24,6 +24,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
+        with:
+          # Le paquet historique "tools" n’existe plus dans le dépôt SDK.
+          packages: platform-tools
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.7'

@@ -124,3 +124,19 @@ installé par Gradle, en plus du SDK 36 de l’application, sans modification du
 ADB n’a pas pu démarrer dans ce sandbox (répertoire ~/.android non écrivable).
 Aucun téléphone ni essai USB n’a été qualifié ici. La porte physique 6A reste
 ouverte : suivre RECETTE_ANDROID.md avant de valider le passage à 6B.
+
+
+## Premier échec CI Android — paquet SDK historique
+
+Logs `logs_111982889002.zip`, 1er novembre 2026 : version réservée **0.6.09**
+(code 10). L’exécution échoue dans android-actions/setup-android@v3 avant Flutter,
+les tests et la construction : `sdkmanager tools` puis
+`Warning: Failed to find package 'tools'`. L’action utilise par défaut
+`packages: tools platform-tools`, dont le premier paquet est obsolète.
+
+Correction minimale du workflow : préciser `packages: platform-tools`.
+Les command-line tools sont installés séparément par l’action ; plateformes 36,
+build-tools 36.0.0 et NDK 28.2.13676358 restent explicitement installés à l’étape
+suivante. Aucun changement de code applicatif, lockfile, SDK cible ni compteur.
+Le mineur 09 reste consommé ; la prochaine réservation suit le compteur courant.
+Une relance CI sur la branche contenant le correctif reste nécessaire.
