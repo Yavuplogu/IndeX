@@ -73,3 +73,11 @@ Dans le cloud, GRADLE_USER_HOME et ANDROID_USER_HOME doivent être dans un dossi
 écrivable. Utiliser une seule méthode de configuration des préférences Android.
 Si nécessaire, fournir à Java le magasin de confiance système via
 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts ; ne jamais désactiver TLS.
+
+
+Depuis la décision du 1er novembre 2026, Windows se lance également uniquement
+à la demande. Un push ne lance aucun des deux workflows. Si Windows est déjà
+en cours, Android attend encore sa fin : le verrou de version reste commun.
+Pour libérer la file immédiatement, le propriétaire peut annuler l’exécution
+Windows en cours depuis Actions → exécution → Cancel workflow. Son numéro déjà
+réservé reste consommé. Changer les déclencheurs n’annule aucune exécution existante.

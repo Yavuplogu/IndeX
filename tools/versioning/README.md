@@ -29,7 +29,7 @@ automatique d’état ou de majeur. La forme Flutter/SemVer enlève le zéro ini
 
 ## Constructions GitHub Actions
 
-Chaque exécution de construction Windows (push ou lancement manuel, y compris
+Chaque exécution manuelle de construction Windows ou Android (y compris
 relance) réserve le prochain mineur **avant** les contrôles et la compilation.
 Un build en échec consomme donc son numéro : il n’est pas réattribué. Le premier
 nouveau build réserve 01, le suivant 02. Le numéro n’est pas basé sur le nombre
@@ -38,16 +38,14 @@ de commits ou sur le nom de l’artefact précédent.
 Le workflow sérialise les constructions et `reserve.py --ci` conserve les
 compteurs dans la branche technique **`index-build-versions`**, créée à la première
 réservation. Cette branche contient uniquement `counters.json` ; elle ne modifie
-ni `main` ni le code. Les pushes du jeton Actions ne relancent pas les workflows ;
-la branche est aussi exclue explicitement du déclenchement Windows. Ne pas effacer
+ni `main` ni le code. Les deux workflows se déclenchent uniquement avec workflow_dispatch ;
+un push, y compris sur la branche de compteurs, ne lance aucune construction. Ne pas effacer
 cette branche ou réinitialiser son compteur, pour éviter de réutiliser des versions.
 
 L’écriture requiert `contents: write` pour le jeton Actions. Une règle du dépôt
 qui refuse la création/écriture de cette branche fera échouer explicitement la
-réservation, sans produire une archive avec une version de repli. Les pull requests
-exécutent les contrôles et la compilation de recette, mais ne réservent pas de
-numéro et ne publient pas d’archive distribuable (jeton externe potentiellement
-sans droit d’écriture). Cette numérotation vise les builds de distribution ;
+réservation, sans produire une archive avec une version de repli. Les pull requests ne déclenchent plus ces workflows ; leurs contrôles doivent
+être lancés explicitement sur la branche à vérifier. Cette numérotation vise les builds de distribution ;
 `flutter test` et les compilations intermédiaires de tests n’incrémentent pas le mineur.
 
 Sorties : `IndeX_0.5.01_windows_x64_portable.zip`, son SHA256 et artefact
@@ -95,3 +93,10 @@ L’APK `IndeX_<version>_android_arm64_diagnostic.apk`, son artefact, À propos,
 versionName et versionCode utilisent les valeurs réservées. La compilation
 intermédiaire locale sans les variables INDEX_* ne produit pas une distribution
 numérotée. Aucun compteur n’est remis à zéro et aucun majeur n’est changé.
+
+
+Décision du 1er novembre 2026 : Windows devient exclusivement manuel, comme
+Android. Le verrou commun reste nécessaire pour le compteur : si les deux sont
+lancés manuellement en même temps, le second attend le premier. Une exécution
+déjà démarrée avant ce changement continue ; modifier les déclencheurs ne
+l’annule pas. Annuler un build ne restitue pas son numéro déjà réservé.

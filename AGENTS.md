@@ -281,3 +281,10 @@ téléchargements. Annuler cet avertissement ou le sélecteur ne change aucun do
 et ne lance aucun transfert. Un dossier choisi est analysé et mémorisé avant le
 téléchargement ; annuler ensuite le transfert conserve ce choix. Un dossier déjà
 configuré ne déclenche pas cet avertissement.
+
+
+- Décision du 1er novembre 2026 : Windows et Android uniquement workflow_dispatch,
+  aucun déclenchement sur push/pull_request. Conserver le même groupe de
+  concurrence pour le compteur partagé, sans reset ni annulation automatique des
+  builds déjà lancés. Chaque lancement manuel distribuant un artefact réserve
+  son mineur. Ce changement ne dispense pas de vérifier avant de distribuer.

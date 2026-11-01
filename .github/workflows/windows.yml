@@ -1,8 +1,6 @@
 name: Verification Windows portable
 on:
-  push:
-    branches-ignore: [index-build-versions]
-  pull_request:
+  # Construction Windows uniquement sur demande, comme Android.
   workflow_dispatch:
 # La branche de compteurs ne contient aucune donnée utilisateur ni code applicatif.
 permissions:
@@ -20,7 +18,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Réserver la version du build (y compris en cas d'échec ultérieur)
-        if: github.event_name != 'pull_request'
         shell: pwsh
         run: |
           python tools/versioning/reserve.py --ci
@@ -40,15 +37,12 @@ jobs:
         shell: pwsh
         run: ./tools/lot4/check.ps1
       - name: Construction de l'archive portable sans MP3
-        if: github.event_name != 'pull_request'
         shell: pwsh
         run: ./tools/lot4/package_windows.ps1
       - name: Lancement de l'archive extraite
-        if: github.event_name != 'pull_request'
         shell: pwsh
         run: ./tools/lot4/smoke_archive.ps1 -Archive "./dist/IndeX_$($env:INDEX_VERSION)_windows_x64_portable.zip"
       - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request'
         with:
           name: IndeX-${{ env.INDEX_VERSION }}-windows-x64-portable
           path: |

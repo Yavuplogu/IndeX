@@ -18,7 +18,9 @@ interface/audio, puis qualification/distribution. L’[audit 6A](docs/lot6/audit
 et le [guide de recette Android](docs/lot6/RECETTE_ANDROID.md) précisent les limites.
 L’APK diagnostique ARM64 (Android 7.0 minimum) compile, sans MP3 embarqué ;
 la preuve sur appareil physique reste à effectuer avant les étapes suivantes.
-Le workflow Android reste manuel et partage la numérotation Windows.
+Les workflows Windows et Android se lancent uniquement manuellement depuis
+GitHub Actions → workflow souhaité → Run workflow. Ils partagent la numérotation
+et le verrou de réservation ; un push ne déclenche plus de construction.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
