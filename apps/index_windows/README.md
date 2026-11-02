@@ -98,7 +98,7 @@ avec confirmation et journal de reprise. Cœur `Mp3Renamer` commun ; publication
 Windows `renameMp3` via MoveFileExW sans remplacement. Le schéma utilisateur v6
 ajoute le journal, le seed documentaire v4 reste inchangé. Voir le
 [bilan Lot 5 bis](../../docs/lot5bis/bilan.md) et la recette Windows restante.
-Android est en audit Lot 6A ; le renommage SAF sera porté en 6B. Le transfert JSON
+Android dispose désormais du renommage sûr dans le dossier géré au Lot 6B. Le transfert JSON
 Windows est décrit ci-dessous au Lot 5 ter.
 
 
@@ -106,7 +106,7 @@ Windows est décrit ci-dessous au Lot 5 ter.
 
 Paramètres → Transfert du suivi : export Windows dans exports/, import avec aperçu,
 conflits explicites et sauvegarde avant transaction. Cœur ListeningSync et contrat
-JSON v2 (lecture v1 conservée) communs au futur Android ; sélection/publication SAF restent différées.
+JSON v2 (lecture v1 conservée) partagés avec Android ; sélecteurs SAF raccordés au Lot 6B.
 Schéma utilisateur v7, seed documentaire v4 conservé. Le compteur de builds 0.6
 continue sans réinitialisation. Voir [le bilan](../../docs/lot5ter/bilan.md) et
 [le contrat](../../docs/lot5ter/format.md).
@@ -120,3 +120,15 @@ dans le compteur commun Windows/Android. Renommage, JSON et téléchargement res
 à porter en 6B ; la lecture continue écran éteint sera réalisée en 6C.
 Voir [audit et décisions](../../docs/lot6/audit-6A.md) et
 [recette sur téléphone](../../docs/lot6/RECETTE_ANDROID.md).
+
+
+## Lot 6B — stockage Android
+
+Porte 6A confirmée par l’utilisateur le 2 novembre. Implémentation SAF/JSON/MP3
+dans AndroidDocuments et fournisseur local optionnel IndeXDocumentsProvider ;
+voir [bilan 6B](../../docs/lot6/bilan-6B.md). Le fournisseur expose uniquement
+les MP3 gérés, jamais les données utilisateur. Renommage sans écrasement réservé
+à ce dossier privé ; les MP3 y sont supprimés à la désinstallation. JSON partagé
+avec Windows, copie externe via sélecteur. Téléchargements HTTP/HTTPS explicites
+avec publication vérifiée et journal de récupération. Aucun nouveau package.
+La recette physique 6B et le service média 6C restent distincts.

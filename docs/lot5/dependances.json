@@ -56,5 +56,13 @@
     "license": "BSD-3-Clause",
     "usage": "Contrainte compatible avec path_provider 2.1.6, évite JNI transitif sur le build Windows ; moteur Android inchangé",
     "risk": "Retester la chaîne Android lors de sa reprise ; ne pas lever ce pin sans revue native"
+  },
+  {
+    "component": "Android DocumentsProvider / DocumentsContract / AtomicFile / Os",
+    "api": "Android API 24 minimum, compile/target 36",
+    "usage": "Lot 6B : URI SAF opaques, copie JSON bornée, publication MP3 journalisée, dossier MP3 privé optionnel et lien dur exclusif synchronisé pour le renommage",
+    "redistributed_binary": false,
+    "license": "API Android système ; adaptateur Kotlin propre au projet, aucun nouveau package runtime",
+    "risk": "Fournisseurs externes sans garantie de renommage refusés ; recette réelle des permissions, interruptions et du fournisseur IndeX requise"
   }
 ]

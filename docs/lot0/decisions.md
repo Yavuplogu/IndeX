@@ -70,3 +70,12 @@ identifiant existant conservé, profil privé/SAF, MediaPlayer gardé pour mesur
 service média prévu en 6C pour écran éteint. APK debug ARM64 compilé et contenu
 vérifié ; aucune qualification sur téléphone revendiquée. CI Android manuelle
 avec compteur de version partagé Windows. Aucun nouveau package runtime.
+
+
+## 2 novembre 2026 — Lot 6B
+
+Validation utilisateur de 6A et lancement explicite de 6B. Choix et garanties dans
+[bilan-6B.md](../lot6/bilan-6B.md) : SAF externe opaque, copie privée complète et
+publication vérifiée/journalisée, provider local optionnel pour un renommage
+sans écrasement, JSON partagé Windows/Android. SQLite/seed/majeur conservés,
+aucun package runtime nouveau. Lecture écran éteint maintenue au futur 6C.

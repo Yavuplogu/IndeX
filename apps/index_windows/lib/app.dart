@@ -26,11 +26,13 @@ Future<String?> nativeDirectoryPicker() => Platform.isAndroid
     : getDirectoryPath(confirmButtonText: 'Choisir ce dossier');
 
 typedef SyncFilePicker = Future<String?> Function();
-Future<String?> nativeSyncFilePicker() async => (await openFile(
-  acceptedTypeGroups: const [
-    XTypeGroup(label: 'Suivi IndeX JSON', extensions: ['json']),
-  ],
-))?.path;
+Future<String?> nativeSyncFilePicker() async => Platform.isAndroid
+    ? AppModel.androidChannel.invokeMethod<String>('pickJson')
+    : (await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'Suivi IndeX JSON', extensions: ['json']),
+        ],
+      ))?.path;
 
 final class EditorialColors {
   EditorialColors(bool dark)
@@ -1769,7 +1771,6 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                                   onPressed:
                                       !m.busy &&
                                           !m.downloading &&
-                                          !m.android &&
                                           mp3DownloadUri(e.downloadUrl) != null
                                       ? () => unawaited(download(e))
                                       : null,
@@ -2476,26 +2477,39 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Future<void> exportSync() async {
     final file = await m.exportListeningSync();
     if (file == null || !mounted) return;
+    String? destination;
+    if (m.android) {
+      try {
+        destination = await m.saveListeningSync(file);
+      } catch (error) {
+        m.error =
+            'Export externe impossible (copie interne conservée) : $error';
+        m.changed();
+        return;
+      }
+      if (!mounted || destination == null) return;
+    }
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Suivi exporté'),
         content: SelectableText(
-          'Le fichier contient les favoris, états d’écoute et progressions sauvegardées. Copiez-le sur l’autre appareil puis importez-le dans IndeX.\n\n${file.path}',
+          'Le fichier contient les favoris, états d’écoute et progressions sauvegardées. Copiez-le sur l’autre appareil puis importez-le dans IndeX.\n\n${destination ?? file.path}',
         ),
         actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await m.folderOpener(file.parent.path);
-              } catch (error) {
-                m.error = error.toString();
-                m.changed();
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Ouvrir le dossier des exports'),
-          ),
+          if (!m.android)
+            TextButton(
+              onPressed: () async {
+                try {
+                  await m.folderOpener(file.parent.path);
+                } catch (error) {
+                  m.error = error.toString();
+                  m.changed();
+                  if (context.mounted) Navigator.pop(context);
+                }
+              },
+              child: const Text('Ouvrir le dossier des exports'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Fermer'),
@@ -2612,6 +2626,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ], c),
                           panelGroup('Données utilisateur', [
                             SelectableText(m.dataPath),
+                            if (m.android)
+                              const Text(
+                                'Stockage privé Android, supprimé à la désinstallation ou après Effacer les données. Exportez votre suivi vers un emplacement externe pour le conserver.',
+                              ),
                             const SizedBox(height: 8),
                             if (!m.android)
                               OutlinedButton(
@@ -2671,7 +2689,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           ], c),
                           panelGroup('Transfert du suivi', [
                             const Text(
-                              'Transfert manuel des favoris, statuts et progressions entre installations IndeX. Disponible sur Windows ; le transfert Android sera activé lors du portage. Aucun MP3, catalogue, chemin ou lien audio local transféré. Un fichier .json pouvant ensuite être importé est créé dans le dossier "exports" du dossier des données utilisateur.',
+                              'Transfert manuel des favoris, statuts et progressions entre installations IndeX, Windows ou Android. Aucun MP3, catalogue, chemin ou lien audio local transféré. Une copie .json est créée dans le dossier "exports" des données utilisateur ; sur Android, choisissez aussi où enregistrer le fichier pour le transférer.',
                             ),
                             const SizedBox(height: 10),
                             Wrap(
@@ -2679,15 +2697,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               runSpacing: 8,
                               children: [
                                 OutlinedButton(
-                                  onPressed: m.android
-                                      ? null
-                                      : () => unawaited(exportSync()),
+                                  onPressed: () => unawaited(exportSync()),
                                   child: const Text('Exporter le suivi JSON'),
                                 ),
                                 OutlinedButton(
-                                  onPressed: m.android
-                                      ? null
-                                      : () => unawaited(importSync()),
+                                  onPressed: () => unawaited(importSync()),
                                   child: const Text(
                                     'Importer et fusionner un suivi JSON',
                                   ),
@@ -2699,18 +2713,19 @@ class _SettingsDialogState extends State<SettingsDialog> {
                             const Text(
                               'Une seule conversion est proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
                             ),
+                            if (m.android)
+                              const Text(
+                                'Sur Android, le renommage sûr est disponible dans le dossier géré IndeX · MP3. Les autres fournisseurs sont refusés s’ils ne garantissent pas l’absence d’écrasement.',
+                              ),
                             const SizedBox(height: 10),
                             OutlinedButton(
-                              onPressed: m.android
-                                  ? null
-                                  : () => unawaited(
-                                      showDialog<void>(
-                                        context: context,
-                                        barrierDismissible: false,
-                                        builder: (_) =>
-                                            Mp3RenameDialog(model: m),
-                                      ),
-                                    ),
+                              onPressed: () => unawaited(
+                                showDialog<void>(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => Mp3RenameDialog(model: m),
+                                ),
+                              ),
                               child: const Text(
                                 'Prévisualiser le renommage des MP3',
                               ),
@@ -2789,6 +2804,36 @@ class ScanPage extends StatelessWidget {
       ),
     ),
   );
+  Future<void> managedFolder(BuildContext context) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Utiliser le dossier MP3 IndeX ?'),
+        content: const SelectableText(
+          'Ce dossier est accessible dans le gestionnaire de fichiers Android sous « IndeX · MP3 » et permet le renommage sûr. Les MP3 existants ne seront pas déplacés. Attention : les MP3 de ce dossier, comme les données privées, sont supprimés si vous désinstallez IndeX ou effacez ses données. Conservez vos originaux ailleurs.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Utiliser ce dossier'),
+          ),
+        ],
+      ),
+    );
+    if (yes != true) return;
+    try {
+      final tree = await model.documentOperation('managedTree', {});
+      if (tree is String) await model.scan(tree);
+    } catch (error) {
+      model.error = 'Dossier géré inaccessible : $error';
+      model.changed();
+    }
+  }
+
   Future<void> associate(
     BuildContext context,
     Map<String, dynamic> decision,
@@ -2950,6 +2995,12 @@ class ScanPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     SelectableText(model.folderLabel),
+                    if (model.android &&
+                        Uri.tryParse(model.mp3Path)?.authority ==
+                            'fr.index.index_windows.documents')
+                      const Text(
+                        'Dossier géré accessible dans Fichiers Android sous IndeX · MP3. Stockage privé : les MP3 de ce dossier sont supprimés à la désinstallation. Conservez vos originaux ailleurs.',
+                      ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 18,
@@ -2980,6 +3031,11 @@ class ScanPage extends StatelessWidget {
                           icon: const Icon(Icons.folder_open),
                           label: const Text('Choisir un dossier MP3'),
                         ),
+                        if (model.android)
+                          OutlinedButton(
+                            onPressed: () => unawaited(managedFolder(context)),
+                            child: const Text('Utiliser le dossier MP3 IndeX'),
+                          ),
                         OutlinedButton(
                           onPressed: model.mp3Path.isEmpty
                               ? null

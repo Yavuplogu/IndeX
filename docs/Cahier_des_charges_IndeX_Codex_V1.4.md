@@ -644,3 +644,19 @@ Révision du 2 novembre 2026, Windows et Android : retirer du cadre « Résultat
 la recherche » la phrase « Correspondances encadrées en rouge, utilisez les boutons
 pour parcourir. » et l’espace correspondant. Conserver le titre et le compteur
 de correspondances, ainsi que les boutons précédent/suivant et les surbrillances.
+
+
+## Avenant du 2 novembre 2026 — lancement explicite du Lot 6B
+
+L’utilisateur confirme les trois points de recette physique 6A (catalogue/recherche,
+association/lecture/seek, conservation du dossier et de la progression), puis
+lance 6B. Porter téléchargement, renommage et JSON selon le [bilan](lot6/bilan-6B.md).
+Conserver SQLite v7/seed v4/JSON v2 avec lecture v1 et majeur 0.6.
+SAF : copie complète privée, contrôle du fichier publié, aucun remplacement
+d’une cible, diagnostic/reprise après interruption. Ne pas supposer une atomicité
+Windows chez les fournisseurs externes. Renommage sûr dans le fournisseur local
+optionnel IndeX · MP3 (privé, effacé à la désinstallation), autres fournisseurs
+refusés sans garantie. Les originaux ne sont ni déplacés ni réécrits.
+JSON externe via sélecteurs Android, sauvegarde et fusion commune, aucune donnée
+de chemin/permission/audio transférée. Confirmer sur appareil avant 6C ; écran
+éteint et commandes de verrouillage non lancés par cette demande.

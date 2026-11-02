@@ -62,6 +62,11 @@ Future<void> publishSyncExport(File partial, File target) =>
       {'partial': partial.path, 'target': target.path},
     );
 
+Future<Object?> androidDocumentOperation(
+  String method,
+  Map<String, Object?> args,
+) => const MethodChannel('index/android').invokeMethod<Object?>(method, args);
+
 enum CatalogSort {
   relevance,
   dateNew,
@@ -101,6 +106,8 @@ final class AppModel extends ChangeNotifier {
     this.renameFile = renameNativeMp3,
     this.syncPublisher = publishSyncExport,
     this.android = false,
+    this.documentOperation = androidDocumentOperation,
+    this.downloadSourcePolicy,
   }) : _audioRandom = audioRandom ?? Random(),
        defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
@@ -135,14 +142,42 @@ final class AppModel extends ChangeNotifier {
     );
   }
 
+  final DocumentOperation documentOperation;
+  final bool Function(Uri)? downloadSourcePolicy;
+  Future<void> _publishPrivate(File partial, File target) async {
+    await documentOperation('publishPrivate', {
+      'partial': partial.path,
+      'target': target.path,
+    });
+  }
+
+  Future<String?> saveListeningSync(File file) async {
+    String? destination;
+    await runWork('Copie externe du suivi…', () async {
+      try {
+        destination = await documentOperation('exportJson', {
+          'path': file.path,
+        }) as String?;
+      } catch (error) {
+        throw StateError(
+          'Export externe impossible ; la copie interne est conservée : $error',
+        );
+      }
+    });
+    return destination;
+  }
+
+  DocumentMp3Renamer get _documentRenamer =>
+      DocumentMp3Renamer(session!.store, documentOperation);
   final SyncPublisher syncPublisher;
   SyncImportPlan? syncPlan;
   Future<File?> exportListeningSync() async {
     File? result;
     await runWork('Export du suivi…', () async {
-      if (android) throw UnsupportedError('Transfert Android en pause.');
-      result = await ListeningSync(session!.store)
-          .exportFile(session!.dataDirectory, publish: syncPublisher);
+      result = await ListeningSync(session!.store).exportFile(
+        session!.dataDirectory,
+        publish: android ? _publishPrivate : syncPublisher,
+      );
       message = 'Export du suivi créé dans le dossier exports.';
     });
     return result;
@@ -155,12 +190,16 @@ final class AppModel extends ChangeNotifier {
   Future<void> previewListeningSync(String path) =>
       runWork('Lecture du suivi à importer…', () async {
         syncPlan = null;
-        if (android) throw UnsupportedError('Transfert Android en pause.');
         if (playback.reference != null)
           throw StateError(
             'Mettez en pause et libérez la piste avant de préparer un import.',
           );
-        final document = await ListeningSync.readFile(File(path));
+        final document = android
+            ? SyncDocument.decode(
+                (await documentOperation('readDocument', {'reference': path}))
+                    as Uint8List,
+              )
+            : await ListeningSync.readFile(File(path));
         syncPlan = ListeningSync(session!.store).preview(document);
       });
   Future<void> applyListeningSync(
@@ -190,28 +229,43 @@ final class AppModel extends ChangeNotifier {
   Future<void> previewRename() =>
       runWork('Préparation du renommage…', () async {
         renamePlan = null;
-        if (android) throw UnsupportedError('Renommage Android en pause.');
         if (mp3Path.isEmpty)
           throw StateError(
             'Choisissez un dossier MP3 dans Fichiers et associations.',
           );
         final renamer = Mp3Renamer(session!.store);
-        await renamer.recover();
+        if (android) {
+          await _documentRenamer.recover();
+        } else {
+          await renamer.recover();
+        }
         final runs = session!.store.database.select(
           'SELECT id FROM rename_runs ORDER BY id DESC LIMIT 1',
         );
         renameReport = runs.isEmpty
             ? []
             : renamer.report(runs.single['id'] as int);
-        renamePlan = await renamer.preview(
-          Directory(mp3Path),
-          recursive: recursive,
-          inUse: playback.reference,
-          onProgress: (done, total) {
-            renameProgress = 'Vérification des fichiers : $done / $total';
-            changed();
-          },
-        );
+        void progress(int done, int total) {
+          renameProgress = 'Vérification des fichiers : $done / $total';
+          changed();
+        }
+
+        renamePlan = android
+            ? await _documentRenamer.preview(
+                mp3Path,
+                recursive: recursive,
+                inUse: playback.reference,
+                onProgress: progress,
+              )
+            : await renamer.preview(
+                Directory(mp3Path),
+                recursive: recursive,
+                inUse: playback.reference,
+                onProgress: (done, total) {
+                  renameProgress = 'Vérification des fichiers : $done / $total';
+                  changed();
+                },
+              );
         renameProgress = '';
       });
 
@@ -228,16 +282,29 @@ final class AppModel extends ChangeNotifier {
     if (plan == null || plan.planned == 0) return;
     renamePlan = null; // Un aperçu confirmé n’est jamais réutilisé.
     final renamer = Mp3Renamer(session!.store);
-    final run = await renamer.execute(
-      plan,
-      move: renameFile,
-      inUse: () => playback.reference,
-      onProgress: (done, total) {
-        renameProgress = 'Renommage : $done / $total';
-        changed();
-      },
-    );
-    await renamer.recover();
+    final run = android
+        ? await _documentRenamer.execute(
+            plan,
+            inUse: () => playback.reference,
+            onProgress: (done, total) {
+              renameProgress = 'Renommage : $done / $total';
+              changed();
+            },
+          )
+        : await renamer.execute(
+            plan,
+            move: renameFile,
+            inUse: () => playback.reference,
+            onProgress: (done, total) {
+              renameProgress = 'Renommage : $done / $total';
+              changed();
+            },
+          );
+    if (android) {
+      await _documentRenamer.recover();
+    } else {
+      await renamer.recover();
+    }
     renameReport = renamer.report(run);
     renameProgress = '';
     _lastReport();
@@ -281,6 +348,8 @@ final class AppModel extends ChangeNotifier {
     String destination,
   ) async {
     File? receivedFile;
+    Directory? androidStage;
+    final temporarilyUnavailable = <Map<String, Object?>>[];
     try {
       final episode = catalog.where((e) => e.id == requested.id).first;
       if (episode.audioAvailable) return;
@@ -288,16 +357,20 @@ final class AppModel extends ChangeNotifier {
       if (source == null)
         throw ArgumentError('Aucune URL MP3 valide dans le journal intégré.');
       if (android)
-        throw UnsupportedError(
-          'Téléchargement Android en attente du portage du stockage.',
-        );
-      final folder = Directory(
-        await Directory(destination).resolveSymbolicLinks(),
-      );
+        androidStage = await Directory(dataPath)
+            .createTemp('.index-android-download-');
+      final folder =
+          androidStage ??
+          Directory(await Directory(destination).resolveSymbolicLinks());
       final name = episode.systemName;
       if (name == null || name.isEmpty)
         throw StateError('Aucun titre système dans le catalogue intégré.');
       final target = File('${folder.path}/$name');
+      if (android)
+        await documentOperation('checkDestination', {
+          'tree': destination,
+          'name': name,
+        });
       if (session!.store.database.select(
         'SELECT 1 FROM local_audio_links WHERE audio_ref=? AND episode_id<>?',
         [target.uri.toString(), episode.id],
@@ -314,7 +387,14 @@ final class AppModel extends ChangeNotifier {
         source: source,
         folder: folder,
         name: name,
-        publish: downloadPublisher,
+        publish: android ? _publishPrivate : downloadPublisher,
+        allowSource:
+            downloadSourcePolicy ??
+            (android
+                ? (uri) =>
+                      uri.scheme == 'https' ||
+                      uri.host == 'rendezvousavecmrx.free.fr'
+                : null),
         onProgress: (received, total) {
           downloadReceived = received;
           downloadTotal = total;
@@ -327,16 +407,74 @@ final class AppModel extends ChangeNotifier {
       );
       changed();
       final file = await activeDownload!.run();
+      if (android) {
+        session!.setSetting('android_publication_pending', 'true');
+        // Une référence en cache peut survivre à la suppression externe d’un MP3.
+        // Ne jamais la laisser lire la nouvelle copie pendant sa publication.
+        for (final link in session!.store.database.select(
+          'SELECT episode_id,audio_ref,current_name FROM local_audio_links WHERE available=1',
+        )) {
+          if (Uri.tryParse(link['audio_ref'] as String)?.authority ==
+                  Uri.tryParse(destination)?.authority &&
+              MatchingEngine.filenameKey(link['current_name'] as String) ==
+                  MatchingEngine.filenameKey(name)) {
+            temporarilyUnavailable.add(Map<String, Object?>.from(link));
+            session!.store.database.execute(
+              'UPDATE local_audio_links SET available=0 WHERE episode_id=?',
+              [link['episode_id']],
+            );
+          }
+        }
+        reload();
+      }
+      Map<String, dynamic>? publication;
+      if (android)
+        publication = Map<String, dynamic>.from(
+          await documentOperation('publishDocument', {
+            'source': file.path,
+            'tree': destination,
+            'name': name,
+            'episode_id': episode.id,
+            'profile_id': ListeningSync(session!.store).deviceId,
+            'previous': episode.audioRef ?? '',
+            'excluded_before': session!.store.unlinkedAudioReferences.toList(),
+          }) as Map,
+        );
+      final reference =
+          publication?['reference'] as String? ?? file.uri.toString();
+      for (final link in temporarilyUnavailable) {
+        if (documentReferenceKey(link['audio_ref'] as String) !=
+            documentReferenceKey(reference))
+          session!.store.database.execute(
+            'UPDATE local_audio_links SET available=1 WHERE episode_id=? AND audio_ref=?',
+            [link['episode_id'], link['audio_ref']],
+          );
+      }
       receivedFile = file;
-      await _scan(folder.path);
+      if (session!.store.database
+          .select('SELECT episode_id,audio_ref FROM local_audio_links')
+          .any(
+            (row) =>
+                row['episode_id'] != episode.id &&
+                documentReferenceKey(row['audio_ref'] as String) ==
+                    documentReferenceKey(reference),
+          ))
+        throw StateError(
+          'La référence publiée est associée à un autre épisode.',
+        );
+      await _scan(android ? destination : folder.path);
       final refreshed = catalog.firstWhere((e) => e.id == episode.id);
-      if (refreshed.audioRef != file.uri.toString() ||
-          !refreshed.audioAvailable) {
+      if (refreshed.audioRef != reference || !refreshed.audioAvailable) {
         // Action explicite de l'utilisateur : lève aussi une exclusion antérieure.
-        session!.store.recordManualLink(episode.id, file.uri.toString(), name);
+        session!.store.recordManualLink(episode.id, reference, name);
         _refreshAssociationReport();
         reload();
       }
+      if (publication != null)
+        await documentOperation('ackPublication', {
+          'id': publication['id'],
+          'reference': reference,
+        });
       message = 'Téléchargement terminé : ${episode.title}';
     } on DownloadCancelled {
       message = 'Téléchargement annulé.';
@@ -345,6 +483,13 @@ final class AppModel extends ChangeNotifier {
           ? 'Téléchargement impossible : $failure'
           : 'Le MP3 a été reçu et conservé, mais son association a échoué. Relancez une analyse dans Fichiers. $failure';
     } finally {
+      if (androidStage != null) {
+        try {
+          await androidStage.delete(recursive: true);
+        } on FileSystemException {
+          /* Résidu privé, jamais scanné comme MP3. */
+        }
+      }
       activeDownload = null;
       downloadingEpisode = null;
       downloadFinishing = false;
@@ -659,6 +804,115 @@ final class AppModel extends ChangeNotifier {
     changed();
   }
 
+  Future<bool> _recoverPublications(String tree) async {
+    try {
+      final state = Map<String, dynamic>.from(
+        await documentOperation('publicationState', {'tree': tree}) as Map,
+      );
+      final pending = state['pending'] as List;
+      var unresolved = false;
+      final errors = (state['errors'] as List).cast<String>().toList();
+      for (final raw in pending) {
+        final item = Map<String, dynamic>.from(raw as Map);
+        final reference = item['uri'] as String;
+        if (item['verified'] == true) {
+          if (item['profile_id'] != ListeningSync(session!.store).deviceId)
+            continue;
+          final id = item['episode_id'] as String;
+          final previous = item['previous'] as String? ?? '';
+          final oldExclusions = (item['excluded_before'] as List? ?? const [])
+              .cast<String>()
+              .map(documentReferenceKey)
+              .toSet();
+          final excluded = session!.store.unlinkedAudioReferences
+              .map(documentReferenceKey)
+              .toSet();
+          final choice = const MatchingEngine().match(
+            session!.store.matchEpisodes(),
+            [
+              AudioCandidate(
+                reference: reference,
+                currentName: item['name'] as String,
+              ),
+            ],
+          ).single;
+          final links = session!.store.database.select(
+            'SELECT episode_id,audio_ref FROM local_audio_links',
+          );
+          final compatible = links
+              .where(
+                (row) =>
+                    row['episode_id'] == id ||
+                    documentReferenceKey(row['audio_ref'] as String) ==
+                        documentReferenceKey(reference),
+              )
+              .every(
+                (row) =>
+                    row['episode_id'] == id &&
+                    (documentReferenceKey(row['audio_ref'] as String) ==
+                            documentReferenceKey(previous) ||
+                        documentReferenceKey(row['audio_ref'] as String) ==
+                            documentReferenceKey(reference)),
+              );
+          if (choice.status == MatchStatus.confirmed &&
+              choice.episodeId == id &&
+              compatible &&
+              !(excluded.contains(documentReferenceKey(reference)) &&
+                  !oldExclusions.contains(documentReferenceKey(reference))) &&
+              !(previous.isNotEmpty &&
+                  excluded.contains(documentReferenceKey(previous)) &&
+                  !oldExclusions.contains(documentReferenceKey(previous)))) {
+            // Le journal atteste le téléchargement explicitement demandé ; pas de
+            // restauration silencieuse d’un choix retiré après cette demande.
+            session!.store.recordManualLink(
+              id,
+              reference,
+              item['name'] as String,
+            );
+            await documentOperation('ackPublication', {
+              'id': item['id'],
+              'reference': reference,
+            });
+            continue;
+          }
+          await documentOperation('quarantinePublication', {'id': item['id']});
+          errors.add(
+            'Publication complète mais association modifiée ou retirée : ${item['name']}. Aucun choix utilisateur remplacé.',
+          );
+        }
+        unresolved = true;
+        for (final row in session!.store.database.select(
+          'SELECT episode_id,audio_ref,current_name FROM local_audio_links',
+        )) {
+          if (documentReferenceKey(row['audio_ref'] as String) ==
+                  documentReferenceKey(reference) ||
+              (reference == '' &&
+                  (row['audio_ref'] as String).startsWith(
+                    item['tree'] as String,
+                  ) &&
+                  MatchingEngine.filenameKey(row['current_name'] as String) ==
+                      MatchingEngine.filenameKey(item['name'] as String))) {
+            session!.store.database.execute(
+              'UPDATE local_audio_links SET available=0 WHERE episode_id=?',
+              [row['episode_id']],
+            );
+          }
+        }
+      }
+      session!.setSetting('android_publication_pending', unresolved.toString());
+      if (errors.isNotEmpty) error = errors.join('\n');
+      return errors.isNotEmpty;
+    } catch (failure) {
+      // Pas de destruction du suivi ni de faux profil vide si le journal natif est inaccessible.
+      session!.store.database.execute(
+        'UPDATE local_audio_links SET available=0',
+      );
+      error =
+          'Publications à vérifier : $failure. Relancez une analyse dans Fichiers.';
+      return true;
+    }
+  }
+
   Future<void> _open(Directory directory, bool existing) async {
     final seed = await seedLoader();
     session = await PortableSession.open(
@@ -669,10 +923,32 @@ final class AppModel extends ChangeNotifier {
       requireExisting: existing,
     );
     dataPath = session!.dataDirectory.path;
+    if (android) {
+      await _documentRenamer.recover();
+      await for (final entry in Directory(dataPath).list(followLinks: false)) {
+        if (entry is Directory &&
+            entry.uri.pathSegments
+                .where((s) => s.isNotEmpty)
+                .last
+                .startsWith('.index-android-download-')) {
+          try {
+            await entry.delete(recursive: true);
+          } on FileSystemException {
+            /* Résidu privé ignoré. */
+          }
+        }
+      }
+    }
     if (Mp3Renamer(session!.store).unresolved) {
       error = 'Renommage interrompu : réconciliation en attente. Consultez Paramètres → Fichiers audio.';
     }
     mp3Path = session!.setting('mp3_directory') ?? '';
+    final blockedPublications =
+        android &&
+            mp3Path.isNotEmpty &&
+            session!.setting('android_publication_pending') == 'true'
+        ? await _recoverPublications(mp3Path)
+        : false;
     dark = session!.setting('theme') == 'dark';
     _restoreListing();
     if (mp3Path.isEmpty)
@@ -689,6 +965,7 @@ final class AppModel extends ChangeNotifier {
           ? AudioFolderState.ready
           : AudioFolderState.incomplete;
     }
+    if (blockedPublications) audioState = AudioFolderState.incomplete;
     reload();
   }
 
@@ -787,20 +1064,41 @@ final class AppModel extends ChangeNotifier {
       });
 
   Future<void> _scan(String path) async {
+    if (android && session!.setting('android_publication_pending') == 'true')
+      await _recoverPublications(path);
+    if (android) await _documentRenamer.recover();
     if (Mp3Renamer(session!.store).unresolved)
       throw StateError('Réconciliez le renommage interrompu avant de scanner.');
     message = 'Association par noms d’origine et système du journal…';
     changed();
     mp3Path = android ? path : Directory(path).absolute.path;
     if (android) {
-      final raw = await androidChannel.invokeMapMethod<String, dynamic>(
-        'scan',
-        {'tree': path, 'recursive': recursive},
+      final raw = Map<String, dynamic>.from(
+        await documentOperation('scan', {'tree': path, 'recursive': recursive})
+            as Map,
       );
+      // Le documentId est opaque et stable chez un fournisseur ; un nouveau
+      // grant tree vers ce même document conserve le choix manuel existant.
+      if (raw['complete'] == true)
+        for (final file in raw['files'] as List) {
+          final reference = (file as Map)['reference'] as String;
+          for (final link in session!.store.database.select(
+            'SELECT episode_id,audio_ref FROM local_audio_links WHERE manual=1',
+          )) {
+            if (link['audio_ref'] != reference &&
+                documentReferenceKey(link['audio_ref'] as String) ==
+                    documentReferenceKey(reference))
+              session!.store.recordManualLink(
+                link['episode_id'] as String,
+                reference,
+                file['name'] as String,
+              );
+          }
+        }
       report = await session!.scanDocuments(
         path,
         [
-          for (final f in raw!['files'] as List)
+          for (final f in raw['files'] as List)
             Map<String, String>.from(f as Map),
         ],
         complete: raw['complete'] == true,

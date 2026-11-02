@@ -2,7 +2,8 @@
 
 Décision du 1er novembre 2026 : réaffecter le Lot 6 à la préparation puis au
 portage Android. Lancement explicite du Lot 6 le 1er novembre 2026 :
-étape 6A en cours (audit, compilation et preuve de faisabilité). Le découpage documentaire a été validé par l’utilisateur le 1er novembre 2026.
+étape 6A confirmée par l’utilisateur le 2 novembre, puis lancement explicite de 6B.
+Le découpage documentaire a été validé le 1er novembre 2026.
 Les étapes seront exécutées successivement, avec bilan et validation avant
 élargissement du périmètre.
 
@@ -17,10 +18,12 @@ reste une tâche distincte, sans publication automatique ni passage en finale.
 FTS5, associations par noms du journal, suivi, sauvegardes et moteur de fusion JSON
 v2 (lecture v1). Conserver les identités métier et les règles Windows récentes.
 
-Android possède déjà une activité Kotlin, un accès aux dossiers SAF, un lecteur
+État initial avant 6B (historique) : Android possédait une activité Kotlin, un accès
+aux dossiers SAF, un lecteur
 MediaPlayer, une UI adaptée partiellement aux petits écrans et un workflow APK
 de test manuel. Il s’agit d’un socle à réévaluer, pas d’une version qualifiée :
-- `app_model.dart` refuse encore explicitement renommage, JSON et téléchargement ;
+- renommage, JSON et téléchargement étaient désactivés (portés en 6B selon les
+  limites décrites dans [le bilan 6B](bilan-6B.md)) ;
 - le lecteur de MainActivity est suspendu dans onStop, sans service de lecture
   continue en arrière-plan ;
 - la configuration release utilise actuellement la clé debug et l’identifiant
@@ -102,6 +105,6 @@ peuvent préparer certaines tâches en parallèle, mais leurs portes restent ord
 Le majeur reste 0.6 tant qu’aucune nouvelle instruction explicite ne le change ;
 le portage ne vaut pas passage en version finale. Avant un APK distribuable,
 aligner son versionnement sur la politique du projet sans réinitialiser le compteur.
-iOS demeure exclu. Aucun nouveau package ajouté en 6A ; les adaptateurs de
-production 6B/6C attendent la porte de validation physique. Voir [l’audit 6A](audit-6A.md)
+iOS demeure exclu. Aucun nouveau package runtime ajouté. Les adaptateurs 6B sont
+implémentés pour recette après validation 6A ; 6C attend la validation physique 6B. Voir [l’audit 6A](audit-6A.md)
 et [la recette](RECETTE_ANDROID.md).

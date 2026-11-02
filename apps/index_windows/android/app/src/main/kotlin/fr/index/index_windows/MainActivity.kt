@@ -29,6 +29,7 @@ class MainActivity : FlutterActivity() {
     private var focus: AudioFocusRequest? = null
     private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
     private val worker = Executors.newSingleThreadExecutor()
+    private val documents by lazy { AndroidDocuments(this, worker) }
     private val noisy = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) { if (prepared && player?.isPlaying == true) player?.pause() }
     }
@@ -46,6 +47,7 @@ class MainActivity : FlutterActivity() {
         noisyRegistered = true
         MethodChannel(engine.dartExecutor.binaryMessenger, "index/android").setMethodCallHandler { call, result ->
             try {
+                if (documents.handle(call, result)) return@setMethodCallHandler
                 when (call.method) {
                     "privateDirectory" -> result.success(File(filesDir, "user").apply { mkdirs() }.absolutePath)
                     "pickTree" -> {
@@ -53,7 +55,7 @@ class MainActivity : FlutterActivity() {
                         else {
                             picker = result
                             startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                             }, 711)
                         }
                     }
@@ -93,6 +95,7 @@ class MainActivity : FlutterActivity() {
                                 } catch (e: Exception) { errors.add("Accès refusé ou source indisponible : ${e.message}") }
                             }
                             try { visit(DocumentsContract.getTreeDocumentId(uri), 0) } catch (e: Exception) { errors.add(e.toString()) }
+                            try { documents.filterScan(files, errors, uri) } catch (e: Exception) { errors.add("Journal des téléchargements illisible : ${e.message}"); files.clear() }
                             runOnUiThread { result.success(mapOf("files" to files, "complete" to errors.isEmpty(), "errors" to errors)) }
                         }
                     }
@@ -158,6 +161,7 @@ class MainActivity : FlutterActivity() {
     @Deprecated("Legacy activity callback required by FlutterActivity")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (documents.onActivityResult(requestCode, resultCode, data)) return
         if (requestCode == 712) {
             val pending = exportResult; exportResult = null
             val text = exportText; exportText = null
@@ -176,7 +180,7 @@ class MainActivity : FlutterActivity() {
             try {
                 val uri = data?.data
                 if (resultCode != Activity.RESULT_OK || uri == null) pending?.success(null)
-                else { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); pending?.success(uri.toString()) }
+                else { contentResolver.takePersistableUriPermission(uri, data!!.flags and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)); pending?.success(uri.toString()) }
             } catch (e: Exception) { pending?.error("permission", e.toString(), null) }
         }
     }

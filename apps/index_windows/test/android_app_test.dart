@@ -76,6 +76,20 @@ void main() {
       expect(rows, hasLength(1));
       await tester.tap(find.byKey(const ValueKey('android-nav-settings')));
       await tester.pumpAndSettle();
+      for (final label in [
+        'Exporter le suivi JSON',
+        'Importer et fusionner un suivi JSON',
+        'Prévisualiser le renommage des MP3',
+      ]) {
+        expect(
+          tester
+              .widget<OutlinedButton>(
+                find.widgetWithText(OutlinedButton, label),
+              )
+              .onPressed,
+          isNotNull,
+        );
+      }
       final settingsSize = tester.getSize(
         find.byKey(const ValueKey('settings-dialog-size')),
       );
@@ -116,6 +130,14 @@ void main() {
           )
           .first;
       expect(tester.widget<SelectableText>(heading).style!.fontSize, 24);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('download-episode')),
+            )
+            .onPressed,
+        isNotNull,
+      );
       await tester.tap(close);
       await tester.pumpAndSettle();
       // L’apparition du clavier ne remonte pas le lecteur et la navigation.

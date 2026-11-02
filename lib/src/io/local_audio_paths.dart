@@ -1,5 +1,23 @@
 import 'dart:io';
 
+/// Identité documentaire opaque Android : fournisseur + documentId, jamais un path.
+/// Deux grants SAF vers le même document peuvent avoir des préfixes tree différents.
+Object documentReferenceKey(String reference) {
+  final uri = Uri.tryParse(reference);
+  if (uri?.scheme == 'content') {
+    final segments = uri!.pathSegments;
+    final at = segments.length == 2 && segments[0] == 'document'
+        ? 0
+        : segments.length == 4 &&
+              segments[0] == 'tree' &&
+              segments[2] == 'document'
+        ? 2
+        : -1;
+    if (at >= 0) return (uri.authority, segments[at + 1]);
+  }
+  return reference;
+}
+
 /// Clés temporaires de comparaison, sans réécriture des références persistées.
 /// Le parent reste résoluble lorsque la feuille vient d’être renommée.
 final class LocalAudioPaths {

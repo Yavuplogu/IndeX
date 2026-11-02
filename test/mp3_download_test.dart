@@ -56,6 +56,39 @@ void main() {
   );
 
   test(
+    'Politique de destination vérifiée avant chaque requête et redirection',
+    () async {
+      final rejected = Mp3Download(
+        source: source,
+        folder: folder,
+        name: 'test.mp3',
+        publish: publish,
+        allowSource: (_) => false,
+      );
+      await expectLater(rejected.run(), throwsA(isA<HttpException>()));
+      expect(requests, 0);
+      handler = (request) async {
+        request.response.statusCode = HttpStatus.found;
+        request.response.headers.set(
+          HttpHeaders.locationHeader,
+          '/interdit.mp3',
+        );
+        await request.response.close();
+      };
+      final redirect = Mp3Download(
+        source: source,
+        folder: folder,
+        name: 'test.mp3',
+        publish: publish,
+        allowSource: (uri) => uri.path == '/audio.mp3',
+      );
+      await expectLater(redirect.run(), throwsA(isA<HttpException>()));
+      expect(requests, 1);
+      expect(folder.listSync(), isEmpty);
+    },
+  );
+
+  test(
     'Requête explicite, redirection, progression et fichier final intégral',
     () async {
       final received = <int>[];

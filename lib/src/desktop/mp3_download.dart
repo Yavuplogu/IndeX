@@ -27,11 +27,13 @@ final class Mp3Download {
     required this.name,
     required this.publish,
     this.onProgress,
+    this.allowSource,
     this.onPublishing,
     this.timeout = const Duration(seconds: 20),
     this.maxBytes = 512 * 1024 * 1024,
   });
   final Uri source;
+  final bool Function(Uri)? allowSource;
   final Directory folder;
   final String name;
   final DownloadPublisher publish;
@@ -92,6 +94,10 @@ final class Mp3Download {
       var uri = source;
       late HttpClientResponse response;
       for (var redirects = 0; ; redirects++) {
+        if (allowSource != null && !allowSource!(uri))
+          throw const HttpException(
+            'Domaine ou protocole de téléchargement refusé.',
+          );
         final request = await _wait(client.getUrl(uri).timeout(timeout));
         request.followRedirects = false;
         request.headers.set(

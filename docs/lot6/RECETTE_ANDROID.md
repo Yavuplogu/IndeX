@@ -1,14 +1,15 @@
-# IndeX — diagnostic Android Lot 6A
+# IndeX — diagnostic Android Lot 6B
 
 APK ARM64 pour Android 7.0 ou plus récent. Il s’agit du socle de diagnostic,
-pas du portage complet : renommage, import/export JSON et téléchargement Android
-sont encore indisponibles ; la lecture se met en pause en quittant l’application.
+pas du portage complet : téléchargement local, import/export JSON et renommage
+dans le dossier géré IndeX sont maintenant disponibles. La lecture se met encore
+en pause en quittant l’application (Lot 6C).
 Aucun MP3 n’est embarqué. Préparer un dossier de **copies** de MP3 avec les noms
 historiques ou système du catalogue. Les tags COMM ne participent pas au scan.
 
 ## Récupérer et utiliser l’APK
 
-Après commit/push des changements, GitHub → Actions → Verification Android Lot 6A
+Après commit/push des changements, GitHub → Actions → Verification Android Lot 6B
 → Run workflow sur la branche contenant le lot. Rien n’est lancé automatiquement.
 Le résultat contient IndeX-<version>-Android-arm64-test : APK, empreinte SHA-256,
 rapport de contenu et ce guide. L’APK est signé pour le développement ; conserver
@@ -81,3 +82,70 @@ en cours, Android attend encore sa fin : le verrou de version reste commun.
 Pour libérer la file immédiatement, le propriétaire peut annuler l’exécution
 Windows en cours depuis Actions → exécution → Cancel workflow. Son numéro déjà
 réservé reste consommé. Changer les déclencheurs n’annule aucune exécution existante.
+
+
+## Recette Lot 6B — copies uniquement
+
+La validation utilisateur du 2 novembre a confirmé 6A. Pour 6B, noter le modèle,
+la version Android, la version APK et les résultats séparément :
+
+1. **Dossier externe** : resélectionner le dossier MP3 afin d’accorder l’écriture.
+   Choisir un épisode absent, Télécharger, attendre la fin : nom système exact,
+   bouton Écouter, suivi/favori conservés. Annuler un transfert avant la finalisation
+   puis vérifier l’absence d’association. Une cible existante doit être conservée.
+   Tester aussi un refus d’écriture et l’espace insuffisant sur des copies.
+2. **Arrêt brutal** : interrompre le processus pendant un téléchargement puis
+   une copie finale. Relancer avec/sans scan automatique : aucune copie non validée
+   ne doit être proposée comme disponible ; diagnostics lisibles et suivi conservé.
+   Vérifier le document concerné dans Fichiers Android, sans supprimer un original
+   sous prétexte d’un diagnostic ambigu. Une copie réellement incomplète peut être
+   retirée manuellement puis le dossier rescanné.
+3. **Renommage** : Fichiers → Utiliser le dossier MP3 IndeX. Confirmer la limite
+   de stockage privé (MP3 supprimés à la désinstallation). Avec le gestionnaire
+   Android, copier quelques MP3 au nom historique dans un sous-dossier de test
+   de IndeX · MP3, puis choisir ce sous-dossier dans IndeX. Paramètres → aperçu
+   du renommage : vérifier avant/après, confirmer, vérifier lecture et suivi.
+   Ajouter une copie au nom système identique pour vérifier le refus de collision.
+   Dans un autre fournisseur, l’aperçu doit expliquer le refus sans changer les noms.
+4. **Windows → Android** : exporter un suivi Windows, transférer le JSON via USB
+   ou copie manuelle. Android → Paramètres → Importer et fusionner : choisir le
+   fichier, vérifier la provenance Windows et l’aperçu, annuler une première fois,
+   puis confirmer. Écoute liée et favori indépendant ; vérifier backup et chemins
+   MP3 locaux conservés. Réimporter : aucun effet supplémentaire.
+5. **Android → Windows** : exporter depuis Android, choisir un emplacement externe
+   (Documents/Téléchargements ou support local, pas le fournisseur MP3 qui ne crée
+   que des MP3/dossiers). Le fichier proposé est IndeX_suivi_AAAAMMJJ_HHMMSS.json.
+   Le retrouver dans le gestionnaire, le copier sur Windows, importer et vérifier
+   la provenance Android, les états et les conflits. Modifier le suivi des deux
+   côtés pour éprouver les choix et le retour après résolution. Tester aussi un
+   JSON tronqué : refus sans perte des favoris/progressions.
+
+Les données et les MP3 du dossier **IndeX · MP3 sont privés**, malgré leur visibilité
+dans le gestionnaire via le fournisseur SAF. Les fichiers d’un dossier externe
+choisi par l’utilisateur ne sont pas supprimés par la désinstallation d’IndeX.
+Toujours exporter le suivi et copier les MP3 gérés ailleurs avant désinstallation.
+Les APK restent de diagnostic : une ancienne signature différente peut exiger une
+réinstallation ; ne pas accepter cette opération sans préserver les données.
+La CI conserve désormais sa clé debug en cache pour les prochaines mises à jour
+de diagnostic ; cela ne restitue pas une ancienne clé perdue et n’est pas une
+signature de distribution finale.
+
+### Test physique automatisé de 6B (poste de développement)
+
+Préparer un **sous-dossier de copies** dans IndeX · MP3, contenant au moins un
+fichier au nom historique exact du catalogue. Le test renomme réellement ces
+copies et conserve leurs octets ; il crée un profil de recette temporaire isolé.
+Le fichier JSON externe choisi reste sur le téléphone ; le profil temporaire est
+supprimé à la fin. Le sélecteur demande d’abord le sous-dossier MP3, puis un
+emplacement externe pour le JSON.
+
+```sh
+python3 tools/lot4/prepare_assets.py
+cd apps/index_windows
+flutter pub get --enforce-lockfile
+flutter test integration_test/android_storage_test.dart -d <identifiant-appareil> --dart-define=INDEX_CONFIRM_RENAME_COPIES=true
+```
+
+Relancer sur un jeu de copies originales restauré : le test exige un renommage
+à effectuer et ne remet pas les noms en sens inverse. Ce test ne remplace pas les
+essais d’arrêt brutal, de fournisseur externe et l’échange physique avec Windows.

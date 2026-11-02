@@ -58,7 +58,10 @@ final class Mp3Renamer {
   Mp3Renamer(this.store);
   final CatalogStore store;
   final _paths = LocalAudioPaths();
-  String _referenceKey(String reference) => _paths.referenceKey(reference);
+  Object _referenceKey(String reference) =>
+      Uri.tryParse(reference)?.scheme == 'content'
+      ? documentReferenceKey(reference)
+      : _paths.referenceKey(reference);
 
   bool _excluded(String reference) {
     final key = _referenceKey(reference);
@@ -329,6 +332,7 @@ final class Mp3Renamer {
     for (final row in store.database.select(
       "SELECT * FROM rename_items WHERE status IN ('planned','moving','blocked') ORDER BY id",
     )) {
+      if (Uri.parse(row['before_ref'] as String).scheme == 'content') continue;
       final id = row['id'] as int;
       if (row['status'] == 'planned') {
         _status(
@@ -382,7 +386,8 @@ final class Mp3Renamer {
     )) {
       final reference = _referenceKey(link['audio_ref'] as String);
       if ((link['episode_id'] == row['episode_id'] && reference != before) ||
-          (link['episode_id'] != row['episode_id'] && reference == after)) {
+          (link['episode_id'] != row['episode_id'] &&
+              (reference == before || reference == after))) {
         throw StateError(
           'Association modifiée ou cible déjà associée : intervention nécessaire.',
         );
@@ -458,6 +463,299 @@ final class Mp3Renamer {
     ))
       Map<String, Object?>.from(row),
   ];
+}
+
+/// Contrat SAF opaque ; aucun URI content:// n’est converti en chemin de disque.
+typedef DocumentOperation = Future<Object?> Function(
+  String method,
+  Map<String, Object?> arguments,
+);
+
+/// Même journal et mêmes identités que Windows, avec capacités du fournisseur.
+final class DocumentMp3Renamer {
+  DocumentMp3Renamer(this.store, this.call) : _journal = Mp3Renamer(store);
+  final CatalogStore store;
+  final DocumentOperation call;
+  final Mp3Renamer _journal;
+  bool get unresolved => _journal.unresolved;
+  List<Map<String, Object?>> report(int run) => _journal.report(run);
+  Future<Map<String, Object?>> _map(
+    String method,
+    Map<String, Object?> args,
+  ) async => Map<String, Object?>.from(await call(method, args) as Map);
+
+  Future<RenamePlan> preview(
+    String tree, {
+    required bool recursive,
+    String? inUse,
+    void Function(int done, int total)? onProgress,
+  }) async {
+    if (unresolved) throw StateError('Réconciliation du renommage requise.');
+    if (Uri.parse(tree).scheme != 'content')
+      throw ArgumentError('Dossier SAF requis.');
+    final scan = await _map('scan', {'tree': tree, 'recursive': recursive});
+    if (scan['complete'] != true)
+      throw StateError('Analyse SAF incomplète : aucun renommage.');
+    final decisions = const MatchingEngine().match(store.matchEpisodes(), [
+      for (final raw in scan['files'] as List)
+        AudioCandidate(
+          reference: (raw as Map)['reference'] as String,
+          currentName: raw['name'] as String,
+        ),
+    ]);
+    final episodes = {for (final e in store.matchEpisodes()) e.id: e};
+    final entries = <RenameEntry>[];
+    for (final d in decisions) {
+      final episode = episodes[d.episodeId];
+      final name = episode?.systemNames.firstOrNull ?? '';
+      var status = 'planned', reason = '', after = d.audio.reference;
+      var info = <String, Object?>{};
+      if (d.status != MatchStatus.confirmed || episode == null) {
+        status = d.status == MatchStatus.conflict ? 'conflict' : 'ignored';
+        reason = d.reason;
+      } else if (_journal._excluded(d.audio.reference)) {
+        status = 'ignored';
+        reason = 'Association retirée par l’utilisateur.';
+      } else if (d.method != 'original_filename' ||
+          MatchingEngine.filenameKey(name) ==
+              MatchingEngine.filenameKey(d.audio.currentName)) {
+        status = 'unchanged';
+        reason = 'Déjà au nom système.';
+      } else if (!_safeName(name)) {
+        status = 'ignored';
+        reason = 'Nom système invalide.';
+      } else if (inUse != null &&
+          documentReferenceKey(inUse) ==
+              documentReferenceKey(d.audio.reference)) {
+        status = 'ignored';
+        reason = 'Libérez le fichier du lecteur avant de refaire l’aperçu.';
+      } else {
+        try {
+          info = await _map('renameInfo', {
+            'reference': d.audio.reference,
+            'name': name,
+          });
+          if (info['supported'] != true) {
+            status = 'ignored';
+            reason =
+                info['reason'] as String? ??
+                'Fournisseur sans garantie de renommage sûr.';
+          } else if (info['collision'] == true) {
+            status = 'conflict';
+            reason = 'Cible déjà présente. Aucun écrasement.';
+          } else {
+            after = info['after'] as String;
+            final row = {
+              'episode_id': episode.id,
+              'before_ref': d.audio.reference,
+              'after_ref': after,
+            };
+            _journal._checkLink(row);
+          }
+        } catch (e) {
+          status = 'ignored';
+          reason = 'Vérification impossible : $e';
+        }
+      }
+      entries.add(
+        RenameEntry._(
+          d.audio.reference,
+          after,
+          episode?.id ?? '',
+          name,
+          status,
+          reason,
+          info['bytes'] as int? ?? 0,
+          info['modified'] as String? ?? '',
+          info['digest'] as String? ?? '',
+        ),
+      );
+      onProgress?.call(entries.length, decisions.length);
+    }
+    final counts = <String, int>{};
+    for (final e in entries.where((e) => e.planned))
+      counts.update(e.after, (v) => v + 1, ifAbsent: () => 1);
+    return RenamePlan._(tree, recursive, [
+      for (final e in entries)
+        if (e.planned && counts[e.after]! > 1)
+          RenameEntry._(
+            e.before,
+            e.after,
+            e.episodeId,
+            e.name,
+            'conflict',
+            'Plusieurs fichiers visent la même cible.',
+            e.bytes,
+            e.modified,
+            e.digest,
+          )
+        else
+          e,
+    ]);
+  }
+
+  Future<int> execute(
+    RenamePlan plan, {
+    String? Function()? inUse,
+    void Function(int done, int total)? onProgress,
+  }) async {
+    final fresh = await preview(
+      plan.scope,
+      recursive: plan.recursive,
+      inUse: inUse?.call(),
+    );
+    final checked = {for (final e in fresh.entries) e.before: e};
+    final db = store.database;
+    db.execute('BEGIN IMMEDIATE');
+    late int run;
+    try {
+      db.execute(
+        "INSERT INTO rename_runs(scope,recursive,started_at,status) VALUES(?,?,?,'running')",
+        [plan.scope, plan.recursive ? 1 : 0, _stamp()],
+      );
+      run = db.lastInsertRowId;
+      for (final e in plan.entries.where((e) => e.planned)) {
+        db.execute(
+          "INSERT INTO rename_items(run_id,episode_id,before_ref,after_ref,target_name,bytes,modified,digest,status,updated_at) VALUES(?,?,?,?,?,?,?,?,'planned',?)",
+          [
+            run,
+            e.episodeId,
+            e.before,
+            e.after,
+            e.name,
+            e.bytes,
+            e.modified,
+            e.digest,
+            _stamp(),
+          ],
+        );
+      }
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
+    }
+    var done = 0;
+    for (final raw in db.select(
+      'SELECT * FROM rename_items WHERE run_id=? ORDER BY id',
+      [run],
+    )) {
+      final row = Map<String, Object?>.from(raw), id = raw['id'] as int;
+      var attempted = false;
+      try {
+        final e = checked[row['before_ref']];
+        if (e == null ||
+            !e.planned ||
+            e.episodeId != row['episode_id'] ||
+            e.after != row['after_ref'] ||
+            e.digest != row['digest'] ||
+            e.modified != row['modified'] ||
+            e.bytes != row['bytes'])
+          throw StateError(
+            'Source, catalogue ou collision modifiés : refaire l’aperçu.',
+          );
+        _journal._checkLink(row);
+        final active = inUse?.call();
+        if (_journal._excluded(e.before) ||
+            (active != null &&
+                documentReferenceKey(active) == documentReferenceKey(e.before)))
+          throw StateError('Association retirée ou fichier en lecture.');
+        _journal._status(id, 'moving', null);
+        attempted = true;
+        final result = await call('renameDocument', {
+          'reference': e.before,
+          'name': e.name,
+          'digest': e.digest,
+          'bytes': e.bytes,
+          'modified': e.modified,
+        });
+        if (result != e.after)
+          throw StateError(
+            'Référence retournée inattendue : réconciliation nécessaire.',
+          );
+        final after = await call('fingerprint', {'reference': e.after});
+        final before = await call('fingerprint', {'reference': e.before});
+        if (before != null || after is! Map || after['digest'] != e.digest)
+          throw StateError('Résultat à réconcilier.');
+        _journal._finish(row);
+      } catch (e) {
+        _journal._status(id, attempted ? 'moving' : 'failed', e.toString());
+        if (attempted) break;
+      }
+      onProgress?.call(++done, plan.planned);
+    }
+    _journal._finishRuns();
+    return run;
+  }
+
+  Future<void> recover() async {
+    for (final raw in store.database.select(
+      "SELECT * FROM rename_items WHERE status IN ('planned','moving','blocked') ORDER BY id",
+    )) {
+      final row = Map<String, Object?>.from(raw), id = raw['id'] as int;
+      if (Uri.parse(row['before_ref'] as String).scheme != 'content') continue;
+      if (row['status'] == 'planned') {
+        _journal._status(
+          id,
+          'skipped',
+          'Interrompu avant tentative ; refaire l’aperçu.',
+        );
+        continue;
+      }
+      try {
+        _journal._checkLink(row);
+        if (_journal._excluded(row['before_ref'] as String) ||
+            _journal._excluded(row['after_ref'] as String))
+          throw StateError(
+            'Association retirée depuis l’opération : intervention explicite requise.',
+          );
+        var before = await call('fingerprint', {
+          'reference': row['before_ref'],
+        });
+        final after = await call('fingerprint', {
+          'reference': row['after_ref'],
+        });
+        if (before is Map &&
+            after is Map &&
+            before['identity'] != null &&
+            before['identity'] == after['identity'] &&
+            after['digest'] == row['digest']) {
+          // Le fournisseur IndeX achève seulement un lien dur déjà journalisé,
+          // avec même inode et même empreinte ; aucune copie ni cible remplacée.
+          await call('renameDocument', {
+            'reference': row['before_ref'],
+            'name': row['target_name'],
+            'digest': row['digest'],
+            'bytes': row['bytes'],
+            'modified': row['modified'],
+          });
+          before = await call('fingerprint', {'reference': row['before_ref']});
+        }
+        if (before == null &&
+            after is Map &&
+            after['digest'] == row['digest']) {
+          _journal._finish(row);
+        } else if (before is Map &&
+            before['digest'] == row['digest'] &&
+            after == null) {
+          _journal._status(
+            id,
+            'failed',
+            'Nom d’origine conservé ; refaire l’aperçu.',
+          );
+        } else {
+          _journal._status(
+            id,
+            'blocked',
+            'Réconciliation ambiguë ou accès indisponible. Aucun fichier modifié.',
+          );
+        }
+      } catch (e) {
+        _journal._status(id, 'blocked', 'Réconciliation impossible : $e');
+      }
+    }
+    _journal._finishRuns();
+  }
 }
 
 Future<bool> _sameFile(File a, File b) async {

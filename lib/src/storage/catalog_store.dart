@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../catalog/models.dart';
 import '../catalog/planner.dart';
 import '../io/catalog_sources.dart';
+import '../io/local_audio_paths.dart';
 import '../matching/matching_engine.dart';
 import 'migrations.dart';
 
@@ -693,7 +694,22 @@ final class CatalogStore {
       );
       if (owner.isNotEmpty && owner.single['episode_id'] != episodeId)
         throw StateError('Ce MP3 est déjà lié à un autre épisode.');
-      _saveUnlinked(unlinkedAudioReferences..remove(reference));
+      final identity = documentReferenceKey(reference);
+      if (Uri.tryParse(reference)?.scheme == 'content') {
+        for (final link in database.select(
+          'SELECT episode_id,audio_ref FROM local_audio_links',
+        )) {
+          if (link['episode_id'] != episodeId &&
+              documentReferenceKey(link['audio_ref'] as String) == identity)
+            throw StateError(
+              'Ce document est déjà lié à un autre épisode via un autre accès SAF.',
+            );
+        }
+      }
+      _saveUnlinked(
+        unlinkedAudioReferences
+          ..removeWhere((r) => documentReferenceKey(r) == identity),
+      );
       _link(
         episodeId,
         reference,

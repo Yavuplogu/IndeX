@@ -100,3 +100,10 @@ Android. Le verrou commun reste nécessaire pour le compteur : si les deux sont
 lancés manuellement en même temps, le second attend le premier. Une exécution
 déjà démarrée avant ce changement continue ; modifier les déclencheurs ne
 l’annule pas. Annuler un build ne restitue pas son numéro déjà réservé.
+
+
+Lot 6B (2 novembre) : workflow Android renommé Verification Android Lot 6B,
+numérotation/compteur inchangés. Cache Actions pour le keystore debug afin de
+maintenir la signature des APK de diagnostic successifs ; aucune clé dans Git
+ou les artefacts. Une ancienne clé non conservée ne peut pas être récupérée.
+La signature définitive et son cycle de vie restent au Lot 6D.

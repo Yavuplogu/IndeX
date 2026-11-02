@@ -2,17 +2,16 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuel : **Lot 6 lancé le 1er novembre 2026**, étape **6A**
-  audit Android/décisions/compilation et préparation de la recette physique.
-  Lire `docs/lot6/plan.md`, `audit-6A.md` et `RECETTE_ANDROID.md`. Les portes
-  successives du plan validé restent applicables : ne pas déclarer 6A qualifié
-  sur une compilation/Linux et ne pas engager les adaptateurs 6B/6C sans bilan
-  et validation. Windows est validé par l’utilisateur, Release GitHub restante.
-  Conserver le cœur partagé et la parité. Android minSdk réel 24/target 36,
-  premier diagnostic ARM64, identifiant historique conservé. Aucun nouveau
-  moteur/package audio ajouté en 6A. Workflow Android manuel avec réservation
-  du même compteur/verrou que Windows ; ne pas lancer/publier automatiquement.
-  Majeur 0.6/bêta inchangés, iOS exclu. Aucun contournement HTML dans l’application.
+- Périmètre actuel : **Lot 6B lancé le 2 novembre 2026**, après confirmation
+  utilisateur de la porte physique 6A. Lire `docs/lot6/plan.md`, `bilan-6B.md` et
+  `RECETTE_ANDROID.md`. Autorisés : stockage SAF, téléchargement, renommage sûr
+  et JSON Windows/Android. Pas de service média/écran verrouillé (6C non lancé).
+  Garder Windows et le cœur partagé, SQLite utilisateur v7/seed v4/JSON v2
+  avec lecture v1. Android minSdk 24/target 36, ARM64, identité existante conservée.
+  Aucun nouveau package runtime. Workflow manuel 6B, compteur/verrou partagé
+  Windows ; clé debug en cache Actions, jamais commit ni artefact de clé.
+  Majeur 0.6/bêta inchangés, iOS exclu, aucune publication automatique.
+  Ne qualifier 6B sur appareil qu’après recette réelle ; tests simulés distincts.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
   le Lot 4 a ensuite été lancé explicitement et son code est désormais implémenté.
@@ -303,3 +302,19 @@ configuré ne déclenche pas cet avertissement.
   scroll aux checkpoints. Fiche Android fond panel, sans teinte Material, palette
   commune Windows clair/sombre. Actions des associations sous le chemin sur
   Android seulement. Présentation et défilement Windows conservés.
+
+
+- Garanties 6B : content:// opaque pour les fournisseurs externes. Copie MP3
+  complète en privé avant publication SAF et contrôle SHA-256 ; journal natif
+  durable avant création, exclusion des publications non validées et contrôle
+  des disponibilités au redémarrage même sans scan. Ne pas effacer un original
+  à partir d’un diagnostic ambigu. Écriture MP3 limitée aux fournisseurs locaux
+  Android et IndeX. HTTP limité au domaine du journal, politique à chaque redirect.
+- Renommage Android seulement dans IndeX · MP3 : provider local exposant uniquement
+  files/mp3, link exclusif + fsync + retrait même parent, journal SQLite avant
+  mutation, reprise par même inode et empreinte. Autres fournisseurs refusés
+  sans garantie. Dossier privé optionnel : avertir de l’effacement à la
+  désinstallation. Aucun déplacement automatique ni réécriture des MP3/ID3.
+- JSON Android : copie interne exports puis copie externe ACTION_CREATE_DOCUMENT ;
+  import borné ACTION_OPEN_DOCUMENT. Pas d’atomicité SAF externe inventée ;
+  parseur et fusion partagés, lecteur libéré, aperçu, backup et transaction.
