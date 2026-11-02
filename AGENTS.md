@@ -296,3 +296,10 @@ configuré ne déclenche pas cet avertissement.
   Fermer en bas, titre 24 ; menu à cinq icônes accessibles sur une ligne ; liste
   et filtres fichiers dans un panneau Android dédié ; clavier au-dessus du menu
   et du lecteur. Préserver la présentation Windows.
+
+
+- Compléments Android du 2 novembre : en-tête défilé en bas une fois à
+  l’ouverture d’une recherche pour exposer précédent/suivant ; ne pas forcer le
+  scroll aux checkpoints. Fiche Android fond panel, sans teinte Material, palette
+  commune Windows clair/sombre. Actions des associations sous le chemin sur
+  Android seulement. Présentation et défilement Windows conservés.

@@ -620,3 +620,21 @@ autorisées sans lancer les adaptateurs SAF 6B ni le service audio 6C.
   Les boîtes de dialogue gardent leur adaptation au clavier pour la saisie.
 Les fonctionnalités en attente du portage demeurent indisponibles ; aucune
 validation native Android implicite ni changement de majeur.
+
+
+### Compléments Android — recherche et associations, 2 novembre 2026
+
+À l’ouverture d’un épisode depuis une recherche, faire défiler l’en-tête de fiche
+Android jusqu’en bas après sa mise en page pour rendre visibles Résultat précédent
+et Résultat suivant, même avec un titre très long. Le faire une seule fois par
+épisode/recherche ; un checkpoint ou un clic de navigation ne doit pas annuler
+le défilement manuel de l’utilisateur. Aucun défilement automatique ajouté à Windows.
+
+La fiche Android reprend la palette de la fiche Windows, clair et sombre : fond
+papier panel, textes ink, boutons et correspondances issus de la palette partagée.
+Son Dialog ne doit plus hériter du fond controls des avertissements ni d’un voile
+de teinte Material. Les autres panneaux et les couleurs Windows sont conservés.
+
+Dans Liste des fichiers Android, les actions Associer… et Enlever l’association
+sont sous le message et le chemin, alignées à droite ; la largeur du cadre est
+ainsi disponible pour le texte. Sur Windows, les actions restent à droite du texte.

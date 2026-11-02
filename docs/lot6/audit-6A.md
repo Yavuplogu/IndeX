@@ -194,3 +194,30 @@ panneau fichiers et ses filtres réactifs, signature et sauvegarde à Retour.
 Ces contrôles sont exécutés sous Linux ; l’affichage du clavier et les gestes
 sur téléphone restent à confirmer dans le prochain APK de diagnostic.
 Aucun changement de lockfile, de version majeure ni de données utilisateur.
+
+
+### Compléments Android — recherche et associations, 2 novembre 2026
+
+À l’ouverture d’un épisode depuis une recherche, faire défiler l’en-tête de fiche
+Android jusqu’en bas après sa mise en page pour rendre visibles Résultat précédent
+et Résultat suivant, même avec un titre très long. Le faire une seule fois par
+épisode/recherche ; un checkpoint ou un clic de navigation ne doit pas annuler
+le défilement manuel de l’utilisateur. Aucun défilement automatique ajouté à Windows.
+
+La fiche Android reprend la palette de la fiche Windows, clair et sombre : fond
+papier panel, textes ink, boutons et correspondances issus de la palette partagée.
+Son Dialog ne doit plus hériter du fond controls des avertissements ni d’un voile
+de teinte Material. Les autres panneaux et les couleurs Windows sont conservés.
+
+Dans Liste des fichiers Android, les actions Associer… et Enlever l’association
+sont sous le message et le chemin, alignées à droite ; la largeur du cadre est
+ainsi disponible pour le texte. Sur Windows, les actions restent à droite du texte.
+
+Validation : analyse et formatage Flutter conformes, 61 tests Flutter réussis.
+Le test Android utilise un titre volontairement très long, vérifie les commandes
+accessibles et l’en-tête au bas de son défilement, puis vérifie qu’un défilement
+manuel est conservé. Il contrôle également fond/texte/correspondances en clair
+et sombre, ainsi que la position des deux actions sous les chemins des fichiers.
+APK debug ARM64 recompilé avec succès, seed identique et aucun MP3 embarqué.
+Recette visuelle sur téléphone à confirmer ; aucun changement de données,
+lockfile ou version majeure, aucun commit/push automatique.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
+import 'package:index_windows/document_text.dart';
 
 import 'support/app_harness.dart';
 
@@ -130,6 +131,91 @@ void main() {
       );
       tester.view.resetViewInsets();
       await tester.pumpAndSettle();
+      // Un titre très long ne masque pas les commandes à l’ouverture d’un résultat.
+      final longTitle =
+          '${List.filled(14, 'Un titre volontairement très long').join(' ')} recetteunique';
+      model.session!.store.database.execute(
+        'UPDATE episodes SET title=?, description=? WHERE id=?',
+        [
+          longTitle,
+          'La recetteunique de cet épisode. Une deuxième recetteunique.',
+          first.id,
+        ],
+      );
+      model.search('recetteunique');
+      for (final dark in [false, true]) {
+        model.setTheme(dark);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find
+              .descendant(
+                of: find.byKey(const ValueKey('episode-list')),
+                matching: find.text(longTitle),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        final colors = EditorialColors(dark);
+        final episodeDialog = tester.widget<Dialog>(
+          find.descendant(
+            of: find.byType(EpisodeDialog),
+            matching: find.byType(Dialog),
+          ),
+        );
+        expect(episodeDialog.backgroundColor, colors.panel);
+        expect(episodeDialog.surfaceTintColor, Colors.transparent);
+        expect(
+          DefaultTextStyle.of(tester.element(find.byType(EpisodeDetail)))
+              .style
+              .color,
+          colors.ink,
+        );
+        final guide =
+            tester
+                    .widget<Container>(
+                      find.byKey(const ValueKey('search-match-guide')),
+                    )
+                    .decoration!
+                as BoxDecoration;
+        expect(guide.color, colors.hitBackground);
+        expect((guide.border! as Border).top.color, colors.hitInk);
+        for (final match in tester.widgetList<DocumentText>(
+          find.byType(DocumentText),
+        )) {
+          expect(match.ink, colors.hitInk);
+          expect(match.fill, colors.hitBackground);
+        }
+        expect(find.text('Résultat précédent').hitTestable(), findsOneWidget);
+        expect(find.text('Résultat suivant').hitTestable(), findsOneWidget);
+        final header = tester
+            .widget<SingleChildScrollView>(
+              find.byKey(ValueKey('detail-header-${first.id}')),
+            )
+            .controller!;
+        expect(header.position.maxScrollExtent, greaterThan(0));
+        expect(header.offset, header.position.maxScrollExtent);
+        await tester.tap(find.text('Résultat suivant'));
+        await tester.pumpAndSettle();
+        expect(header.offset, header.position.maxScrollExtent);
+        header.jumpTo(0);
+        model.changed();
+        await tester.pumpAndSettle();
+        expect(
+          header.offset,
+          0,
+          reason: 'Les rafraîchissements ne doivent pas forcer le défilement après ouverture.',
+        );
+        await tester.tap(
+          find.descendant(
+            of: find.byType(EpisodeDialog),
+            matching: find.text('Fermer'),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+      model.setTheme(false);
+      model.search('');
+      await tester.pumpAndSettle();
       // La liste/filtres se trouvent uniquement dans le panneau dédié Android.
       model.report = {
         'decisions': [
@@ -138,6 +224,12 @@ void main() {
             'reason': 'Fichier de recette sans association',
             'current_name': 'exemple.mp3',
             'audio_reference': 'content://recette/exemple.mp3',
+          },
+          {
+            'status': 'confirmed',
+            'reason': 'Association de recette',
+            'current_name': 'associe.mp3',
+            'audio_reference': 'content://recette/associe.mp3',
           },
         ],
         'issues': [],
@@ -157,9 +249,29 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('exemple.mp3'), findsOneWidget);
+      final fileTile = tester.widget<ListTile>(
+        find.ancestor(
+          of: find.text('exemple.mp3'),
+          matching: find.byType(ListTile),
+        ),
+      );
+      expect(fileTile.trailing, isNull);
+      expect(
+        tester.getTopLeft(find.text('Associer…')).dy,
+        greaterThan(
+          tester.getBottomLeft(find.text('content://recette/exemple.mp3')).dy,
+        ),
+      );
       await tester.tap(find.byKey(const ValueKey('audio-files-associated')));
       await tester.pumpAndSettle();
       expect(find.text('exemple.mp3'), findsNothing);
+      expect(find.text('associe.mp3'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byTooltip('Enlever l’association')).dy,
+        greaterThanOrEqualTo(
+          tester.getBottomLeft(find.text('content://recette/associe.mp3')).dy,
+        ),
+      );
       await tester.tap(find.byKey(const ValueKey('audio-files-unassociated')));
       await tester.pumpAndSettle();
       expect(find.text('exemple.mp3'), findsOneWidget);

@@ -1462,6 +1462,8 @@ class EpisodeDialog extends StatelessWidget {
       ),
     );
     return Dialog(
+      backgroundColor: model.android ? EditorialColors(model.dark).panel : null,
+      surfaceTintColor: model.android ? Colors.transparent : null,
       child: SizedBox(
         key: const ValueKey('episode-dialog-size'),
         width: 650,
@@ -1570,6 +1572,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
   int tab = 0;
   String? lastId;
   String lastSearch = '';
+  String? revealedHeaderSearch;
   int matchIndex = -1;
   late EpisodeSearch document;
   String? get activeMatch =>
@@ -1689,6 +1692,15 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
       final c = EditorialColors(m.dark);
       final hasSearch =
           m.query.trim().characters.length >= 3 && e.matchedFields.isNotEmpty;
+      if (!hasSearch) revealedHeaderSearch = null;
+      if (m.android && hasSearch && revealedHeaderSearch != signature) {
+        revealedHeaderSearch = signature;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || lastSearch != signature || !headerScroll.hasClients)
+            return;
+          headerScroll.jumpTo(headerScroll.position.maxScrollExtent);
+        });
+      }
       return LayoutBuilder(
         builder: (context, bounds) => Column(
           key: ValueKey('detail-${e.id}'),
@@ -3110,6 +3122,25 @@ class ScanPage extends StatelessWidget {
                         final manual = entries[index].manual;
                         final linked =
                             decision['status'] == 'confirmed' || manual;
+                        final action = linked
+                            ? IconButton(
+                                tooltip: 'Enlever l’association',
+                                icon: const Icon(Icons.link_off),
+                                onPressed: () => unawaited(
+                                  removeAssociation(
+                                    context,
+                                    decision['audio_reference'] as String,
+                                  ),
+                                ),
+                              )
+                            : OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: c.controls,
+                                ),
+                                onPressed: () =>
+                                    unawaited(associate(context, decision)),
+                                child: const Text('Associer…'),
+                              );
                         return SelectionArea(
                           child: Card(
                             color: linked ? c.controls : c.missing,
@@ -3134,28 +3165,16 @@ class ScanPage extends StatelessWidget {
                                       decision['audio_reference'] as String,
                                     ),
                                   ),
+                                  if (model.android) ...[
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: action,
+                                    ),
+                                  ],
                                 ],
                               ),
-                              trailing: linked
-                                  ? IconButton(
-                                      tooltip: 'Enlever l’association',
-                                      icon: const Icon(Icons.link_off),
-                                      onPressed: () => unawaited(
-                                        removeAssociation(
-                                          context,
-                                          decision['audio_reference'] as String,
-                                        ),
-                                      ),
-                                    )
-                                  : OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        backgroundColor: c.controls,
-                                      ),
-                                      onPressed: () => unawaited(
-                                        associate(context, decision),
-                                      ),
-                                      child: const Text('Associer…'),
-                                    ),
+                              trailing: model.android ? null : action,
                             ),
                           ),
                         );
