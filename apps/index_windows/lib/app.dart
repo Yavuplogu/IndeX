@@ -1829,10 +1829,6 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Correspondances encadrées en rouge, utilisez les boutons pour parcourir.',
-                            ),
-                            const SizedBox(height: 8),
                             Semantics(
                               liveRegion: true,
                               child: Text(

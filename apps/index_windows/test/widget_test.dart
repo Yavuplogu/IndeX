@@ -871,7 +871,7 @@ void main() {
         find.text(
           'Correspondances encadrées en rouge, utilisez les boutons pour parcourir.',
         ),
-        findsOneWidget,
+        findsNothing,
       );
       for (
         var i = 0;

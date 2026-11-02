@@ -700,3 +700,9 @@ de teinte Material. Les autres panneaux et les couleurs Windows sont conservés.
 Dans Liste des fichiers Android, les actions Associer… et Enlever l’association
 sont sous le message et le chemin, alignées à droite ; la largeur du cadre est
 ainsi disponible pour le texte. Sur Windows, les actions restent à droite du texte.
+
+
+Révision du 2 novembre 2026, Windows et Android : retirer du cadre « Résultat de
+la recherche » la phrase « Correspondances encadrées en rouge, utilisez les boutons
+pour parcourir. » et l’espace correspondant. Conserver le titre et le compteur
+de correspondances, ainsi que les boutons précédent/suivant et les surbrillances.
