@@ -288,3 +288,11 @@ configuré ne déclenche pas cet avertissement.
   concurrence pour le compteur partagé, sans reset ni annulation automatique des
   builds déjà lancés. Chaque lancement manuel distribuant un artefact réserve
   son mineur. Ce changement ne dispense pas de vérifier avant de distribuer.
+
+
+- Demande du 2 novembre : ajustements UI Android explicitement autorisés dans
+  l’étape 6A, sans lancement des adaptateurs 6B/services audio 6C. Signature
+  À propos commune « Monsieur K. ». Fiche Android même dimensions que Paramètres,
+  Fermer en bas, titre 24 ; menu à cinq icônes accessibles sur une ligne ; liste
+  et filtres fichiers dans un panneau Android dédié ; clavier au-dessus du menu
+  et du lecteur. Préserver la présentation Windows.

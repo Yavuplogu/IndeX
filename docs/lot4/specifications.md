@@ -663,3 +663,22 @@ Vérification sous Linux : formatage conforme, analyse Flutter sans problème et
 dossier, l’avertissement avant sélecteur, l’annulation sans effet et la persistance
 du dossier après annulation du transfert. Recette du prochain paquet Windows à
 confirmer sur la cible ; aucun développement Android ni changement de version majeure.
+
+
+## Ajustements d’interface du 2 novembre 2026
+
+Demande utilisateur distincte de la porte 6A : corrections visuelles Android
+autorisées sans lancer les adaptateurs SAF 6B ni le service audio 6C.
+- Signature À propos commune Windows/Android : « Monsieur K. ».
+- Sur Android, la fiche est un panneau de mêmes dimensions maximales que
+  Paramètres (650 × 780, contraint à l’écran), fermeture en bas et titre 24 px
+  comme Bibliothèque. Les ouvertures depuis la liste et le lecteur sont cohérentes.
+- Navigation Android : cinq icônes sur une ligne, avec infobulles/libellés
+  accessibles et état sélectionné ; pas de modification de la navigation Windows.
+- Fichiers et associations Android : bouton « Voir les fichiers et associations »
+  vers un panneau défilant dédié, contenant les filtres et les associations.
+  Les actions/données restent communes et le panneau se met à jour immédiatement.
+- Le clavier recouvre le lecteur et le menu Android, au lieu de les faire remonter.
+  Les boîtes de dialogue gardent leur adaptation au clavier pour la saisie.
+Les fonctionnalités en attente du portage demeurent indisponibles ; aucune
+validation native Android implicite ni changement de majeur.

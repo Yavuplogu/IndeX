@@ -165,3 +165,32 @@ aucune modification des lockfiles. Configuration YAML et ordre des étapes véri
 Le cache de développement habituel a ensuite été réactivé. Le workflow GitHub
 complet reste à relancer ; aucun changement applicatif ne nécessite de refaire
 la recette audio pour cette seule correction de préparation.
+
+
+## Ajustements d’interface du 2 novembre 2026
+
+Demande utilisateur distincte de la porte 6A : corrections visuelles Android
+autorisées sans lancer les adaptateurs SAF 6B ni le service audio 6C.
+- Signature À propos commune Windows/Android : « Monsieur K. ».
+- Sur Android, la fiche est un panneau de mêmes dimensions maximales que
+  Paramètres (650 × 780, contraint à l’écran), fermeture en bas et titre 24 px
+  comme Bibliothèque. Les ouvertures depuis la liste et le lecteur sont cohérentes.
+- Navigation Android : cinq icônes sur une ligne, avec infobulles/libellés
+  accessibles et état sélectionné ; pas de modification de la navigation Windows.
+- Fichiers et associations Android : bouton « Voir les fichiers et associations »
+  vers un panneau défilant dédié, contenant les filtres et les associations.
+  Les actions/données restent communes et le panneau se met à jour immédiatement.
+- Le clavier recouvre le lecteur et le menu Android, au lieu de les faire remonter.
+  Les boîtes de dialogue gardent leur adaptation au clavier pour la saisie.
+Les fonctionnalités en attente du portage demeurent indisponibles ; aucune
+validation native Android implicite ni changement de majeur.
+
+Validation de ces ajustements : analyse Flutter sans diagnostic, 61 tests Flutter
+réussis (dont les contrôles Windows existants et le test Android enrichi),
+compilation APK debug ARM64 réussie et contrôle de contenu : seed identique,
+aucun MP3 embarqué. Le test Android vérifie dimensions Paramètres/fiche, bouton
+Fermer en bas, titre 24, cinq icônes alignées, stabilité du menu sous clavier,
+panneau fichiers et ses filtres réactifs, signature et sauvegarde à Retour.
+Ces contrôles sont exécutés sous Linux ; l’affichage du clavier et les gestes
+sur téléphone restent à confirmer dans le prochain APK de diagnostic.
+Aucun changement de lockfile, de version majeure ni de données utilisateur.

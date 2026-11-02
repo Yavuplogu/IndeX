@@ -271,6 +271,7 @@ class _IndeXAppState extends State<IndeXApp>
             if (!didPop && m.android) unawaited(close());
           },
           child: Scaffold(
+            resizeToAvoidBottomInset: !m.android,
             body: SafeArea(
               child: Column(
                 children: [
@@ -775,7 +776,7 @@ class _LibraryPageState extends State<LibraryPage> {
           Expanded(
             child: LayoutBuilder(
               builder: (context, size) {
-                final compact = size.maxWidth < 950;
+                final compact = m.android || size.maxWidth < 950;
                 return Row(
                   children: [
                     if (!compact)
@@ -852,7 +853,62 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
           ),
           _futurePlayer(c),
-          if (MediaQuery.sizeOf(context).width < 950)
+          if (m.android)
+            Row(
+              key: const ValueKey('android-bottom-menu'),
+              children: [
+                for (final item in [
+                  (
+                    'library',
+                    'Bibliothèque',
+                    Icons.library_books,
+                    !m.filesView && !m.favoritesOnly,
+                    () => section(false, false),
+                  ),
+                  (
+                    'favorites',
+                    'Favoris',
+                    Icons.star_border,
+                    !m.filesView && m.favoritesOnly,
+                    () => section(false, true),
+                  ),
+                  (
+                    'files',
+                    'Fichiers',
+                    Icons.folder_outlined,
+                    m.filesView,
+                    () => section(true, false),
+                  ),
+                  (
+                    'settings',
+                    'Paramètres',
+                    Icons.settings_outlined,
+                    false,
+                    () => unawaited(settings()),
+                  ),
+                  (
+                    'about',
+                    'À propos',
+                    Icons.info_outline,
+                    false,
+                    () => unawaited(about()),
+                  ),
+                ])
+                  Expanded(
+                    child: Semantics(
+                      selected: item.$4,
+                      child: IconButton(
+                        key: ValueKey('android-nav-${item.$1}'),
+                        tooltip: item.$2,
+                        color: item.$4 ? c.accent : c.ink,
+                        onPressed: item.$5,
+                        icon: Icon(item.$3),
+                      ),
+                    ),
+                  ),
+              ],
+            )
+          else if (MediaQuery.sizeOf(context).width < 950)
             Wrap(
               alignment: WrapAlignment.spaceAround,
               spacing: 12,
@@ -891,29 +947,10 @@ class _LibraryPageState extends State<LibraryPage> {
       unawaited(
         showDialog<void>(
           context: context,
-          builder: (context) => Dialog(
-            child: SizedBox(
-              width: 650,
-              height: 650,
-              child: Column(
-                children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Fermer'),
-                    ),
-                  ),
-                  Expanded(
-                    child: EpisodeDetail(
-                      model: m,
-                      onRelated: related,
-                      pickDirectory: widget.pickDirectory,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          builder: (context) => EpisodeDialog(
+            model: m,
+            onRelated: related,
+            pickDirectory: widget.pickDirectory,
           ),
         ),
       );
@@ -1132,30 +1169,10 @@ class _LibraryPageState extends State<LibraryPage> {
                             unawaited(
                               showDialog<void>(
                                 context: context,
-                                builder: (context) => Dialog(
-                                  child: SizedBox(
-                                    width: 650,
-                                    height: 650,
-                                    child: Column(
-                                      children: [
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text('Fermer'),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: EpisodeDetail(
-                                            model: m,
-                                            onRelated: related,
-                                            pickDirectory: widget.pickDirectory,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                builder: (context) => EpisodeDialog(
+                                  model: m,
+                                  onRelated: related,
+                                  pickDirectory: widget.pickDirectory,
                                 ),
                               ),
                             );
@@ -1425,6 +1442,52 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 }
 
+class EpisodeDialog extends StatelessWidget {
+  const EpisodeDialog({
+    super.key,
+    required this.model,
+    required this.onRelated,
+    required this.pickDirectory,
+  });
+  final AppModel model;
+  final ValueChanged<DesktopEpisode> onRelated;
+  final DirectoryPicker pickDirectory;
+  @override
+  Widget build(BuildContext context) {
+    Widget close() => Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Fermer'),
+      ),
+    );
+    return Dialog(
+      child: SizedBox(
+        key: const ValueKey('episode-dialog-size'),
+        width: 650,
+        height: model.android ? 780 : 650,
+        child: Column(
+          children: [
+            if (!model.android) close(),
+            Expanded(
+              child: EpisodeDetail(
+                model: model,
+                onRelated: onRelated,
+                pickDirectory: pickDirectory,
+              ),
+            ),
+            if (model.android)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: close(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class EpisodeDetail extends StatefulWidget {
   const EpisodeDetail({
     super.key,
@@ -1649,9 +1712,9 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                           key: const ValueKey('episode-detail-heading'),
                           child: documentText(
                             'title',
-                            const TextStyle(
+                            TextStyle(
                               fontFamily: 'Georgia',
-                              fontSize: 30,
+                              fontSize: m.android ? 24 : 30,
                               fontWeight: FontWeight.bold,
                             ),
                             c,
@@ -2175,7 +2238,7 @@ class IndexAboutDialog extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text('Bonne écoute,\n\nK.'),
+                            const Text('Bonne écoute,\n\nMonsieur K.'),
                           ],
                           c,
                           heading: Row(
@@ -2458,6 +2521,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         backgroundColor: c.panel,
         surfaceTintColor: Colors.transparent,
         child: ConstrainedBox(
+          key: const ValueKey('settings-dialog-size'),
           constraints: const BoxConstraints(maxWidth: 650, maxHeight: 780),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -2666,9 +2730,57 @@ class _SettingsDialogState extends State<SettingsDialog> {
 }
 
 class ScanPage extends StatelessWidget {
-  const ScanPage({super.key, required this.model, required this.pickDirectory});
+  const ScanPage({
+    super.key,
+    required this.model,
+    required this.pickDirectory,
+    this.associationsOnly = false,
+  });
+  final bool associationsOnly;
   final AppModel model;
   final DirectoryPicker pickDirectory;
+  Future<void> showAssociations(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (context) => AnimatedBuilder(
+      animation: model,
+      builder: (context, _) => Dialog(
+        backgroundColor: EditorialColors(model.dark).panel,
+        surfaceTintColor: Colors.transparent,
+        child: SizedBox(
+          key: const ValueKey('android-associations-dialog'),
+          width: 650,
+          height: 780,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Liste des fichiers',
+                  style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ScanPage(
+                    model: model,
+                    pickDirectory: pickDirectory,
+                    associationsOnly: true,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fermer'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
   Future<void> associate(
     BuildContext context,
     Map<String, dynamic> decision,
@@ -2808,231 +2920,249 @@ class ScanPage extends StatelessWidget {
       builder: (context, bounds) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: bounds.maxHeight * .75),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Fichiers et associations',
-                    style: TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
+          if (!associationsOnly)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: model.android
+                    ? bounds.maxHeight
+                    : bounds.maxHeight * .75,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Fichiers et associations',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  SelectableText(model.folderLabel),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 18,
-                    runSpacing: 6,
-                    children: [
-                      Text('Catalogue : ${model.catalog.length} épisodes'),
-                      Text(
-                        'Dossier MP3 : ${model.mp3Path.isEmpty ? 'Non analysé' : model.report?['count'] ?? 'Non analysé'} fichiers',
-                      ),
-                      Text(
-                        'Épisodes associés : ${model.mp3Path.isEmpty ? 'Non vérifié' : model.availableAudioCount}',
-                      ),
-                      Text(
-                        'Épisodes manquants : ${model.audioKnown ? model.missingAudioCount : 'Non vérifié'}',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 6,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: () async {
-                          final path = await pickDirectory();
-                          if (path != null) await model.scan(path);
-                        },
-                        icon: const Icon(Icons.folder_open),
-                        label: const Text('Choisir un dossier MP3'),
-                      ),
-                      OutlinedButton(
-                        onPressed: model.mp3Path.isEmpty
-                            ? null
-                            : () => unawaited(model.scan(model.mp3Path)),
-                        child: const Text('Relancer le scan'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: model.mp3Path.isEmpty
-                            ? null
-                            : () => unawaited(model.openMp3Folder()),
-                        icon: const Icon(Icons.folder_open),
-                        label: const Text('Ouvrir le dossier MP3'),
-                      ),
-                      if (model.mp3Path.isNotEmpty)
-                        TextButton(
-                          onPressed: () =>
-                              unawaited(model.folders('', model.recursive)),
-                          child: const Text('Retirer le dossier MP3'),
+                    const SizedBox(height: 10),
+                    SelectableText(model.folderLabel),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 18,
+                      runSpacing: 6,
+                      children: [
+                        Text('Catalogue : ${model.catalog.length} épisodes'),
+                        Text(
+                          'Dossier MP3 : ${model.mp3Path.isEmpty ? 'Non analysé' : model.report?['count'] ?? 'Non analysé'} fichiers',
                         ),
-                    ],
-                  ),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text('Analyser aussi les sous-dossiers'),
-                    value: model.recursive,
-                    onChanged: (value) => model.setRecursive(value!),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    model.report == null
-                        ? 'Aucun scan réalisé.'
-                        : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.fact_check_outlined),
-                        label: const Text('Diagnostic du scan'),
-                        onPressed: () =>
-                            unawaited(diagnostics(context, issues)),
-                      ),
-                      if (model.report != null)
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.save_alt),
-                          label: const Text('Exporter le diagnostic TXT'),
+                        Text(
+                          'Épisodes associés : ${model.mp3Path.isEmpty ? 'Non vérifié' : model.availableAudioCount}',
+                        ),
+                        Text(
+                          'Épisodes manquants : ${model.audioKnown ? model.missingAudioCount : 'Non vérifié'}',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      children: [
+                        FilledButton.icon(
                           onPressed: () async {
-                            try {
-                              final file = await model.exportScanDiagnostic();
-                              var location = file.path;
-                              if (model.android) {
-                                final target = await AppModel.androidChannel
-                                    .invokeMethod<String>('exportText', {
-                                      'name': file.uri.pathSegments.last,
-                                      'text': await file.readAsString(),
-                                    });
-                                if (target == null) return;
-                                location = target;
-                              }
-                              if (context.mounted)
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: SelectableText(
-                                      'Diagnostic exporté : $location',
-                                    ),
-                                  ),
-                                );
-                            } catch (error) {
-                              model.error =
-                                  'Export du diagnostic impossible : $error';
-                              model.changed();
-                            }
+                            final path = await pickDirectory();
+                            if (path != null) await model.scan(path);
                           },
+                          icon: const Icon(Icons.folder_open),
+                          label: const Text('Choisir un dossier MP3'),
                         ),
-                    ],
-                  ),
+                        OutlinedButton(
+                          onPressed: model.mp3Path.isEmpty
+                              ? null
+                              : () => unawaited(model.scan(model.mp3Path)),
+                          child: const Text('Relancer le scan'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: model.mp3Path.isEmpty
+                              ? null
+                              : () => unawaited(model.openMp3Folder()),
+                          icon: const Icon(Icons.folder_open),
+                          label: const Text('Ouvrir le dossier MP3'),
+                        ),
+                        if (model.mp3Path.isNotEmpty)
+                          TextButton(
+                            onPressed: () =>
+                                unawaited(model.folders('', model.recursive)),
+                            child: const Text('Retirer le dossier MP3'),
+                          ),
+                      ],
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text('Analyser aussi les sous-dossiers'),
+                      value: model.recursive,
+                      onChanged: (value) => model.setRecursive(value!),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      model.report == null
+                          ? 'Aucun scan réalisé.'
+                          : '${model.report!['count']} MP3 analysé(s) · ${issues.length} diagnostic(s).',
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        if (model.android)
+                          OutlinedButton.icon(
+                            key: const ValueKey('open-android-associations'),
+                            icon: const Icon(Icons.list_alt),
+                            label: const Text(
+                              'Voir les fichiers et associations',
+                            ),
+                            onPressed: () =>
+                                unawaited(showAssociations(context)),
+                          ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.fact_check_outlined),
+                          label: const Text('Diagnostic du scan'),
+                          onPressed: () =>
+                              unawaited(diagnostics(context, issues)),
+                        ),
+                        if (model.report != null)
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.save_alt),
+                            label: const Text('Exporter le diagnostic TXT'),
+                            onPressed: () async {
+                              try {
+                                final file = await model.exportScanDiagnostic();
+                                var location = file.path;
+                                if (model.android) {
+                                  final target = await AppModel.androidChannel
+                                      .invokeMethod<String>('exportText', {
+                                        'name': file.uri.pathSegments.last,
+                                        'text': await file.readAsString(),
+                                      });
+                                  if (target == null) return;
+                                  location = target;
+                                }
+                                if (context.mounted)
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: SelectableText(
+                                        'Diagnostic exporté : $location',
+                                      ),
+                                    ),
+                                  );
+                              } catch (error) {
+                                model.error =
+                                    'Export du diagnostic impossible : $error';
+                                model.changed();
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!model.android || associationsOnly) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final entry in const {
+                    AudioFileFilter.associated: 'Fichiers associés',
+                    AudioFileFilter.unassociated: 'Fichiers non associés',
+                    AudioFileFilter.all: 'Tous les fichiers',
+                  }.entries)
+                    ChoiceChip(
+                      key: ValueKey('audio-files-${entry.key.name}'),
+                      mouseCursor: SystemMouseCursors.click,
+                      backgroundColor: c.controls,
+                      selectedColor: c.controls,
+                      surfaceTintColor: Colors.transparent,
+                      label: Text(entry.value),
+                      selected: model.audioFileFilter == entry.key,
+                      onSelected: (_) {
+                        model.audioFileFilter = entry.key;
+                        model.changed();
+                      },
+                    ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final entry in const {
-                  AudioFileFilter.associated: 'Fichiers associés',
-                  AudioFileFilter.unassociated: 'Fichiers non associés',
-                  AudioFileFilter.all: 'Tous les fichiers',
-                }.entries)
-                  ChoiceChip(
-                    key: ValueKey('audio-files-${entry.key.name}'),
-                    mouseCursor: SystemMouseCursors.click,
-                    backgroundColor: c.controls,
-                    selectedColor: c.controls,
-                    surfaceTintColor: Colors.transparent,
-                    label: Text(entry.value),
-                    selected: model.audioFileFilter == entry.key,
-                    onSelected: (_) {
-                      model.audioFileFilter = entry.key;
-                      model.changed();
-                    },
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: entries.isEmpty
-                ? Center(
-                    child: Text(
-                      decisions.isEmpty
-                          ? 'Sélectionnez un dossier pour analyser les MP3.'
-                          : 'Aucun fichier pour ce filtre.',
-                    ),
-                  )
-                : ListView.builder(
-                    key: const ValueKey('scan-associations-list'),
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final decision = entries[index].decision;
-                      final manual = entries[index].manual;
-                      final linked =
-                          decision['status'] == 'confirmed' || manual;
-                      return SelectionArea(
-                        child: Card(
-                          color: linked ? c.controls : c.missing,
-                          surfaceTintColor: Colors.transparent,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 5,
-                          ),
-                          child: ListTile(
-                            title: Text(decision['current_name'] as String),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}',
-                                  style: TextStyle(
-                                    color: linked ? c.muted : c.hitInk,
-                                  ),
-                                ),
-                                Text(
-                                  displayDiagnosticPath(
-                                    decision['audio_reference'] as String,
-                                  ),
-                                ),
-                              ],
+            Expanded(
+              child: entries.isEmpty
+                  ? Center(
+                      child: Text(
+                        decisions.isEmpty
+                            ? 'Sélectionnez un dossier pour analyser les MP3.'
+                            : 'Aucun fichier pour ce filtre.',
+                      ),
+                    )
+                  : ListView.builder(
+                      key: const ValueKey('scan-associations-list'),
+                      itemCount: entries.length,
+                      itemBuilder: (context, index) {
+                        final decision = entries[index].decision;
+                        final manual = entries[index].manual;
+                        final linked =
+                            decision['status'] == 'confirmed' || manual;
+                        return SelectionArea(
+                          child: Card(
+                            color: linked ? c.controls : c.missing,
+                            surfaceTintColor: Colors.transparent,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 5,
                             ),
-                            trailing: linked
-                                ? IconButton(
-                                    tooltip: 'Enlever l’association',
-                                    icon: const Icon(Icons.link_off),
-                                    onPressed: () => unawaited(
-                                      removeAssociation(
-                                        context,
-                                        decision['audio_reference'] as String,
-                                      ),
+                            child: ListTile(
+                              title: Text(decision['current_name'] as String),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${manual ? 'Association manuelle' : associationNames[decision['status']] ?? decision['status']} · ${decision['reason']}',
+                                    style: TextStyle(
+                                      color: linked ? c.muted : c.hitInk,
                                     ),
-                                  )
-                                : OutlinedButton(
-                                    style: OutlinedButton.styleFrom(
-                                      backgroundColor: c.controls,
-                                    ),
-                                    onPressed: () =>
-                                        unawaited(associate(context, decision)),
-                                    child: const Text('Associer…'),
                                   ),
+                                  Text(
+                                    displayDiagnosticPath(
+                                      decision['audio_reference'] as String,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: linked
+                                  ? IconButton(
+                                      tooltip: 'Enlever l’association',
+                                      icon: const Icon(Icons.link_off),
+                                      onPressed: () => unawaited(
+                                        removeAssociation(
+                                          context,
+                                          decision['audio_reference'] as String,
+                                        ),
+                                      ),
+                                    )
+                                  : OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: c.controls,
+                                      ),
+                                      onPressed: () => unawaited(
+                                        associate(context, decision),
+                                      ),
+                                      child: const Text('Associer…'),
+                                    ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ],
       ),
     );
