@@ -683,3 +683,21 @@ La réconciliation d’opérations historiquement confirmées reste conservée p
 anciens profils. La dernière demande utilisateur ne prévoit pas de nouveau panneau
 ni de déplacement des listes/filtres. Les descriptions antérieures du renommage
 Android sont historiques et cette révision prévaut sur leur disponibilité.
+
+
+### Lancement du Lot 6C — 3 novembre 2026
+
+L’utilisateur valide tous les contrôles 6B et le correctif paysage sur son téléphone,
+puis lance explicitement 6C. Implémenter service de lecture Android, continuité
+arrière-plan/écran éteint, notification et commandes système, priorité audio,
+interruptions casque/appels/autres lecteurs et conservation du suivi partagé.
+Reprendre les mêmes règles de checkpoints, fin, reprise, arrêt/reset et enchaînement,
+sans régression Windows. Le renommage Android reste exclu.
+
+Retour racine avec une piste chargée : mettre l’application en arrière-plan en
+conservant la lecture ou la pause. Une fermeture explicite sauvegarde puis libère
+le service et le moteur. Perte de focus/casque : pause immédiate et reprise manuelle,
+sans son inattendu. Force-stop/kill ne déclenche pas de redémarrage/autoplay ; reprise
+ultérieure depuis le dernier checkpoint. Aucun réseau ajouté, compte ni télémétrie.
+Pas de nouveau package runtime, de signature finale ni de lancement de 6D.
+Voir bilan-6C et recette Android pour les garanties et validations physiques restantes.

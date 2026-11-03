@@ -1,4 +1,4 @@
-name: Verification Android Lot 6B
+name: Verification Android Lot 6C
 on:
   # APK de diagnostic Android : construction à la demande uniquement.
   workflow_dispatch:

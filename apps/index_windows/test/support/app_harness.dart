@@ -6,6 +6,7 @@ final class FakeWindow implements WindowPort {
   final Future<void>? destroyGate;
   bool closeRequested = false;
   int destroyed = 0;
+  int minimized = 0;
   @override
   Future<void> destroy() async {
     closeRequested = true;
@@ -14,7 +15,10 @@ final class FakeWindow implements WindowPort {
   }
 
   @override
-  Future<void> minimize() async {}
+  Future<void> minimize() async {
+    minimized++;
+  }
+
   @override
   Future<void> maximizeOrRestore() async {}
 }

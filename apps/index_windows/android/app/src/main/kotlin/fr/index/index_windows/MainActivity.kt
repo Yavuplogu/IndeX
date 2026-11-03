@@ -2,15 +2,8 @@ package fr.index.index_windows
 
 import android.app.Activity
 import android.content.Intent
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.IntentFilter
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
-import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Build
 import android.provider.DocumentsContract
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -22,33 +15,19 @@ class MainActivity : FlutterActivity() {
     private var picker: MethodChannel.Result? = null
     private var exportResult: MethodChannel.Result? = null
     private var exportText: String? = null
-    private var player: MediaPlayer? = null
-    private var ended = false
-    private var audioError: String? = null
-    private var prepared = false
-    private var focus: AudioFocusRequest? = null
-    private val audioManager by lazy { getSystemService(AUDIO_SERVICE) as AudioManager }
     private val worker = Executors.newSingleThreadExecutor()
     private val documents by lazy { AndroidDocuments(this, worker) }
-    private val noisy = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) { if (prepared && player?.isPlaying == true) player?.pause() }
-    }
-    private var noisyRegistered = false
-    private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        if (change < 0) {
-            runOnUiThread { if (prepared && player?.isPlaying == true) player?.pause() }
-        }
-    }
+    override fun provideFlutterEngine(context: Context): FlutterEngine = IndexEngine.get(context)
+    override fun shouldDestroyEngineWithHost() = false
     override fun configureFlutterEngine(engine: FlutterEngine) {
         super.configureFlutterEngine(engine)
-        val filter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
-        if (Build.VERSION.SDK_INT >= 33) registerReceiver(noisy, filter, Context.RECEIVER_NOT_EXPORTED)
-        else { @Suppress("DEPRECATION") registerReceiver(noisy, filter) }
-        noisyRegistered = true
+        AndroidAudioBridge.install(applicationContext, engine)
         MethodChannel(engine.dartExecutor.binaryMessenger, "index/android").setMethodCallHandler { call, result ->
             try {
                 if (documents.handle(call, result)) return@setMethodCallHandler
                 when (call.method) {
+                    "backgroundTask" -> { moveTaskToBack(true); result.success(null) }
+                    "closeApplication" -> { IndexEngine.closing = true; result.success(null); stopService(Intent(this, IndexPlaybackService::class.java)); finishAndRemoveTask() }
                     "privateDirectory" -> result.success(File(filesDir, "user").apply { mkdirs() }.absolutePath)
                     "pickTree" -> {
                         if (picker != null) { result.error("picker_busy", "Sélection déjà ouverte.", null) }
@@ -109,54 +88,6 @@ class MainActivity : FlutterActivity() {
                 }
             } catch (e: Exception) { result.error("android_storage", e.toString(), null) }
         }
-        MethodChannel(engine.dartExecutor.binaryMessenger, "index/audio").setMethodCallHandler { call, result ->
-            try {
-                when (call.method) {
-                    "open" -> {
-                        val uri = Uri.parse(call.arguments as String)
-                        require(uri.scheme == "content") { "URI locale SAF requise." }
-                        player?.release(); prepared = false; ended = false; audioError = null
-                        var preparing = true
-                        player = MediaPlayer().apply {
-                            setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                            setDataSource(this@MainActivity, uri)
-                            setOnCompletionListener { ended = true }
-                            // Préparation asynchrone : ne pas bloquer l'interface sur un fournisseur lent.
-                            setOnPreparedListener { if (preparing) { preparing = false; prepared = true; result.success(null) } }
-                            setOnErrorListener { _, what, extra ->
-                                prepared = false
-                                audioError = "Audio indisponible ($what/$extra)."
-                                if (preparing) { preparing = false; result.error("audio_prepare", audioError, null) }
-                                true
-                            }
-                            prepareAsync()
-                        }
-                        return@setMethodCallHandler
-                    }
-                    "play" -> {
-                        val granted = if (Build.VERSION.SDK_INT >= 26) {
-                            focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()).setOnAudioFocusChangeListener(focusListener).build()
-                            audioManager.requestAudioFocus(focus!!)
-                        } else { @Suppress("DEPRECATION") audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) }
-                        check(granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { "Priorité audio refusée." }
-                        ended = false; player!!.start()
-                    }
-                    "pause" -> { if (prepared && player?.isPlaying == true) player?.pause() }
-                    "seek" -> {
-                        val value = (call.arguments as Number).toLong(); require(value in 0..Int.MAX_VALUE.toLong())
-                        player!!.setOnSeekCompleteListener { it.setOnSeekCompleteListener(null); result.success(null) }
-                        if (Build.VERSION.SDK_INT >= 26) player!!.seekTo(value, MediaPlayer.SEEK_CLOSEST)
-                        else { @Suppress("DEPRECATION") player!!.seekTo(value.toInt()) }
-                        ended = false; return@setMethodCallHandler
-                    }
-                    "volume" -> { val value = (call.arguments as Number).toFloat().coerceIn(0f, 1f); player!!.setVolume(value, value) }
-                    "snapshot" -> { check(prepared) { audioError ?: "Audio non préparé" }; check(audioError == null) { audioError ?: "Erreur audio" }; val p = player!!; result.success(mapOf("position" to p.currentPosition, "duration" to p.duration, "playing" to p.isPlaying, "ended" to ended)); return@setMethodCallHandler }
-                    "release" -> { player?.release(); player = null; prepared = false; if (Build.VERSION.SDK_INT >= 26) focus?.let { audioManager.abandonAudioFocusRequest(it) } }
-                    else -> { result.notImplemented(); return@setMethodCallHandler }
-                }
-                result.success(null)
-            } catch (e: Exception) { result.error("audio_native", e.toString(), null) }
-        }
     }
     @Deprecated("Legacy activity callback required by FlutterActivity")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -184,6 +115,9 @@ class MainActivity : FlutterActivity() {
             } catch (e: Exception) { pending?.error("permission", e.toString(), null) }
         }
     }
-    override fun onStop() { if (prepared && player?.isPlaying == true) player?.pause(); super.onStop() }
-    override fun onDestroy() { if (noisyRegistered) unregisterReceiver(noisy); player?.release(); player = null; worker.shutdown(); super.onDestroy() }
+    override fun onDestroy() {
+        worker.shutdown()
+        super.onDestroy()
+        if (IndexEngine.closing) IndexEngine.close()
+    }
 }

@@ -10,6 +10,7 @@ import 'package:index_core/index_core.dart';
 import 'package:index_core/index_desktop.dart';
 
 import 'audio_player.dart';
+import 'android_media_controls.dart';
 import 'just_audio_port.dart';
 
 final class SeedData {
@@ -120,6 +121,27 @@ final class AppModel extends ChangeNotifier {
       _saveAudio,
       autoPoll: pollAudio,
     )..onEnded = _audioEnded;
+    systemMedia = android && playback.port is NativeAudioPort
+        ? AndroidMediaControls(
+            playback: playback,
+            onCommand: systemAudioCommand,
+            nowPlaying: () {
+              final episode = playingEpisode;
+              if (episode == null) return null;
+              final date = episode.date;
+              return {
+                'id': episode.id,
+                'title': episode.title,
+                'date': date == null ? '' : date.split('-').reversed.join('/'),
+              };
+            },
+            onError: (e) {
+              if (_disposed) return;
+              error = 'Commandes audio Android indisponibles : $e';
+              changed();
+            },
+          )
+        : null;
   }
   void _audioDiagnostic(Map<String, Object?> event) {
     final directory = session?.dataDirectory;
@@ -481,6 +503,35 @@ final class AppModel extends ChangeNotifier {
   final Random _audioRandom;
   static const androidChannel = MethodChannel('index/android');
   late final Playback playback;
+  late final AndroidMediaControls? systemMedia;
+
+  Future<void> systemAudioCommand(String action, int? position) async {
+    switch (action) {
+      case 'play':
+        if (!playback.state.playing || playback.state.ended) await playToggle();
+      case 'pause':
+        await playback.pause();
+      case 'stop':
+        await stopAudio();
+      case 'next':
+        await nextAudio(1);
+      case 'previous':
+        await nextAudio(-1);
+      case 'forward':
+        await playback.skip(10000);
+      case 'rewind':
+        await playback.skip(-10000);
+      case 'seek':
+        await playback.seekFromPlayer(position!);
+      case 'tick':
+        await playback.poll();
+      case 'backendLost':
+        await playback.backendReleased();
+      default:
+        throw ArgumentError('Commande système inconnue.');
+    }
+  }
+
   void _saveAudio(
     String id,
     AudioSnapshot state,
@@ -1365,6 +1416,7 @@ final class AppModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    systemMedia?.dispose();
     playback.dispose();
     super.dispose();
   }

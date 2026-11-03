@@ -1,11 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
         android:label="IndeX"
         android:allowBackup="false"
         android:networkSecurityConfig="@xml/network_security_config"
         android:name="${applicationName}"
         android:icon="@drawable/index_icon">
+        <service android:name=".IndexPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" android:stopWithTask="false" />
         <provider
             android:name=".IndeXDocumentsProvider"
             android:authorities="fr.index.index_windows.documents"

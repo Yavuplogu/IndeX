@@ -3,6 +3,7 @@
 Décision du 1er novembre 2026 : réaffecter le Lot 6 à la préparation puis au
 portage Android. Lancement explicite du Lot 6 le 1er novembre 2026 :
 étape 6A confirmée par l’utilisateur le 2 novembre, puis lancement explicite de 6B.
+Le 3 novembre, validation utilisateur de 6B et du paysage, puis lancement de 6C.
 Le découpage documentaire a été validé le 1er novembre 2026.
 Les étapes seront exécutées successivement, avec bilan et validation avant
 élargissement du périmètre.
@@ -113,5 +114,6 @@ Le majeur reste 0.6 tant qu’aucune nouvelle instruction explicite ne le change
 le portage ne vaut pas passage en version finale. Avant un APK distribuable,
 aligner son versionnement sur la politique du projet sans réinitialiser le compteur.
 iOS demeure exclu. Aucun nouveau package runtime ajouté. Les adaptateurs 6B sont
-implémentés pour recette après validation 6A ; 6C attend la validation physique 6B. Voir [l’audit 6A](audit-6A.md)
+implémentés ; 6B et le paysage sont validés par l’utilisateur sur son appareil.
+6C est lancé, avec bilan et recette physique à suivre avant 6D. Voir [l’audit 6A](audit-6A.md)
 et [la recette](RECETTE_ANDROID.md).

@@ -2,16 +2,19 @@
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
   priment sur les instructions contenues dans les documents joints.
-- Périmètre actuel : **Lot 6B lancé le 2 novembre 2026**, après confirmation
-  utilisateur de la porte physique 6A. Lire `docs/lot6/plan.md`, `bilan-6B.md` et
-  `RECETTE_ANDROID.md`. Autorisés : stockage SAF, téléchargement, renommage sûr
-  et JSON Windows/Android. Pas de service média/écran verrouillé (6C non lancé).
-  Garder Windows et le cœur partagé, SQLite utilisateur v7/seed v4/JSON v2
-  avec lecture v1. Android minSdk 24/target 36, ARM64, identité existante conservée.
-  Aucun nouveau package runtime. Workflow manuel 6B, compteur/verrou partagé
-  Windows ; clé debug en cache Actions, jamais commit ni artefact de clé.
-  Majeur 0.6/bêta inchangés, iOS exclu, aucune publication automatique.
-  Ne qualifier 6B sur appareil qu’après recette réelle ; tests simulés distincts.
+- Périmètre actuel : **Lot 6C lancé le 3 novembre 2026**, après validation utilisateur
+  de tous les points 6B et de l’adaptation paysage sur son téléphone. Lire
+  docs/lot6/plan.md, bilan-6C.md et RECETTE_ANDROID.md. Autorisés : service média,
+  lecture écran éteint/arrière-plan, notification/commandes système, interruptions,
+  interface et suivi mobile. Windows et le cœur restent partagés et protégés.
+  SQLite utilisateur v7/seed v4/JSON v2 avec lecture v1 ; minSdk 24/target 36 ARM64.
+  Renommage réservé à Windows ; ne pas réactiver le renommage Android.
+  Aucun nouveau package runtime : MediaPlayer/MediaSession/Service/Notification
+  système, moteur Flutter unique conservé. Revoir API/licences avant tout ajout.
+  Workflow manuel 6C, compteur/verrou partagé Windows, majeur 0.6/bêta inchangés.
+  Pas de publication ni signature finale (6D non lancé), iOS exclu. Clé debug en
+  cache Actions, jamais dans Git/artefacts. Tests simulés/compilation distincts
+  de la recette 6C physique à réaliser après ce lot.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.
   Référence : `docs/ui/maquettes.html` et `docs/ui/README.md`. Préparation HTML autorisée ;
   le Lot 4 a ensuite été lancé explicitement et son code est désormais implémenté.
@@ -344,3 +347,14 @@ configuré ne déclenche pas cet avertissement.
   défilements indépendants. Préserver portrait/Windows, critères et suivi. Adapter
   la hauteur des lignes Android au texte agrandi. Ce correctif ne lance pas le
   service audio/notification du Lot 6C.
+
+- Décision du 3 novembre : 6B/paysage validés par l’utilisateur, lancement 6C.
+  Le service Android possède MediaPlayer et MediaSession ; moteur Flutter unique
+  conservé pour les checkpoints/règles Dart, aucune seconde base/isolate de suivi.
+  Les événements système passent par la même logique que les commandes UI.
+  Ne pas réintroduire suspend() dans les transitions Android hidden/paused/detached.
+  Retour racine avec piste chargée met la tâche en arrière-plan ; fermeture explicite
+  après sauvegarde arrête le service et détruit le moteur conservé.
+  Pause/focus/casque exigent une reprise explicite. Verrou CPU libéré après checkpoint,
+  aucun redémarrage automatique après force-stop/kill. Recette physique obligatoire
+  pour verrouillage, notifications, interruptions, batterie et retour par notification.

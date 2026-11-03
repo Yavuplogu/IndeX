@@ -1,9 +1,28 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/window_port.dart';
+import 'package:index_windows/main.dart' show AndroidWindowPort;
 import 'package:index_windows/app_model.dart';
 
 void main() {
+  test('Android : mise en arrière-plan distincte de la fermeture explicite du moteur', () async {
+    final calls = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(AppModel.androidChannel, (call) async {
+          calls.add(call.method);
+          return null;
+        });
+    try {
+      final window = AndroidWindowPort();
+      await window.minimize();
+      await window.destroy();
+      expect(calls, ['backgroundTask', 'closeApplication']);
+    } finally {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(AppModel.androidChannel, null);
+    }
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   test('Ouverture native : dossier cible transmis séparément, antislashs et Unicode conservés', () async {
     const channel = MethodChannel('index/local_folders');

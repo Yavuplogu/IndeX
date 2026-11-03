@@ -1,15 +1,15 @@
-# IndeX — diagnostic Android Lot 6B
+# IndeX — diagnostic Android Lot 6C
 
 APK ARM64 pour Android 7.0 ou plus récent. Il s’agit du socle de diagnostic,
 pas du portage complet : téléchargement local et import/export JSON sont disponibles.
-Le renommage est désormais réservé à Windows (décision du 3 novembre 2026). La lecture se met encore
-en pause en quittant l’application (Lot 6C).
+Le renommage est réservé à Windows. Le Lot 6C ajoute le service média pour la lecture
+écran éteint et en arrière-plan, à qualifier sur téléphone avec la recette ci-dessous.
 Aucun MP3 n’est embarqué. Préparer un dossier de **copies** de MP3 avec les noms
 historiques ou système du catalogue. Les tags COMM ne participent pas au scan.
 
 ## Récupérer et utiliser l’APK
 
-Après commit/push des changements, GitHub → Actions → Verification Android Lot 6B
+Après commit/push des changements, GitHub → Actions → Verification Android Lot 6C
 → Run workflow sur la branche contenant le lot. Rien n’est lancé automatiquement.
 Le résultat contient IndeX-<version>-Android-arm64-test : APK, empreinte SHA-256,
 rapport de contenu et ce guide. L’APK est signé pour le développement ; conserver
@@ -28,7 +28,7 @@ manuelles suivantes. Ne pas choisir un fournisseur cloud pour un essai hors lign
    de MP3_Files/MP3_Bugs copiés sur le téléphone ; noter toute erreur, le modèle
    du téléphone, sa version Android et la latence perçue.
 4. Quitter/revenir, puis redémarrer le téléphone : retrouver le dossier et la
-   progression sans nouveau sélecteur. La pause en arrière-plan est attendue ici.
+   progression sans nouveau sélecteur. La lecture doit continuer en arrière-plan (voir recette 6C).
 5. Révoquer l’accès au dossier, rouvrir : un diagnostic doit signaler le problème
    sans supprimer favoris/suivi. Choisir à nouveau le dossier et vérifier la reprise.
 
@@ -194,3 +194,69 @@ hauteur. Les lignes Android grandissent avec la taille de police système.
 - Refaire avec caractères système agrandis et avec le clavier affiché.
 La présentation Windows et l’organisation portrait restent conservées. Cette
 correction ne comprend pas la lecture en arrière-plan ni les notifications 6C.
+
+
+## Recette Lot 6C — service média, écran verrouillé et interruptions
+
+6B et le paysage sont validés par l’utilisateur le 3 novembre. Cette recette porte
+sur les changements 6C, après construction du nouvel APK et mise à jour conservant
+l’identifiant/signature/profil. Noter version APK, téléphone, version Android et
+réglage de batterie. Les tests Linux et la compilation ne valident pas ces points.
+
+1. Lire plusieurs minutes, revenir à l’accueil Android et ouvrir une autre application :
+   le son continue, une notification média IndeX affiche titre/date et les commandes.
+   Appuyer sur Retour depuis la bibliothèque avec une piste chargée : la tâche passe
+   en arrière-plan ; pas d’arrêt/reset ni fermeture du profil.
+2. Verrouiller le téléphone au moins dix minutes. Contrôler pause/reprise, précédent,
+   suivant et déplacement dans la piste depuis les commandes disponibles sur cet
+   Android. Certains skins choisissent quels boutons montrer. Pause répétée ne
+   relance pas la lecture ; arrêt remet progression et statut à zéro. Le titre/date
+   et la progression système correspondent au lecteur, pas à la fiche consultée.
+3. Toucher la notification : retrouver la même écoute, le suivi et les filtres sans
+   nouvelle configuration, erreur de verrou ni deuxième lecteur. Tourner l’écran,
+   ouvrir d’autres fiches et vérifier thèmes et paysage. Répéter après une mise en
+   arrière-plan prolongée ; si Android a détruit le service inactif, Lecture réouvre
+   le fichier depuis le checkpoint. Aucun autoplay imposé au redémarrage du processus.
+4. Pendant une écoute, recevoir un appel, démarrer un autre lecteur puis débrancher
+   un casque filaire/déconnecter le Bluetooth : pause immédiate, position sauvegardée.
+   Reprise explicite seulement ; aucune reprise automatique après l’appel/reconnexion.
+   Vérifier aussi les boutons du casque, la priorité audio refusée et une source
+   inaccessible : erreur sélectionnable et absence de lecture concurrente.
+5. Écran verrouillé, atteindre la fin naturellement puis après seek vers la dernière
+   seconde : Écouté, suivi durable et suivant disponible/non écouté. Tester aléatoire,
+   précédent/suivant manuels et auto-suivant désactivé. Revenir dans IndeX et vérifier
+   le pourcentage, la fiche et les statuts ; réécouter un épisode terminé.
+6. Après plus de cinq secondes en arrière-plan, forcer l’arrêt du processus puis
+   rouvrir : reprise au dernier checkpoint confirmé, favoris conservés. Force-stop
+   arrête le son et la notification ; pas de relance automatique du service.
+   Enlever l’application des tâches récentes sans force-stop : la lecture continue
+   si Android ne termine pas lui-même le processus. Ne pas promettre la survie à
+   une action système explicite d’arrêt ou à toutes les politiques constructeur.
+7. Faire une pause prolongée : pas de verrou CPU conservé après sauvegarde. Tester
+   d’abord le réglage de batterie standard, puis documenter toute restriction du
+   constructeur. Ne pas demander automatiquement d’exemption batterie globale.
+   L’app utilise une notification MediaStyle/MediaSession, exemptée de la demande
+   POST_NOTIFICATIONS des notifications ordinaires sur Android 13+ ; vérifier les
+   réglages média du téléphone si les commandes sont masquées par l’utilisateur.
+8. Régression Windows : lecture, pause, arrêt, seek/fin, aléatoire/suivant, fermeture,
+   reprise et JSON restent identiques. API Android 24–28, 30–33 et 34–36 à couvrir
+   avant diffusion 6D ; consigner chaque appareil réellement testé.
+
+### Test supervisé de progression en arrière-plan (poste de développement)
+
+Choisir un dossier de copies contenant au moins deux MP3 reconnus, de plus de vingt
+secondes. Aucun MP3 n’est modifié ; le test utilise un profil temporaire, sauvegarde
+la progression en arrière-plan, saute au terme pour vérifier le suivant, puis pause.
+Il ne remplace pas les commandes réelles du verrouillage, les appels ou Bluetooth.
+
+```sh
+python3 tools/lot4/prepare_assets.py
+cd apps/index_windows
+flutter test integration_test/android_background_audio_test.dart -d <identifiant-appareil>
+```
+
+Pour diagnostiquer sur un poste ADB : `adb shell dumpsys media_session`,
+`adb shell dumpsys activity services fr.index.index_windows`, et
+`adb logcat -v time` pendant la reproduction. Retirer les informations personnelles
+avant partage. Une erreur FGS, une notification incorrecte ou un checkpoint absent
+reste un échec de recette même si l’APK compile.

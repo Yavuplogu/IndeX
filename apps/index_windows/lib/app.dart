@@ -150,11 +150,12 @@ class _IndeXAppState extends State<IndeXApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (m.android &&
+        m.session != null &&
         (state == AppLifecycleState.paused ||
             state == AppLifecycleState.hidden ||
             state == AppLifecycleState.detached)) {
       unawaited(
-        m.playback.suspend().catchError((Object e) {
+        m.playback.checkpointCurrent().catchError((Object e) {
           m.error = 'Sauvegarde audio impossible : $e';
           m.changed();
         }),
@@ -271,7 +272,13 @@ class _IndeXAppState extends State<IndeXApp>
         home: PopScope<Object?>(
           canPop: !m.android,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop && m.android) unawaited(close());
+            if (!didPop && m.android) {
+              if (m.playback.episodeId != null || m.playback.busy) {
+                unawaited(widget.window.minimize());
+              } else {
+                unawaited(close());
+              }
+            }
           },
           child: Scaffold(
             resizeToAvoidBottomInset: !m.android,

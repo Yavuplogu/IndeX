@@ -64,6 +64,8 @@ final class NativeAudioPort implements AudioPort {
     );
   }
 
+  Future<void> confirmCheckpoint() =>
+      channel.invokeMethod<void>('checkpointed');
   @override
   Future<void> dispose() => channel.invokeMethod<void>('release');
 }
@@ -132,6 +134,7 @@ final class Playback extends ChangeNotifier {
   String error = '';
   bool busy = false, _polling = false, _closed = false;
   int _savedAt = 0;
+  int sourceRevision = 0;
   Timer? _timer;
   Future<void>? _pending;
 
@@ -175,6 +178,7 @@ final class Playback extends ChangeNotifier {
       reference = null;
       state = const AudioSnapshot(0, 0, false);
       await port.open(ref).timeout(const Duration(seconds: 30));
+      sourceRevision++;
       episodeId = id;
       reference = ref;
       guard = ListeningGuard();
@@ -208,6 +212,25 @@ final class Playback extends ChangeNotifier {
     _timer = null;
   }
 
+  Future<void> waitUntilIdle() async {
+    while (busy || _polling) {
+      if (_polling) {
+        await _waitPoll();
+        continue;
+      }
+      final task = _pending;
+      if (task != null) {
+        try {
+          await task;
+        } catch (_) {
+          /* Erreur déjà exposée par la commande. */
+        }
+      } else {
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+      }
+    }
+  }
+
   Future<void> _waitPoll() async {
     while (_polling) {
       await Future<void>.delayed(const Duration(milliseconds: 1));
@@ -235,6 +258,16 @@ final class Playback extends ChangeNotifier {
     if (episodeId == null) return;
     save(episodeId!, state, guard, status);
     _savedAt = state.position;
+    final native = port;
+    if (native is NativeAudioPort) {
+      unawaited(
+        native.confirmCheckpoint().catchError((Object e) {
+          if (_closed) return;
+          error = 'Confirmation du suivi Android impossible : $e';
+          notifyListeners();
+        }),
+      );
+    }
   }
 
   Future<void> poll() async {
@@ -290,6 +323,25 @@ final class Playback extends ChangeNotifier {
     guard = ListeningGuard()..discontinuity(0);
     _endedHandled = false;
     flush('stopped');
+  });
+
+  /// Pause idempotente pour notification, casque et perte de focus Android.
+  Future<void> pause() {
+    final recovering = error.isNotEmpty;
+    return _command(() async {
+      if (episodeId == null) return;
+      await _waitPoll();
+      await _pauseForCheckpoint(recovering);
+      flush('paused');
+    });
+  }
+
+  /// Sauvegarde de transition sans suspendre une lecture en arrière-plan.
+  Future<void> checkpointCurrent() => _command(() async {
+    if (episodeId == null) return;
+    await _waitPoll();
+    await _capture();
+    flush(state.playing ? 'playing' : 'paused');
   });
 
   Future<void> toggle() => _command(() async {
@@ -363,6 +415,19 @@ final class Playback extends ChangeNotifier {
     level = value.clamp(0, 1);
     if (episodeId != null) await port.volume(level);
   });
+
+  /// Android peut détruire un service inactif sans tuer le moteur Flutter.
+  /// Garder le dernier checkpoint puis forcer une réouverture à la reprise.
+  Future<void> backendReleased() => _command(() async {
+    await _waitPoll();
+    state = AudioSnapshot(state.position, state.duration, false);
+    flush('paused');
+    _stopPolling();
+    episodeId = null;
+    reference = null;
+    state = const AudioSnapshot(0, 0, false);
+  });
+
   Future<void> unload() async {
     await suspend();
     if (episodeId != null) await port.dispose();
@@ -390,6 +455,7 @@ final class Playback extends ChangeNotifier {
 
   @override
   void dispose() {
+    _closed = true;
     _timer?.cancel();
     super.dispose();
   }

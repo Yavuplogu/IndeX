@@ -64,5 +64,13 @@
     "redistributed_binary": false,
     "license": "API Android système ; adaptateur Kotlin propre au projet, aucun nouveau package runtime",
     "risk": "Fournisseurs externes sans garantie de renommage refusés ; recette réelle des permissions, interruptions et du fournisseur IndeX requise"
+  },
+  {
+    "component": "Android Service / MediaSession / Notification.MediaStyle / PowerManager / FlutterEngine conservé",
+    "api": "Android API 24 minimum, compile/target 36 ; FGS mediaPlayback API 29+, permission typée API 34+",
+    "usage": "Lot 6C : MediaPlayer dans un service non exporté, commandes et notification système, moteur/isolate Flutter unique pour le suivi partagé",
+    "redistributed_binary": false,
+    "license": "API Android du système non redistribuée ; Flutter BSD-3-Clause déjà inventorié ; adaptateurs Kotlin/Dart du projet",
+    "risk": "Recette physique écran éteint, restrictions batterie/FGS, casque/Bluetooth/focus et destruction/recréation Activity ; aucun nouveau package ni accès réseau"
   }
 ]

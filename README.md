@@ -11,16 +11,16 @@ Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 6B lancé — stockage Android, fichiers et transfert JSON.**
-L’utilisateur confirme la recette physique 6A le 2 novembre. Windows reste validé,
-Release GitHub à préparer. [Bilan 6B](docs/lot6/bilan-6B.md) et
-[recette Android](docs/lot6/RECETTE_ANDROID.md) : téléchargement dans un dossier
-SAF local, JSON manuel dans les deux sens, renommage dans le dossier géré
-optionnel IndeX · MP3. Ce dossier est privé et supprimé à la désinstallation :
-conserver les originaux ailleurs. Les autres fournisseurs ne sont pas présumés
-sûrs pour le renommage. La lecture écran éteint reste au Lot 6C.
+**État : Lot 6C lancé — lecture Android en arrière-plan et commandes système.**
+L’utilisateur valide 6B et le paysage le 3 novembre. Windows reste validé,
+Release GitHub séparément à préparer. [Bilan 6C](docs/lot6/bilan-6C.md) et
+[recette Android](docs/lot6/RECETTE_ANDROID.md) : service média, écran verrouillé,
+notification, priorité audio et suivi partagé. Recette 6C physique à confirmer.
+Téléchargement dans un dossier SAF local et transfert JSON restent disponibles ;
+renommage réservé à Windows. Le dossier optionnel IndeX · MP3 est privé et supprimé
+à la désinstallation : conserver les originaux ailleurs.
 Workflows Windows et Android uniquement manuels ; Android : Verification Android
-Lot 6B → Run workflow. Compteur/verrou partagé, aucun déclenchement sur push.
+Lot 6C → Run workflow. Compteur/verrou partagé, aucun déclenchement sur push.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
@@ -29,8 +29,8 @@ sur les deux cibles reste distincte des tests Linux. La recette et les limites
 sont détaillées dans le bilan du Lot 5.
 
 Depuis le 28 octobre, le lecteur Windows utilise **just_audio + just_audio_windows**
-(WinRT MediaPlayer), en remplacement de MCI. Android conserve son moteur et reste
-en recette Lot 6B ; le service média mobile reste au Lot 6C.
+(WinRT MediaPlayer), en remplacement de MCI. Android conserve MediaPlayer, désormais possédé par un service média ;
+la lecture écran éteint et les commandes système sont en recette Lot 6C.
 
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans

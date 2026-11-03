@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app.dart';
@@ -67,9 +66,11 @@ Future<void> main() async {
 
 final class AndroidWindowPort implements WindowPort {
   @override
-  Future<void> destroy() => SystemNavigator.pop();
+  Future<void> destroy() =>
+      AppModel.androidChannel.invokeMethod<void>('closeApplication');
   @override
-  Future<void> minimize() async {}
+  Future<void> minimize() =>
+      AppModel.androidChannel.invokeMethod<void>('backgroundTask');
   @override
   Future<void> maximizeOrRestore() async {}
 }

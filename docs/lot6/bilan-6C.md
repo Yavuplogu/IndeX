@@ -1,0 +1,142 @@
+# Lot 6C — Lecture Android en arrière-plan et commandes système
+
+Lancé explicitement le **3 novembre 2026**, après validation utilisateur de tous
+les contrôles précédents, y compris le paysage corrigé. Cette validation est celle
+de son téléphone ; elle ne remplace pas une matrice de versions Android. La recette
+6C ci-dessous reste distincte, à exécuter avec le nouvel APK. 6D/signature finale et
+Release GitHub ne sont pas lancés. Windows et le majeur bêta 0.6 sont conservés.
+
+## Décisions et réalisation
+
+Aucun nouveau package Flutter, Maven ou binaire tiers. Utiliser les API système
+Android déjà disponibles dès API 24 : Service, MediaPlayer, MediaSession,
+Notification.MediaStyle, AudioManager et PowerManager. Les branches API 26/29/33+
+sont conditionnées à la version du système. API 36/ARM64, identité et signature de
+diagnostic existantes restent conservées. Voir l’inventaire des dépendances.
+
+### Un propriétaire du moteur audio et un propriétaire du suivi
+
+- `IndexPlaybackService`, non exporté, possède MediaPlayer, MediaSession, la
+  notification et le focus. Il fonctionne en foreground de type mediaPlayback
+  pendant la lecture. Il lit les URI SAF opaques avec les grants existants ;
+  aucun chemin déduit, MP3 copié ou modifié, réseau ou permission de stockage ajouté.
+- `IndexEngine` conserve un seul FlutterEngine/isolate lors de la destruction de
+  l’Activity. Sa réouverture rattache la vue au même moteur, donc au même AppModel
+  et profil SQLite. Il n’y a pas de deuxième base ni de concurrence entre deux
+  propriétaires des états/horloges JSON.
+- `AndroidAudioBridge` appartient au moteur, pas à l’Activity. La partie stockage
+  et sélecteurs reste raccordée à l’Activity courante. Aucun MediaPlayer n’est
+  conservé ni libéré dans MainActivity.onStop/onDestroy.
+- L’Activity n’est plus propriétaire de la durée de vie audio. La fermeture
+  explicite sauvegarde, libère le lecteur, arrête le service et détruit le moteur.
+  Retour racine avec piste chargée met la tâche en arrière-plan, même en pause ;
+  sans piste, le parcours de fermeture sauvegardée reste conservé.
+
+La suspension inconditionnelle Dart lors de hidden/paused/detached est remplacée
+par un checkpoint sans pause, si le profil existe. Les cinq secondes et les
+transitions de suivi restent en Dart. Les filtres, la fin/seek, la réécoute, le
+favori, l’aléatoire et le suivant non écouté utilisent les mêmes fonctions que Windows.
+Le service envoie aussi une impulsion de suivi à la seconde pendant la lecture ;
+Playback protège les polls concurrents. Aucun timer de service ne reste actif en pause.
+
+### CPU et durabilité
+
+Le service garde un verrou CPU partiel pendant la lecture pour que le moteur et
+les checkpoints Dart continuent écran éteint. Les pauses natives (focus, casque,
+notification) arrêtent immédiatement le son puis demandent le checkpoint partagé.
+Le verrou est libéré après confirmation de sauvegarde ; une sauvegarde qui échoue
+ne produit pas de faux acquittement. Une pause UI sans confirmation a un garde-fou
+à cinq secondes ; une commande système sans réponse est suspendue au plus tard
+après son watchdog de 35 secondes. Ces bornes sont des garde-fous de ressource,
+pas une promesse de sauvegarde si SQLite ou l’isolate sont bloqués.
+
+En pause, le service quitte le foreground après sauvegarde et libère le focus/CPU ;
+la notification média et la session restent disponibles tant que le service vit.
+Android peut détruire ce service inactif : `backendLost` sauvegarde le dernier état
+connu et libère la référence Dart pour réouvrir le fichier à la prochaine Lecture.
+La libération de piste laisse le service réutilisable jusqu’à sa destruction par
+Android/fermeture explicite, évitant une course stopSelf/nouvelle ouverture.
+
+`START_NOT_STICKY` : aucun autoplay/restart à partir d’un état supposé après kill
+ou force-stop. Après mort du processus, le prochain lancement reprend au dernier
+checkpoint SQLite confirmé. Le service ne garantit pas la survie à un arrêt
+explicite Android, à un manque de mémoire ou à toutes les politiques constructeur.
+Aucune demande automatique d’exemption globale d’optimisation batterie.
+
+### Commandes et présentation système
+
+MediaSession + notification : titre/date, lecture/pause, arrêt, précédent/suivant,
+seek et sauts de dix secondes si exposés par l’interface système/casque. Le choix
+visuel des boutons sur le verrouillage dépend d’Android et du constructeur.
+Toucher la notification ouvre IndeX via l’Activity existante ou une nouvelle vue
+rattachée au moteur conservé, sans changer la fiche/listing ni la piste.
+
+Les commandes sont sérialisées en Dart et attendent une ouverture engagée ainsi
+qu’un poll déjà en vol. L’acquittement d’une fin ne doit pas précéder le checkpoint
+et l’enchaînement déjà engagés par le timer Dart. Play et
+Pause sont idempotents ; Arrêt remet à zéro via stopAudio ; précédent/suivant
+respectent l’aléatoire et la fin utilise l’auto-suivant excluant les épisodes écoutés.
+La préparation et les seeks restent asynchrones, leurs résultats remplacés sont
+annulés ; les callbacks d’une ancienne instance MediaPlayer sont ignorés. Atteindre
+le terme par seek ne doit pas relancer accidentellement le même MP3 à zéro.
+
+Métadonnées republiées seulement au changement de source/durée, y compris réécoute
+du même épisode. La session Android extrapole la position ; aucun rafraîchissement
+global de l’UI ni publication de métadonnées à chaque tick à 250 ms. Les régions
+PlaybackBuilder et les optimisations de fluidité sont conservées.
+
+Perte de focus, appel ou ACTION_AUDIO_BECOMING_NOISY : pause immédiate et reprise
+explicite seulement, pas de reprise sonore inattendue au retour du focus/casque.
+La priorité audio doit être accordée avant start. Aucun accès aux contacts,
+appels, périphériques Bluetooth ou SMS demandé pour cela.
+
+Permissions nouvelles : FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK et
+WAKE_LOCK. Pas de POST_NOTIFICATIONS : les notifications de session média suivent
+l’exemption Android 13+, à vérifier sur les appareils retenus et leurs réglages.
+Aucune permission Internet supplémentaire ; le téléchargement volontaire reste
+la seule fonction propre à IndeX qui contacte le serveur source.
+
+## Tests et preuves
+
+Nouveaux tests Flutter : commandes venant du canal système, idempotence,
+checkpoint/arrêt, seek au terme/suivant non écouté, navigation conservée, reprise
+après perte du backend, sérialisation pendant ouverture, acquittement après
+sauvegarde et absence d’acquittement sur erreur stockage. Le test widget vérifie
+hidden/paused sans pause audio et Retour mettant en arrière-plan sans fermer SQLite.
+Les anciens tests Windows, suivi, JSON, fichiers et paysage restent conservés.
+
+Test natif supervisé : `integration_test/android_background_audio_test.dart`,
+profil temporaire, dossier de copies, au moins deux MP3 reconnus de plus de vingt
+secondes. Vérifie le service/wake lock, la progression SQLite après sept secondes
+hors premier plan, la fin/suivant en arrière-plan et la pause durable. Il ne prouve
+pas les commandes réelles du verrouillage ni les politiques de batterie.
+
+La recette physique de RECETTE_ANDROID.md doit ensuite vérifier notification,
+verrouillage prolongé, retour par notification, casque/Bluetooth/appels/autres
+lecteurs, arrêt du processus, différentes versions Android et régression Windows.
+Ne pas déduire cette qualification d’une compilation ou d’un test simulé.
+
+
+## Vérifications exécutées le 3 novembre 2026
+
+- Contrôles communs `tools/lot4/check.sh` : 7 tests Python et 257 tests Dart du
+  cœur réussis ; formatage et analyses conformes. Après les derniers tests de
+  concurrence/fermeture, la suite Flutter complète est relancée séparément :
+  **86 tests réussis**, analyse `--fatal-infos` sans anomalie.
+- `tools/lot5/build_android.sh` : APK debug ARM64 compilé avec les sources Kotlin
+  réelles, seed/manifeste inchangés, aucun MP3 ou profil utilisateur embarqué.
+  SHA-256 de l’APK intermédiaire local :
+  `fe7348f16ea7ddf5bea4780403236d903ddb1ba7ac343ccafa14ea4416db0ba2`.
+- Manifeste binaire de l’APK inspecté avec AAPT : service non exporté,
+  stopWithTask=false, type mediaPlayback=0x2 ; permissions foreground/mediaPlayback
+  et wake lock attendues, absence de POST_NOTIFICATIONS. XML conformes.
+- Aucun lockfile ni catalogue modifié ; aucun nouveau package runtime. Le workflow
+  Android reste uniquement manuel, renommé Verification Android Lot 6C ; même
+  compteur/verrou et artefact versionné qu’auparavant. Aucun mineur de distribution
+  réservé localement, aucun workflow GitHub ou publication déclenché ici.
+
+Le test d’intégration natif est préparé et analysé, **pas exécuté sur un téléphone**
+dans cet environnement. La validation physique 6C (verrouillage, contrôles système,
+interruptions, consommation, recréation Activity) et la nouvelle recette Windows
+native restent à réaliser. Les validations utilisateur 6A/6B/paysage sont conservées
+mais ne constituent pas une qualification des nouveaux changements 6C.
