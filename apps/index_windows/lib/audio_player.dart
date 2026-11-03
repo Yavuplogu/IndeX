@@ -153,6 +153,7 @@ final class Playback extends ChangeNotifier {
     } finally {
       busy = false;
       _pending = null;
+      if (!state.playing) _stopPolling();
       if (!_closed) notifyListeners();
     }
   }
@@ -202,6 +203,11 @@ final class Playback extends ChangeNotifier {
     });
   }
 
+  void _stopPolling() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
   Future<void> _waitPoll() async {
     while (_polling) {
       await Future<void>.delayed(const Duration(milliseconds: 1));
@@ -234,6 +240,8 @@ final class Playback extends ChangeNotifier {
   Future<void> poll() async {
     if (_closed || busy || _polling || episodeId == null) return;
     _polling = true;
+    final before = state;
+    final previousError = error;
     try {
       final progressed = guard.progressed, completed = guard.completed;
       final wasPlaying = state.playing;
@@ -246,10 +254,6 @@ final class Playback extends ChangeNotifier {
           guard.completed != completed) {
         save(episodeId!, state, guard, state.playing ? 'playing' : 'paused');
       }
-      if (state.ended) {
-        _timer?.cancel();
-        _timer = null;
-      }
     } catch (e) {
       error = 'Suivi ou lecture impossible : $e';
       try {
@@ -258,7 +262,15 @@ final class Playback extends ChangeNotifier {
       state = AudioSnapshot(state.position, state.duration, false);
     } finally {
       _polling = false;
-      if (!_closed) notifyListeners();
+      if (!state.playing || state.ended) _stopPolling();
+      if (!_closed &&
+          (before.position != state.position ||
+              before.duration != state.duration ||
+              before.playing != state.playing ||
+              before.ended != state.ended ||
+              previousError != error)) {
+        notifyListeners();
+      }
     }
     if (!_closed && error.isEmpty && state.ended && !_endedHandled) {
       _endedHandled = true;

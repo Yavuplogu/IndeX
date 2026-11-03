@@ -11,6 +11,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app_model.dart';
 import 'audio_player.dart';
+import 'playback_builder.dart';
 import 'document_text.dart';
 import 'episode_search.dart';
 import 'window_port.dart';
@@ -854,7 +855,10 @@ class _LibraryPageState extends State<LibraryPage> {
               },
             ),
           ),
-          _futurePlayer(c),
+          PlaybackBuilder(
+            playback: m.playback,
+            builder: (_) => _futurePlayer(c),
+          ),
           if (m.android)
             Row(
               key: const ValueKey('android-bottom-menu'),
@@ -1146,151 +1150,167 @@ class _LibraryPageState extends State<LibraryPage> {
                   itemExtent: m.query.trim().characters.length >= 3 ? 66 : 52,
                   itemCount: m.visible.length,
                   itemBuilder: (context, index) {
-                    final e = m.visible[index];
-                    final missing =
-                            (m.mp3Path.isEmpty || m.audioKnown) &&
-                            !e.audioAvailable,
-                        heard = e.status == 'ECOUTE';
-                    final color = missing
-                        ? c.missingInk
-                        : heard
-                        ? c.heardInk
-                        : c.ink;
-                    return Material(
-                      color: missing
-                          ? c.missing
-                          : heard
-                          ? c.heard
-                          : c.panel,
-                      child: InkWell(
-                        mouseCursor: SystemMouseCursors.click,
-                        onTap: () {
-                          listFocus.requestFocus();
-                          m.select(e);
-                          if (compact)
-                            unawaited(
-                              showDialog<void>(
-                                context: context,
-                                builder: (context) => EpisodeDialog(
-                                  model: m,
-                                  onRelated: related,
-                                  pickDirectory: widget.pickDirectory,
+                    final id = m.visible[index].id;
+                    return PlaybackBuilder(
+                      key: ValueKey(id),
+                      playback: m.playback,
+                      episodeId: id,
+                      builder: (context) {
+                        final e = m.visible.firstWhere((e) => e.id == id);
+                        final missing =
+                                (m.mp3Path.isEmpty || m.audioKnown) &&
+                                !e.audioAvailable,
+                            heard = e.status == 'ECOUTE';
+                        final color = missing
+                            ? c.missingInk
+                            : heard
+                            ? c.heardInk
+                            : c.ink;
+                        return Material(
+                          color: missing
+                              ? c.missing
+                              : heard
+                              ? c.heard
+                              : c.panel,
+                          child: InkWell(
+                            mouseCursor: SystemMouseCursors.click,
+                            onTap: () {
+                              listFocus.requestFocus();
+                              m.select(e);
+                              if (compact)
+                                unawaited(
+                                  showDialog<void>(
+                                    context: context,
+                                    builder: (context) => EpisodeDialog(
+                                      model: m,
+                                      onRelated: related,
+                                      pickDirectory: widget.pickDirectory,
+                                    ),
+                                  ),
+                                );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient:
+                                    !missing && !heard && m.progress(e) > 0
+                                    ? LinearGradient(
+                                        colors: [
+                                          c.heard,
+                                          c.heard,
+                                          Colors.transparent,
+                                          Colors.transparent,
+                                        ],
+                                        stops: [
+                                          0,
+                                          m.progress(e),
+                                          m.progress(e),
+                                          1,
+                                        ],
+                                      )
+                                    : null,
+                                border: Border(
+                                  top: BorderSide(color: c.line),
+                                  left: BorderSide(
+                                    width: 4,
+                                    color: m.selected?.id == e.id
+                                        ? c.accent
+                                        : Colors.transparent,
+                                  ),
                                 ),
                               ),
-                            );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: !missing && !heard && m.progress(e) > 0
-                                ? LinearGradient(
-                                    colors: [
-                                      c.heard,
-                                      c.heard,
-                                      Colors.transparent,
-                                      Colors.transparent,
-                                    ],
-                                    stops: [0, m.progress(e), m.progress(e), 1],
-                                  )
-                                : null,
-                            border: Border(
-                              top: BorderSide(color: c.line),
-                              left: BorderSide(
-                                width: 4,
-                                color: m.selected?.id == e.id
-                                    ? c.accent
-                                    : Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 3,
                               ),
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 3,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      e.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: 'Georgia',
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: color,
-                                      ),
-                                    ),
-                                    Text(
-                                      dateLabel(e.date),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: color,
-                                      ),
-                                    ),
-                                    if (e.matchedFields.isNotEmpty)
-                                      Text(
-                                        'Trouvé dans : ${e.matchedFields.map((f) => fieldNames[f]!).join(', ')}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: c.accent,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (e.favorite)
-                                Icon(Icons.star, size: 16, color: c.accent),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Row(
                                 children: [
-                                  Row(
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          e.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: 'Georgia',
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: color,
+                                          ),
+                                        ),
+                                        Text(
+                                          dateLabel(e.date),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: color,
+                                          ),
+                                        ),
+                                        if (e.matchedFields.isNotEmpty)
+                                          Text(
+                                            'Trouvé dans : ${e.matchedFields.map((f) => fieldNames[f]!).join(', ')}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: c.accent,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (e.favorite)
+                                    Icon(Icons.star, size: 16, color: c.accent),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
-                                        statusIcon(e.status),
-                                        size: 11,
-                                        color: color,
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            statusIcon(e.status),
+                                            size: 11,
+                                            color: color,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            statusLabel(e.status),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: color,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        statusLabel(e.status),
+                                        compact &&
+                                                !m.audioKnown &&
+                                                m.mp3Path.isNotEmpty
+                                            ? 'MP3 non vérifié'
+                                            : m.availability(e),
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: color,
+                                          color: missing ? c.alert : c.muted,
+                                          fontWeight: missing
+                                              ? FontWeight.w600
+                                              : null,
                                         ),
                                       ),
                                     ],
-                                  ),
-                                  Text(
-                                    compact &&
-                                            !m.audioKnown &&
-                                            m.mp3Path.isNotEmpty
-                                        ? 'MP3 non vérifié'
-                                        : m.availability(e),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: missing ? c.alert : c.muted,
-                                      fontWeight: missing
-                                          ? FontWeight.w600
-                                          : null,
-                                    ),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -1740,61 +1760,80 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                           style: TextStyle(color: c.muted, fontSize: 13),
                         ),
                         const SizedBox(height: 18),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 8,
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => unawaited(toggle(e)),
-                              icon: Icon(statusIcon(e.status), size: 18),
-                              label: Text(
-                                e.status == 'EN_COURS'
-                                    ? 'En cours (${(m.progress(e) * 100).floor()} %)'
-                                    : statusLabel(e.status),
-                              ),
-                            ),
-                            if (e.audioAvailable)
-                              FilledButton.icon(
-                                onPressed: !m.busy && !m.playback.busy
-                                    ? () => unawaited(m.playEpisode(e))
-                                    : null,
-                                icon: const Icon(Icons.play_arrow),
-                                label: const Text('Écouter'),
-                              )
-                            else
-                              Tooltip(
-                                message: mp3DownloadUri(e.downloadUrl) == null
-                                    ? 'Aucune URL MP3 disponible dans le journal.'
-                                    : 'Télécharger depuis ${mp3DownloadUri(e.downloadUrl)!.host} (connexion Internet requise)',
-                                child: FilledButton.icon(
-                                  key: const ValueKey('download-episode'),
-                                  onPressed:
-                                      !m.busy &&
-                                          !m.downloading &&
-                                          mp3DownloadUri(e.downloadUrl) != null
-                                      ? () => unawaited(download(e))
-                                      : null,
-                                  icon: const Icon(Icons.download_outlined),
-                                  label: const Text('Télécharger'),
+                        PlaybackBuilder(
+                          playback: m.playback,
+                          builder: (_) {
+                            final display = m.selected?.id == e.id
+                                ? m.selected!
+                                : e;
+                            return Wrap(
+                              spacing: 10,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => unawaited(toggle(display)),
+                                  icon: Icon(
+                                    statusIcon(display.status),
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    display.status == 'EN_COURS'
+                                        ? 'En cours (${(m.progress(display) * 100).floor()} %)'
+                                        : statusLabel(display.status),
+                                  ),
                                 ),
-                              ),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                try {
-                                  m.favorite(e);
-                                } catch (error) {
-                                  m.error = error.toString();
-                                  m.changed();
-                                }
-                              },
-                              icon: Icon(
-                                e.favorite ? Icons.star : Icons.star_border,
-                                color: c.accent,
-                                size: 18,
-                              ),
-                              label: const Text('Favori'),
-                            ),
-                          ],
+                                if (display.audioAvailable)
+                                  FilledButton.icon(
+                                    onPressed: !m.busy && !m.playback.busy
+                                        ? () =>
+                                              unawaited(m.playEpisode(display))
+                                        : null,
+                                    icon: const Icon(Icons.play_arrow),
+                                    label: const Text('Écouter'),
+                                  )
+                                else
+                                  Tooltip(
+                                    message:
+                                        mp3DownloadUri(display.downloadUrl) ==
+                                            null
+                                        ? 'Aucune URL MP3 disponible dans le journal.'
+                                        : 'Télécharger depuis ${mp3DownloadUri(display.downloadUrl)!.host} (connexion Internet requise)',
+                                    child: FilledButton.icon(
+                                      key: const ValueKey('download-episode'),
+                                      onPressed:
+                                          !m.busy &&
+                                              !m.downloading &&
+                                              mp3DownloadUri(
+                                                    display.downloadUrl,
+                                                  ) !=
+                                                  null
+                                          ? () => unawaited(download(display))
+                                          : null,
+                                      icon: const Icon(Icons.download_outlined),
+                                      label: const Text('Télécharger'),
+                                    ),
+                                  ),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    try {
+                                      m.favorite(display);
+                                    } catch (error) {
+                                      m.error = error.toString();
+                                      m.changed();
+                                    }
+                                  },
+                                  icon: Icon(
+                                    display.favorite
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: c.accent,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Favori'),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 10),
                         Text(

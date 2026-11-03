@@ -112,17 +112,14 @@ final class AppModel extends ChangeNotifier {
        defaultDataDirectory =
            defaultDataDirectory ?? Directory('${portableDirectory.path}/user') {
     dataPath = this.defaultDataDirectory.absolute.path;
-    playback =
-        Playback(
-            audioPort ??
-                (android
-                    ? const NativeAudioPort()
-                    : JustAudioPort(onDiagnostic: _audioDiagnostic)),
-            _saveAudio,
-            autoPoll: pollAudio,
-          )
-          ..addListener(changed)
-          ..onEnded = _audioEnded;
+    playback = Playback(
+      audioPort ??
+          (android
+              ? const NativeAudioPort()
+              : JustAudioPort(onDiagnostic: _audioDiagnostic)),
+      _saveAudio,
+      autoPoll: pollAudio,
+    )..onEnded = _audioEnded;
   }
   void _audioDiagnostic(Map<String, Object?> event) {
     final directory = session?.dataDirectory;
@@ -521,7 +518,26 @@ final class AppModel extends ChangeNotifier {
       completed: guard.completed,
       playbackStatus: status,
     );
-    reload();
+    final row = session!.store.database.select(
+      'SELECT position_ms,duration_ms,listening_status FROM user_episode_state WHERE episode_id=?',
+      [id],
+    ).single;
+    final previous = catalog.where((e) => e.id == id).firstOrNull;
+    if (previous == null || previous.status != row['listening_status']) {
+      // Seul un changement d’état peut changer les filtres de la bibliothèque.
+      reload();
+      return;
+    }
+    DesktopEpisode update(DesktopEpisode e) => e.id != id
+        ? e
+        : e.withListening(
+            positionMs: row['position_ms'] as int,
+            durationMs: row['duration_ms'] as int? ?? 0,
+            status: row['listening_status'] as String,
+          );
+    catalog = catalog.map(update).toList();
+    visible = visible.map(update).toList();
+    if (selected?.id == id) selected = update(selected!);
   }
 
   bool get resumePlayback => session?.setting('resume_playback') != 'false';
@@ -1372,7 +1388,6 @@ final class AppModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    playback.removeListener(changed);
     playback.dispose();
     super.dispose();
   }

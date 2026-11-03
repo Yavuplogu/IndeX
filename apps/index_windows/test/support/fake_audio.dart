@@ -4,6 +4,7 @@ final class FakeAudio implements AudioPort {
   AudioSnapshot value = const AudioSnapshot(0, 120000, false);
   String? ref;
   bool fail = false;
+  int snapshotCalls = 0;
   @override
   Future<void> open(String reference) async {
     if (fail) throw StateError('absent');
@@ -29,7 +30,11 @@ final class FakeAudio implements AudioPort {
   @override
   Future<void> volume(double value) async {}
   @override
-  Future<AudioSnapshot> snapshot() async => value;
+  Future<AudioSnapshot> snapshot() async {
+    snapshotCalls++;
+    return value;
+  }
+
   @override
   Future<void> dispose() async {
     ref = null;

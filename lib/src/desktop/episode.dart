@@ -48,4 +48,33 @@ final class DesktopEpisode {
   final Set<SearchField> matchedFields;
   final Map<SearchField, String> markedFields;
   final List<Map<String, Object?>> sources, music;
+
+  /// Actualise le suivi sans reconstruire les données documentaires/recherche.
+  DesktopEpisode withListening({
+    required int positionMs,
+    required int durationMs,
+    required String status,
+  }) => DesktopEpisode(
+    id: id,
+    title: title,
+    date: date,
+    description: description,
+    sourcesText: sourcesText,
+    musicText: musicText,
+    sources: sources,
+    music: music,
+    originalName: originalName,
+    status: status,
+    favorite: favorite,
+    audioRef: audioRef,
+    audioAvailable: audioAvailable,
+    positionMs: positionMs,
+    durationMs: durationMs,
+    downloadUrl: downloadUrl,
+    systemName: systemName,
+    excerpt: excerpt,
+    markedExcerpt: markedExcerpt,
+    matchedFields: matchedFields,
+    markedFields: markedFields,
+  );
 }

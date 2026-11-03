@@ -325,3 +325,9 @@ configuré ne déclenche pas cet avertissement.
   Provider et worker restent dans le même processus ; ne pas étendre ce protocole
   aux fournisseurs SAF externes ni à un stockage partagé. Test JVM reproductible :
   bash tools/lot6/test_private_moves.sh ; recette physique encore nécessaire.
+
+- Fluidité lecteur du 3 novembre : ne pas relayer les ticks Playback vers le
+  ChangeNotifier global AppModel. Régions UI ciblées pour lecteur, ligne et boutons ;
+  polling arrêté en pause/fin/erreur et relancé à la reprise. Conserver checkpoints
+  cinq secondes/transitions, cache de suivi actualisé sans recharger les documents,
+  recalcul des filtres sur changement de statut. Aucun lancement du Lot 6C.

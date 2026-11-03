@@ -159,3 +159,18 @@ Enregistrer une copie et vérifier l’import sur Windows. Annuler un deuxième 
 la copie interne et le suivi restent conservés. Le test physique automatisé vérifie
 également qu’une cible privée existante n’est pas écrasée. Retester téléchargement
 et renommage sur copies dans IndeX · MP3 : ils utilisaient la même primitive refusée.
+
+
+### Fluidité et suivi pendant lecture/pause (3 novembre 2026)
+
+Sur téléphone, faire défiler une liste longue puis un résumé long, successivement
+sans lecture, en lecture, en pause et après Arrêt. Refaire avec une recherche active.
+La progression du lecteur, le remplissage de la ligne et le pourcentage de la fiche
+doivent rester actualisés pendant l’écoute sans saccades liées aux ticks globaux.
+En pause, l’horodatage reste stable. Consulter une autre fiche puis revenir, changer
+de piste sans changer de fiche : les pourcentages sauvegardés restent cohérents.
+Après plus de cinq secondes de lecture, terminer brutalement le processus puis
+relancer : reprise au dernier checkpoint. Après Pause, la reprise conserve la
+position de pause. Vérifier les filtres En cours/Écouté lors du début et de la fin,
+le seek au terme, l’arrêt/reset et l’enchaînement. Recette Windows également requise
+pour ces parcours partagés ; ne pas déduire une validation physique des tests Linux.

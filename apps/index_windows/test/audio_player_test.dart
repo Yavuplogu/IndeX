@@ -4,6 +4,52 @@ import 'package:index_windows/audio_player.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  testWidgets(
+    'Pause : checkpoint immédiat et aucun polling ; reprise et fin conservées',
+    (tester) async {
+      final native = FakeAudio();
+      final saved = <(int, String)>[];
+      final p = Playback(
+        native,
+        (_, state, __, status) => saved.add((state.position, status)),
+      );
+      try {
+        await p.start('a', 'local', 0);
+        native.value = const AudioSnapshot(5000, 120000, true);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(saved.last, (5000, 'playing'));
+        await p.toggle();
+        expect(saved.last, (5000, 'paused'));
+        final calls = native.snapshotCalls;
+        await tester.pump(const Duration(seconds: 2));
+        expect(native.snapshotCalls, calls);
+        var notifications = 0;
+        p.addListener(() => notifications++);
+        await p.poll();
+        expect(
+          notifications,
+          0,
+          reason: 'Un état inchangé ne rafraîchit pas la vue.',
+        );
+        await p.toggle();
+        native.value = const AudioSnapshot(6000, 120000, true);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(p.state.position, 6000);
+        expect(native.snapshotCalls, greaterThan(calls));
+        await p.seekFromPlayer(120000);
+        native.value = const AudioSnapshot(120000, 120000, false, ended: true);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(p.guard.completed, isTrue);
+        final endedCalls = native.snapshotCalls;
+        await tester.pump(const Duration(seconds: 1));
+        expect(native.snapshotCalls, endedCalls);
+      } finally {
+        await p.release();
+        p.dispose();
+      }
+    },
+  );
+
   for (final position in [119000, 119900, 120000]) {
     test(
       'Glissement souris au terme $position : fin réelle requise et validée',

@@ -204,3 +204,44 @@ sans anomalie ; 11 tests Flutter ciblés (`android_documents_test.dart` et
 et inspecte l’APK ARM64 : aucun MP3, seed inchangé. SHA-256 de cet APK intermédiaire
 local : `c884c485b3d1d42ccdeb2c457dd2682c378fb5d774e9bdce4697d60c877ec10c`.
 Aucun numéro de distribution réservé ; aucune recette physique exécutée ici.
+
+
+## Correctif du 3 novembre 2026 — fluidité pendant la lecture et la pause
+
+Retour utilisateur : défilements saccadés sur Android pendant lecture et pause,
+fluidité retrouvée après Arrêt. Le polling à 250 ms notifiait systématiquement
+AppModel, donc l’arbre documentaire et le thème ; il restait actif en pause. Chaque
+checkpoint rechargeait aussi tout le catalogue, ses sources et la recherche.
+
+La position continue d’être interrogée à 250 ms pendant la lecture, mais les ticks
+n’invalident plus AppModel. PlaybackBuilder actualise le lecteur, les boutons de
+fiche et la seule ligne concernée (y compris l’ancienne lors d’un changement de
+piste). Le résumé, les références et la recherche restent hors de ces mises à jour.
+Un snapshot inchangé n’émet plus de notification. Pause, arrêt, fin et erreur
+coupent le timer ; Reprendre le réactive. Une pause imposée par le moteur est
+capturée une dernière fois et sauvegardée avant l’arrêt du polling.
+
+Les checkpoints SQLite aux cinq secondes et aux transitions sont conservés,
+ainsi que les règles de fin, seek, aléatoire, suivant et reprise après interruption.
+Après checkpoint, seule la ligne de suivi de l’épisode est relue ; les objets en
+mémoire sont actualisés en conservant les données documentaires et correspondances.
+Un changement de statut déclenche encore le recalcul de la bibliothèque pour
+appliquer immédiatement ses filtres. La cadence visuelle de la progression n’est
+pas réduite. Aucun schéma, version JSON, moteur audio ou package ne change.
+
+L’optimisation du code Flutter partagé s’applique aussi à Windows. Aucun service
+média ni lecture arrière-plan du Lot 6C n’est ajouté. Le gain de fluidité doit être
+confirmé sur téléphone ; les tests automatisés prouvent l’isolation des mises à
+jour et la conservation du suivi, pas une fréquence d’images mesurée sur appareil.
+
+
+Vérifications du correctif de fluidité (Linux) : 7 tests Python de versionnement,
+257 tests Dart du cœur et 76 tests Flutter réussis. Formatage et analyse statique
+sans anomalie. Les nouveaux tests vérifient le timer suspendu en pause, la reprise
+et la fin, l’absence de notifications globales pendant les checkpoints stables,
+la conservation des données/recherches en mémoire, les filtres après changement
+de statut, les reconstructions ciblées et le pourcentage après changement de piste.
+Compilation APK ARM64 et inspection réussies, aucun MP3 embarqué ; SHA-256 local
+`25e08bd3a235635843d190daf4508ce8bcfc03df6ccfbf3657c7c4dd9ad449ab`.
+Aucun numéro de distribution réservé. Aucune mesure de fluidité sur téléphone ni
+nouvelle recette native Windows exécutée depuis cet environnement.
