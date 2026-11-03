@@ -219,55 +219,44 @@ final class AppModel extends ChangeNotifier {
     message = 'Suivi importé et fusionné. Aucun MP3 ni réglage local modifié.';
   });
 
+  static const renameWindowsOnly =
+      'Le renommage des MP3 est disponible uniquement sur Windows.';
+
   final RenameFile renameFile;
   RenamePlan? renamePlan;
   List<Map<String, Object?>> renameReport = [];
   String renameProgress = '';
   Future<void> previewRename() =>
       runWork('Préparation du renommage…', () async {
+        if (android) throw UnsupportedError(renameWindowsOnly);
         renamePlan = null;
         if (mp3Path.isEmpty)
           throw StateError(
             'Choisissez un dossier MP3 dans Fichiers et associations.',
           );
         final renamer = Mp3Renamer(session!.store);
-        if (android) {
-          await _documentRenamer.recover();
-        } else {
-          await renamer.recover();
-        }
+        await renamer.recover();
         final runs = session!.store.database.select(
           'SELECT id FROM rename_runs ORDER BY id DESC LIMIT 1',
         );
         renameReport = runs.isEmpty
             ? []
             : renamer.report(runs.single['id'] as int);
-        void progress(int done, int total) {
-          renameProgress = 'Vérification des fichiers : $done / $total';
-          changed();
-        }
-
-        renamePlan = android
-            ? await _documentRenamer.preview(
-                mp3Path,
-                recursive: recursive,
-                inUse: playback.reference,
-                onProgress: progress,
-              )
-            : await renamer.preview(
-                Directory(mp3Path),
-                recursive: recursive,
-                inUse: playback.reference,
-                onProgress: (done, total) {
-                  renameProgress = 'Vérification des fichiers : $done / $total';
-                  changed();
-                },
-              );
+        renamePlan = await renamer.preview(
+          Directory(mp3Path),
+          recursive: recursive,
+          inUse: playback.reference,
+          onProgress: (done, total) {
+            renameProgress = 'Vérification des fichiers : $done / $total';
+            changed();
+          },
+        );
         renameProgress = '';
       });
 
   Future<void> releaseAudioForRename() async {
     await runWork('Sauvegarde et libération de la piste…', () async {
+      if (android) throw UnsupportedError(renameWindowsOnly);
       await playback.unload();
       renamePlan = null;
     });
@@ -275,33 +264,21 @@ final class AppModel extends ChangeNotifier {
   }
 
   Future<void> executeRename() => runWork('Renommage en cours…', () async {
+    if (android) throw UnsupportedError(renameWindowsOnly);
     final plan = renamePlan;
     if (plan == null || plan.planned == 0) return;
     renamePlan = null; // Un aperçu confirmé n’est jamais réutilisé.
     final renamer = Mp3Renamer(session!.store);
-    final run = android
-        ? await _documentRenamer.execute(
-            plan,
-            inUse: () => playback.reference,
-            onProgress: (done, total) {
-              renameProgress = 'Renommage : $done / $total';
-              changed();
-            },
-          )
-        : await renamer.execute(
-            plan,
-            move: renameFile,
-            inUse: () => playback.reference,
-            onProgress: (done, total) {
-              renameProgress = 'Renommage : $done / $total';
-              changed();
-            },
-          );
-    if (android) {
-      await _documentRenamer.recover();
-    } else {
-      await renamer.recover();
-    }
+    final run = await renamer.execute(
+      plan,
+      move: renameFile,
+      inUse: () => playback.reference,
+      onProgress: (done, total) {
+        renameProgress = 'Renommage : $done / $total';
+        changed();
+      },
+    );
+    await renamer.recover();
     renameReport = renamer.report(run);
     renameProgress = '';
     _lastReport();

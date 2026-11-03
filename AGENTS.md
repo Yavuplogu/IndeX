@@ -310,7 +310,7 @@ configuré ne déclenche pas cet avertissement.
   des disponibilités au redémarrage même sans scan. Ne pas effacer un original
   à partir d’un diagnostic ambigu. Écriture MP3 limitée aux fournisseurs locaux
   Android et IndeX. HTTP limité au domaine du journal, politique à chaque redirect.
-- Renommage Android seulement dans IndeX · MP3 : provider local exposant uniquement
+- Renommage Android historique (désactivé le 3 novembre) dans IndeX · MP3 : provider local exposant uniquement
   files/mp3, déplacement privé contrôlé + fsync même parent, journal SQLite avant
   mutation, reprise par empreinte et compatibilité des anciens liens durs. Autres fournisseurs refusés
   sans garantie. Dossier privé optionnel : avertir de l’effacement à la
@@ -331,3 +331,9 @@ configuré ne déclenche pas cet avertissement.
   polling arrêté en pause/fin/erreur et relancé à la reprise. Conserver checkpoints
   cinq secondes/transitions, cache de suivi actualisé sans recharger les documents,
   recalcul des filtres sur changement de statut. Aucun lancement du Lot 6C.
+
+- Décision du 3 novembre : renommage réservé à Windows. Sur Android, bouton
+  d’aperçu désactivé dans Paramètres et mention explicite ; AppModel refuse aperçu,
+  exécution et libération audio pour renommage. Conserver la réconciliation des
+  anciens journaux et le stockage MP3 géré, sans nouveau renommage proposé.
+  La demande finale ne comprend aucune réorganisation des listes/panneaux.

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:index_core/index_desktop.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
 
@@ -9,6 +10,60 @@ import 'support/app_harness.dart';
 import 'support/fake_audio.dart';
 
 void main() {
+  test('Android : aperçu, confirmation et libération pour renommage refusés sans mutation', () async {
+    final root = Directory.systemTemp.createTempSync('index-rename-disabled-');
+    final folder = Directory('${root.path}/MP3')..createSync();
+    final source = File('${folder.path}/mr_x_1997_01_04.mp3')
+      ..writeAsStringSync('octets conservés');
+    var documentCalls = 0, moves = 0;
+    final model = AppModel(
+      portableDirectory: root,
+      android: true,
+      audioPort: FakeAudio(),
+      pollAudio: false,
+      documentOperation: (method, args) async {
+        documentCalls++;
+        throw StateError(method);
+      },
+      renameFile: (from, to) async {
+        moves++;
+      },
+    );
+    try {
+      await model.configure('${root.path}/user', '', true);
+      final e = model.catalog.first;
+      model.favorite(e);
+      await model.playback.start(e.id, 'content://test/episode', 0);
+      final before = model.session!.listeningState(e.id);
+      final plan = await Mp3Renamer(model.session!.store)
+          .preview(folder, recursive: false);
+      model.renamePlan =
+          plan; // Même un appel direct avec un plan ne doit pas muter.
+      final calls = documentCalls;
+      await model.executeRename();
+      expect(model.error, contains(AppModel.renameWindowsOnly));
+      await model.previewRename();
+      expect(model.error, contains(AppModel.renameWindowsOnly));
+      await model.releaseAudioForRename();
+      expect(model.error, contains(AppModel.renameWindowsOnly));
+      expect(model.playback.state.playing, isTrue);
+      expect(model.session!.listeningState(e.id), before);
+      expect(model.catalog.firstWhere((r) => r.id == e.id).favorite, isTrue);
+      expect(
+        model.session!.store.database.select('SELECT * FROM rename_runs'),
+        isEmpty,
+      );
+      expect(documentCalls, calls);
+      expect(moves, 0);
+      expect(source.readAsStringSync(), 'octets conservés');
+      expect(folder.listSync(), hasLength(1));
+    } finally {
+      await model.release();
+      model.dispose();
+      root.deleteSync(recursive: true);
+    }
+  });
+
   testWidgets(
     'Renommage : aperçu annulable, confirmation, journal et suivi conservé',
     (tester) async {

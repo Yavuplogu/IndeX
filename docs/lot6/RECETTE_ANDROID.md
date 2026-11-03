@@ -1,8 +1,8 @@
 # IndeX — diagnostic Android Lot 6B
 
 APK ARM64 pour Android 7.0 ou plus récent. Il s’agit du socle de diagnostic,
-pas du portage complet : téléchargement local, import/export JSON et renommage
-dans le dossier géré IndeX sont maintenant disponibles. La lecture se met encore
+pas du portage complet : téléchargement local et import/export JSON sont disponibles.
+Le renommage est désormais réservé à Windows (décision du 3 novembre 2026). La lecture se met encore
 en pause en quittant l’application (Lot 6C).
 Aucun MP3 n’est embarqué. Préparer un dossier de **copies** de MP3 avec les noms
 historiques ou système du catalogue. Les tags COMM ne participent pas au scan.
@@ -100,13 +100,10 @@ la version Android, la version APK et les résultats séparément :
    Vérifier le document concerné dans Fichiers Android, sans supprimer un original
    sous prétexte d’un diagnostic ambigu. Une copie réellement incomplète peut être
    retirée manuellement puis le dossier rescanné.
-3. **Renommage** : Fichiers → Utiliser le dossier MP3 IndeX. Confirmer la limite
-   de stockage privé (MP3 supprimés à la désinstallation). Avec le gestionnaire
-   Android, copier quelques MP3 au nom historique dans un sous-dossier de test
-   de IndeX · MP3, puis choisir ce sous-dossier dans IndeX. Paramètres → aperçu
-   du renommage : vérifier avant/après, confirmer, vérifier lecture et suivi.
-   Ajouter une copie au nom système identique pour vérifier le refus de collision.
-   Dans un autre fournisseur, l’aperçu doit expliquer le refus sans changer les noms.
+3. **Renommage indisponible sur Android** : ouvrir Paramètres → Fichiers audio.
+   Vérifier la mention « Le renommage des MP3 est disponible uniquement sur Windows. »
+   et le bouton de prévisualisation désactivé, même avec un dossier MP3 configuré.
+   Aucune sélection de dossier géré n’est nécessaire pour cette vérification.
 4. **Windows → Android** : exporter un suivi Windows, transférer le JSON via USB
    ou copie manuelle. Android → Paramètres → Importer et fusionner : choisir le
    fichier, vérifier la provenance Windows et l’aperçu, annuler une première fois,
@@ -132,23 +129,22 @@ signature de distribution finale.
 
 ### Test physique automatisé de 6B (poste de développement)
 
-Préparer un **sous-dossier de copies** dans IndeX · MP3, contenant au moins un
-fichier au nom historique exact du catalogue. Le test renomme réellement ces
-copies et conserve leurs octets ; il crée un profil de recette temporaire isolé.
-Le fichier JSON externe choisi reste sur le téléphone ; le profil temporaire est
-supprimé à la fin. Le sélecteur demande d’abord le sous-dossier MP3, puis un
-emplacement externe pour le JSON.
+Préparer un dossier de copies contenant au moins un MP3 reconnu du catalogue.
+Le test scanne ce dossier, vérifie le refus du renommage sans changement de fichier,
+puis l’export/import JSON et la conservation du suivi dans un profil temporaire isolé.
+Le JSON externe choisi reste sur le téléphone ; le profil temporaire est supprimé
+à la fin. Le sélecteur demande d’abord le dossier MP3, puis la destination du JSON.
 
 ```sh
 python3 tools/lot4/prepare_assets.py
 cd apps/index_windows
 flutter pub get --enforce-lockfile
-flutter test integration_test/android_storage_test.dart -d <identifiant-appareil> --dart-define=INDEX_CONFIRM_RENAME_COPIES=true
+flutter test integration_test/android_storage_test.dart -d <identifiant-appareil>
 ```
 
-Relancer sur un jeu de copies originales restauré : le test exige un renommage
-à effectuer et ne remet pas les noms en sens inverse. Ce test ne remplace pas les
-essais d’arrêt brutal, de fournisseur externe et l’échange physique avec Windows.
+Le test est relançable sans restaurer les noms des copies : aucun renommage n’est
+exécuté. Il ne remplace pas les essais d’arrêt brutal, de fournisseur externe et
+l’échange physique avec Windows.
 
 
 ### Régression export JSON EACCES (3 novembre 2026)
@@ -157,8 +153,8 @@ Installer le nouvel APK en mise à jour, sans effacer les données. Exporter le 
 le sélecteur de destination externe doit s’ouvrir sans erreur `link failed`.
 Enregistrer une copie et vérifier l’import sur Windows. Annuler un deuxième export :
 la copie interne et le suivi restent conservés. Le test physique automatisé vérifie
-également qu’une cible privée existante n’est pas écrasée. Retester téléchargement
-et renommage sur copies dans IndeX · MP3 : ils utilisaient la même primitive refusée.
+également qu’une cible privée existante n’est pas écrasée. Retester le téléchargement sur copies dans IndeX · MP3 : il utilisait la même
+primitive refusée. Le renommage Android a depuis été désactivé.
 
 
 ### Fluidité et suivi pendant lecture/pause (3 novembre 2026)

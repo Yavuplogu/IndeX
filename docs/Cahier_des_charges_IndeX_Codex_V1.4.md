@@ -671,3 +671,15 @@ préalable de cible existante sous mutex commun à tous les écrivains, puis fsy
 Cette garantie ne s’étend pas aux fournisseurs SAF externes. Préserver le journal
 et la réconciliation après interruption, sans ajout de permission ni changement Windows.
 Voir `docs/lot6/bilan-6B.md` et la recette EACCES ; aucun lancement du Lot 6C.
+
+
+### Révision du 3 novembre 2026 — renommage réservé à Windows
+
+Le renommage global facultatif historique → nom système est disponible uniquement
+sur Windows. Sur Android, désactiver l’aperçu et l’exécution et afficher cette
+restriction dans Paramètres → Fichiers audio, y compris pour le dossier MP3 IndeX.
+Conserver stockage, associations, téléchargement et transfert JSON Android.
+La réconciliation d’opérations historiquement confirmées reste conservée pour les
+anciens profils. La dernière demande utilisateur ne prévoit pas de nouveau panneau
+ni de déplacement des listes/filtres. Les descriptions antérieures du renommage
+Android sont historiques et cette révision prévaut sur leur disponibilité.

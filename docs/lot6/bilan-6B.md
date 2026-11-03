@@ -6,6 +6,11 @@ dossier et du suivi sur son téléphone. Cette confirmation valide la porte 6A ;
 elle ne constitue pas une recette de toutes les versions Android. Windows reste
 validé par l’utilisateur. Le Lot 6C (service média/écran verrouillé) n’est pas lancé.
 
+> Décision du 3 novembre 2026 : le renommage est désormais réservé à Windows.
+> Android affiche cette limite dans les Paramètres et désactive l’aperçu ainsi que
+> l’exécution, quel que soit le dossier. Les détails du renommage Android ci-dessous
+> décrivent l’implémentation historique ; ils ne constituent plus une disponibilité.
+
 ## Réalisation et décisions
 
 Aucun nouveau package runtime. Adaptateur Kotlin AndroidDocuments, fournisseur
@@ -78,7 +83,7 @@ des publications au démarrage sans scan : les références en cache concernées
 sont indisponibles, le favori et le suivi restent intacts. Un journal inaccessible
 ne crée pas de profil vide et bloque prudemment les disponibilités en cache.
 
-### Renommage contrôlé et dossier géré
+### Renommage historique et dossier géré (renommage Android désactivé)
 
 SAF ne fournit pas universellement une primitive sans écrasement concurrent.
 Le renommage est donc proposé seulement dans le fournisseur local optionnel
@@ -245,3 +250,30 @@ Compilation APK ARM64 et inspection réussies, aucun MP3 embarqué ; SHA-256 loc
 `25e08bd3a235635843d190daf4508ce8bcfc03df6ccfbf3657c7c4dd9ad449ab`.
 Aucun numéro de distribution réservé. Aucune mesure de fluidité sur téléphone ni
 nouvelle recette native Windows exécutée depuis cet environnement.
+
+
+## Décision du 3 novembre 2026 — renommage Windows uniquement
+
+À la demande de l’utilisateur, désactiver le renommage sur Android, y compris
+pour le dossier IndeX · MP3. Paramètres → Fichiers audio affiche la restriction ;
+le bouton d’aperçu est désactivé. AppModel refuse aussi l’aperçu, l’exécution et
+la libération du lecteur pour renommage sur Android, avant toute opération de
+renommage. Aucune réorganisation de liste ni nouveau panneau dans cette révision.
+Le parcours Windows (aperçu, filtres, confirmation et journal) est conservé.
+
+Le dossier MP3 privé facultatif reste utilisable pour stockage/lecture/téléchargement.
+Les adaptateurs historiques sont conservés pour réconcilier les anciens journaux
+au démarrage, sans proposer de nouvelle opération de renommage. Aucun effacement
+ou déplacement automatique de la collection ni migration du suivi.
+La recette native vérifie désormais le refus plutôt qu’un renommage réel. Les tests
+UI Android vérifient la mention et le bouton inactif ; le test AppModel vérifie le
+refus des appels directs sans écriture native, sans journal créé et sans effet sur
+les fichiers, le favori, le suivi ni la lecture en cours.
+
+
+Vérifications de cette désactivation : analyse Flutter sans anomalie ; 3 tests
+ciblés réussis (refus Android sans mutation, Paramètres Android, parcours de
+renommage Windows simulé). Compilation APK ARM64 et inspection réussies, sans MP3 ;
+SHA-256 local `d8be515d229baba2801e42b52f3f4cf2188b4fb008da39db7abd45aa80e16145`.
+La recette physique native est adaptée mais n’a pas été exécutée ici. Aucun numéro
+de distribution réservé et aucune nouvelle validation physique Windows revendiquée.

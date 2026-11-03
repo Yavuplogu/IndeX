@@ -79,7 +79,6 @@ void main() {
       for (final label in [
         'Exporter le suivi JSON',
         'Importer et fusionner un suivi JSON',
-        'Prévisualiser le renommage des MP3',
       ]) {
         expect(
           tester
@@ -90,6 +89,18 @@ void main() {
           isNotNull,
         );
       }
+      expect(find.text(AppModel.renameWindowsOnly), findsOneWidget);
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(
+                OutlinedButton,
+                'Prévisualiser le renommage des MP3',
+              ),
+            )
+            .onPressed,
+        isNull,
+      );
       final settingsSize = tester.getSize(
         find.byKey(const ValueKey('settings-dialog-size')),
       );

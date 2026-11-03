@@ -5,24 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:index_windows/app_model.dart';
 
-// Ne lancer que sur des copies : le renommage natif est réellement exécuté.
+// Recette native : scan en lecture seule et export/import JSON sur profil temporaire.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-    'Android 6B : copie MP3 gérée, renommage, JSON SAF et conservation du suivi',
+    'Android 6B : renommage désactivé, JSON SAF et conservation du suivi',
     (tester) async {
       expect(Platform.isAndroid, isTrue);
-      expect(
-        const bool.fromEnvironment('INDEX_CONFIRM_RENAME_COPIES'),
-        isTrue,
-        reason: 'Ce test modifie les noms des copies MP3 choisies. Lire RECETTE_ANDROID.md et confirmer par dart-define.',
-      );
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
               child: Text(
-                'Recette 6B : choisir un sous-dossier de copies dans IndeX · MP3.',
+                'Recette 6B : choisir un dossier contenant des copies MP3 reconnues.',
               ),
             ),
           ),
@@ -43,19 +38,7 @@ void main() {
             'pickTree',
           );
           expect(tree, isNotNull);
-          expect(
-            Uri.parse(tree!).authority,
-            'fr.index.index_windows.documents',
-            reason: 'Le test de renommage exige le fournisseur sûr IndeX.',
-          );
-          // Les copies doivent être dans un sous-dossier, jamais la racine de la collection.
-          expect(Uri.parse(tree).pathSegments.last, startsWith('mp3:'));
-          expect(
-            Uri.parse(tree).pathSegments.last,
-            isNot('mp3:'),
-            reason: 'Choisir un sous-dossier de copies.',
-          );
-          await model.configure('${root.path}/user', tree, false);
+          await model.configure('${root.path}/user', tree!, false);
           expect(model.error, isEmpty);
           // Régression EACCES : publication réelle sans création de lien dur.
           final partial = File('${root.path}/export.partial');
@@ -78,14 +61,9 @@ void main() {
           expect(await partial.readAsString(), 'ne pas remplacer');
           expect(await published.readAsString(), '{"test":"complet"}');
           await model.previewRename();
-          expect(model.error, isEmpty);
-          expect(model.renamePlan!.planned, greaterThan(0));
-          final planned = model.renamePlan!.entries.firstWhere(
-            (e) => e.planned,
-          );
-          final episode = model.catalog.singleWhere(
-            (e) => e.id == planned.episodeId,
-          );
+          expect(model.error, contains(AppModel.renameWindowsOnly));
+          expect(model.renamePlan, isNull);
+          final episode = model.catalog.firstWhere((e) => e.audioAvailable);
           model.favorite(episode);
           model.session!.checkpoint(
             episode.id,
@@ -95,16 +73,17 @@ void main() {
             completed: false,
             playbackStatus: 'paused',
           );
+          model.reload();
           final original = Map<String, Object?>.from(
             await model.documentOperation('fingerprint', {
               'reference': episode.audioRef,
             }) as Map,
           );
           await model.executeRename();
-          expect(model.error, isEmpty);
+          expect(model.error, contains(AppModel.renameWindowsOnly));
           final renamed = model.catalog.singleWhere((e) => e.id == episode.id);
           expect(renamed.audioAvailable, isTrue);
-          expect(renamed.audioRef, isNot(episode.audioRef));
+          expect(renamed.audioRef, episode.audioRef);
           final after = Map<String, Object?>.from(
             await model.documentOperation('fingerprint', {
               'reference': renamed.audioRef,

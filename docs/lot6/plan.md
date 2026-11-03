@@ -46,6 +46,13 @@ Une compilation ou un émulateur seul ne valide pas les comportements physiques.
 
 ## 6B — Stockage, fichiers et transfert
 
+Révision du 3 novembre 2026 : le renommage Android est désactivé sur demande de
+l’utilisateur, y compris dans le dossier géré IndeX. Fonction réservée à Windows,
+mentionnée comme telle dans les Paramètres Android. Les exigences de renommage
+Android ci-dessous décrivent l’objectif historique et ne sont plus un critère de
+livraison ; conserver la compatibilité des anciens journaux. Les autres fonctions
+6B et la porte de validation restent applicables.
+
 Adapter les interfaces de plateforme aux documents SAF : permissions persistantes,
 scan récursif, association manuelle, disparition et récupération d’accès. Garder
 le suivi dans le stockage privé et permettre sa sauvegarde/transfert sans exposer

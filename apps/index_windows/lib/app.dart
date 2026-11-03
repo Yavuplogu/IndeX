@@ -2753,18 +2753,19 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               'Une seule conversion est proposée : nom historique → nom système du catalogue. Exemple : mr_x_2005_10_15.mp3 → 2005-10-15 L’Irak (1 sur 3) _ Halabja.mp3. Aucun autre modèle ni sens inverse. Aperçu et confirmation obligatoires.',
                             ),
                             if (m.android)
-                              const Text(
-                                'Sur Android, le renommage sûr est disponible dans le dossier géré IndeX · MP3. Les autres fournisseurs sont refusés s’ils ne garantissent pas l’absence d’écrasement.',
-                              ),
+                              const Text(AppModel.renameWindowsOnly),
                             const SizedBox(height: 10),
                             OutlinedButton(
-                              onPressed: () => unawaited(
-                                showDialog<void>(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (_) => Mp3RenameDialog(model: m),
-                                ),
-                              ),
+                              onPressed: m.android
+                                  ? null
+                                  : () => unawaited(
+                                      showDialog<void>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) =>
+                                            Mp3RenameDialog(model: m),
+                                      ),
+                                    ),
                               child: const Text(
                                 'Prévisualiser le renommage des MP3',
                               ),
@@ -3767,7 +3768,11 @@ class _Mp3RenameDialogState extends State<Mp3RenameDialog> {
                       ),
                       FilledButton(
                         key: const ValueKey('confirm-mp3-rename'),
-                        onPressed: m.busy || plan == null || plan.planned == 0
+                        onPressed:
+                            m.android ||
+                                m.busy ||
+                                plan == null ||
+                                plan.planned == 0
                             ? null
                             : () => unawaited(m.executeRename()),
                         child: Text(
