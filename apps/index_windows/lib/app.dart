@@ -584,7 +584,9 @@ class FilterMenu<T> extends StatelessWidget {
     required this.value,
     required this.labels,
     required this.onChanged,
+    this.constrained = false,
   });
+  final bool constrained;
   final String menuKey;
   final T value;
   final Map<T, String> labels;
@@ -617,7 +619,16 @@ class FilterMenu<T> extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(labels[value]!),
+          if (constrained)
+            Flexible(
+              child: Text(
+                labels[value]!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )
+          else
+            Text(labels[value]!),
           const SizedBox(width: 6),
           const Icon(Icons.arrow_drop_down, size: 20),
         ],
@@ -834,7 +845,11 @@ class _LibraryPageState extends State<LibraryPage> {
                               pickDirectory: widget.pickDirectory,
                             )
                           : compact
-                          ? list(c, true)
+                          ? m.android &&
+                                    MediaQuery.orientationOf(context) ==
+                                        Orientation.landscape
+                                ? _landscapeLibrary(c)
+                                : list(c, true)
                           : Row(
                               children: [
                                 Expanded(flex: 11, child: list(c, false)),
@@ -992,6 +1007,148 @@ class _LibraryPageState extends State<LibraryPage> {
           label: Text(text, style: const TextStyle(fontSize: 12)),
         ),
       );
+  Widget _searchPanel(EditorialColors c) => DecoratedBox(
+    key: const ValueKey('library-search-panel'),
+    decoration: BoxDecoration(
+      border: Border.all(color: c.line),
+      borderRadius: BorderRadius.circular(8),
+      color: c.background,
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: search,
+            decoration: InputDecoration(
+              hintText: 'Rechercher un sujet… (3 caractères minimum)',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: IconButton(
+                tooltip: 'Effacer la recherche',
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  debounce?.cancel();
+                  search.clear();
+                  m.search('');
+                },
+              ),
+              isDense: true,
+            ),
+            onChanged: (value) {
+              debounce?.cancel();
+              // Conserver aussi une saisie suivie d'une fermeture immédiate.
+              m.search(value, refresh: false);
+              debounce = Timer(const Duration(milliseconds: 250), m.reload);
+            },
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final field in SearchField.values)
+                InkWell(
+                  mouseCursor: WidgetStateMouseCursor.clickable,
+                  onTap: () {
+                    if (m.fields.contains(field))
+                      m.fields.remove(field);
+                    else
+                      m.fields.add(field);
+                    m.reload();
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 30,
+                        child: Checkbox(
+                          value: m.fields.contains(field),
+                          onChanged: (value) {
+                            if (value!)
+                              m.fields.add(field);
+                            else
+                              m.fields.remove(field);
+                            m.reload();
+                          },
+                        ),
+                      ),
+                      Text(
+                        fieldNames[field]!,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+    ),
+  );
+
+  Widget _libraryTitle() => Text(
+    m.favoritesOnly ? 'Favoris' : 'Bibliothèque',
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: const TextStyle(
+      fontFamily: 'Georgia',
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+    ),
+  );
+
+  Widget _libraryCounter(EditorialColors c) => SelectableText(
+    m.queryError.isNotEmpty ? m.queryError : m.episodeCountLabel,
+    style: TextStyle(
+      fontSize: 11,
+      color: m.queryError.isNotEmpty ? c.alert : c.muted,
+    ),
+  );
+
+  Widget _libraryFilters({bool inline = false}) {
+    final filters = <Widget>[
+      FilterMenu<CatalogSort>(
+        menuKey: 'sort-filter',
+        constrained: inline,
+        value: m.sort,
+        labels: sortNames,
+        onChanged: (value) {
+          m.sort = value;
+          m.reload();
+        },
+      ),
+      FilterMenu<String>(
+        menuKey: 'status-filter',
+        constrained: inline,
+        value: m.status,
+        labels: {
+          for (final value in ['Tous', 'NON_ECOUTE', 'EN_COURS', 'ECOUTE'])
+            value: value == 'Tous' ? 'Tous les états' : statusLabel(value),
+        },
+        onChanged: (value) {
+          m.status = value;
+          m.reload();
+        },
+      ),
+    ];
+    return inline
+        ? Row(
+            children: [
+              Expanded(child: filters[0]),
+              const SizedBox(width: 4),
+              Expanded(child: filters[1]),
+            ],
+          )
+        : Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: filters,
+          );
+  }
+
   Widget list(EditorialColors c, bool compact) => Column(
     children: [
       Padding(
@@ -999,324 +1156,237 @@ class _LibraryPageState extends State<LibraryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DecoratedBox(
-              key: const ValueKey('library-search-panel'),
-              decoration: BoxDecoration(
-                border: Border.all(color: c.line),
-                borderRadius: BorderRadius.circular(8),
-                color: c.background,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextField(
-                      controller: search,
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher un sujet… (3 caractères minimum)',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: IconButton(
-                          tooltip: 'Effacer la recherche',
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            debounce?.cancel();
-                            search.clear();
-                            m.search('');
-                          },
-                        ),
-                        isDense: true,
-                      ),
-                      onChanged: (value) {
-                        debounce?.cancel();
-                        // Conserver aussi une saisie suivie d'une fermeture immédiate.
-                        m.search(value, refresh: false);
-                        debounce = Timer(
-                          const Duration(milliseconds: 250),
-                          m.reload,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        for (final field in SearchField.values)
-                          InkWell(
-                            mouseCursor: WidgetStateMouseCursor.clickable,
-                            onTap: () {
-                              if (m.fields.contains(field))
-                                m.fields.remove(field);
-                              else
-                                m.fields.add(field);
-                              m.reload();
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 24,
-                                  height: 30,
-                                  child: Checkbox(
-                                    value: m.fields.contains(field),
-                                    onChanged: (value) {
-                                      if (value!)
-                                        m.fields.add(field);
-                                      else
-                                        m.fields.remove(field);
-                                      m.reload();
-                                    },
-                                  ),
-                                ),
-                                Text(
-                                  fieldNames[field]!,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                ),
-              ),
-            ),
+            _searchPanel(c),
             const SizedBox(height: 10),
-            Text(
-              m.favoritesOnly ? 'Favoris' : 'Bibliothèque',
-              style: const TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            _libraryTitle(),
             const SizedBox(height: 6),
-            Wrap(
-              spacing: 12,
-              runSpacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                FilterMenu<CatalogSort>(
-                  menuKey: 'sort-filter',
-                  value: m.sort,
-                  labels: sortNames,
-                  onChanged: (value) {
-                    m.sort = value;
-                    m.reload();
-                  },
-                ),
-                FilterMenu<String>(
-                  menuKey: 'status-filter',
-                  value: m.status,
-                  labels: {
-                    for (final value in [
-                      'Tous',
-                      'NON_ECOUTE',
-                      'EN_COURS',
-                      'ECOUTE',
-                    ])
-                      value: value == 'Tous'
-                          ? 'Tous les états'
-                          : statusLabel(value),
-                  },
-                  onChanged: (value) {
-                    m.status = value;
-                    m.reload();
-                  },
-                ),
-              ],
-            ),
+            _libraryFilters(),
             const SizedBox(height: 4),
-            SelectableText(
-              m.queryError.isNotEmpty ? m.queryError : m.episodeCountLabel,
-              style: TextStyle(
-                fontSize: 11,
-                color: m.queryError.isNotEmpty ? c.alert : c.muted,
-              ),
-            ),
+            _libraryCounter(c),
           ],
         ),
       ),
+      _episodeList(c, compact),
+    ],
+  );
+
+  Widget _landscapeLibrary(EditorialColors c) => Row(
+    key: const ValueKey('android-landscape-library'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
       Expanded(
-        child: Focus(
-          focusNode: listFocus,
-          onKeyEvent: navigateList,
-          child: m.visible.isEmpty
-              ? const Center(child: Text('Aucun épisode pour ces critères.'))
-              : ListView.builder(
-                  key: const ValueKey('episode-list'),
-                  controller: listScroll,
-                  itemExtent: m.query.trim().characters.length >= 3 ? 66 : 52,
-                  itemCount: m.visible.length,
-                  itemBuilder: (context, index) {
-                    final id = m.visible[index].id;
-                    return PlaybackBuilder(
-                      key: ValueKey(id),
-                      playback: m.playback,
-                      episodeId: id,
-                      builder: (context) {
-                        final e = m.visible.firstWhere((e) => e.id == id);
-                        final missing =
-                                (m.mp3Path.isEmpty || m.audioKnown) &&
-                                !e.audioAvailable,
-                            heard = e.status == 'ECOUTE';
-                        final color = missing
-                            ? c.missingInk
-                            : heard
-                            ? c.heardInk
-                            : c.ink;
-                        return Material(
-                          color: missing
-                              ? c.missing
-                              : heard
-                              ? c.heard
-                              : c.panel,
-                          child: InkWell(
-                            mouseCursor: SystemMouseCursors.click,
-                            onTap: () {
-                              listFocus.requestFocus();
-                              m.select(e);
-                              if (compact)
-                                unawaited(
-                                  showDialog<void>(
-                                    context: context,
-                                    builder: (context) => EpisodeDialog(
-                                      model: m,
-                                      onRelated: related,
-                                      pickDirectory: widget.pickDirectory,
-                                    ),
-                                  ),
-                                );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient:
-                                    !missing && !heard && m.progress(e) > 0
-                                    ? LinearGradient(
-                                        colors: [
-                                          c.heard,
-                                          c.heard,
-                                          Colors.transparent,
-                                          Colors.transparent,
-                                        ],
-                                        stops: [
-                                          0,
-                                          m.progress(e),
-                                          m.progress(e),
-                                          1,
-                                        ],
-                                      )
-                                    : null,
-                                border: Border(
-                                  top: BorderSide(color: c.line),
-                                  left: BorderSide(
-                                    width: 4,
-                                    color: m.selected?.id == e.id
-                                        ? c.accent
-                                        : Colors.transparent,
-                                  ),
+        flex: 3,
+        child: SingleChildScrollView(
+          key: const ValueKey('android-landscape-search'),
+          padding: const EdgeInsets.all(12),
+          child: _searchPanel(c),
+        ),
+      ),
+      VerticalDivider(width: 1, color: c.line),
+      Expanded(
+        flex: 5,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    key: const ValueKey('android-landscape-library-header'),
+                    children: [
+                      Flexible(flex: 2, child: _libraryTitle()),
+                      const SizedBox(width: 8),
+                      Expanded(flex: 3, child: _libraryFilters(inline: true)),
+                    ],
+                  ),
+                  _libraryCounter(c),
+                ],
+              ),
+            ),
+            _episodeList(c, true),
+          ],
+        ),
+      ),
+    ],
+  );
+
+  Widget _episodeList(EditorialColors c, bool compact) => Expanded(
+    child: Focus(
+      focusNode: listFocus,
+      onKeyEvent: navigateList,
+      child: m.visible.isEmpty
+          ? const Center(child: Text('Aucun épisode pour ces critères.'))
+          : ListView.builder(
+              key: const ValueKey('episode-list'),
+              controller: listScroll,
+              itemExtent:
+                  (m.query.trim().characters.length >= 3 ? 66.0 : 52.0) *
+                  (m.android
+                      ? (MediaQuery.textScalerOf(context).scale(13) / 13).clamp(
+                          1.0,
+                          double.infinity,
+                        )
+                      : 1.0),
+              itemCount: m.visible.length,
+              itemBuilder: (context, index) {
+                final id = m.visible[index].id;
+                return PlaybackBuilder(
+                  key: ValueKey(id),
+                  playback: m.playback,
+                  episodeId: id,
+                  builder: (context) {
+                    final e = m.visible.firstWhere((e) => e.id == id);
+                    final missing =
+                            (m.mp3Path.isEmpty || m.audioKnown) &&
+                            !e.audioAvailable,
+                        heard = e.status == 'ECOUTE';
+                    final color = missing
+                        ? c.missingInk
+                        : heard
+                        ? c.heardInk
+                        : c.ink;
+                    return Material(
+                      color: missing
+                          ? c.missing
+                          : heard
+                          ? c.heard
+                          : c.panel,
+                      child: InkWell(
+                        mouseCursor: SystemMouseCursors.click,
+                        onTap: () {
+                          listFocus.requestFocus();
+                          m.select(e);
+                          if (compact)
+                            unawaited(
+                              showDialog<void>(
+                                context: context,
+                                builder: (context) => EpisodeDialog(
+                                  model: m,
+                                  onRelated: related,
+                                  pickDirectory: widget.pickDirectory,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 3,
+                            );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: !missing && !heard && m.progress(e) > 0
+                                ? LinearGradient(
+                                    colors: [
+                                      c.heard,
+                                      c.heard,
+                                      Colors.transparent,
+                                      Colors.transparent,
+                                    ],
+                                    stops: [0, m.progress(e), m.progress(e), 1],
+                                  )
+                                : null,
+                            border: Border(
+                              top: BorderSide(color: c.line),
+                              left: BorderSide(
+                                width: 4,
+                                color: m.selected?.id == e.id
+                                    ? c.accent
+                                    : Colors.transparent,
                               ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          e.title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontFamily: 'Georgia',
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: color,
-                                          ),
-                                        ),
-                                        Text(
-                                          dateLabel(e.date),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: color,
-                                          ),
-                                        ),
-                                        if (e.matchedFields.isNotEmpty)
-                                          Text(
-                                            'Trouvé dans : ${e.matchedFields.map((f) => fieldNames[f]!).join(', ')}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: c.accent,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (e.favorite)
-                                    Icon(Icons.star, size: 16, color: c.accent),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            statusIcon(e.status),
-                                            size: 11,
-                                            color: color,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            statusLabel(e.status),
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: color,
-                                            ),
-                                          ),
-                                        ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 3,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      e.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Georgia',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: color,
                                       ),
+                                    ),
+                                    Text(
+                                      dateLabel(e.date),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: color,
+                                      ),
+                                    ),
+                                    if (e.matchedFields.isNotEmpty)
                                       Text(
-                                        compact &&
-                                                !m.audioKnown &&
-                                                m.mp3Path.isNotEmpty
-                                            ? 'MP3 non vérifié'
-                                            : m.availability(e),
+                                        'Trouvé dans : ${e.matchedFields.map((f) => fieldNames[f]!).join(', ')}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: c.accent,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (e.favorite)
+                                Icon(Icons.star, size: 16, color: c.accent),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        statusIcon(e.status),
+                                        size: 11,
+                                        color: color,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        statusLabel(e.status),
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: missing ? c.alert : c.muted,
-                                          fontWeight: missing
-                                              ? FontWeight.w600
-                                              : null,
+                                          color: color,
                                         ),
                                       ),
                                     ],
                                   ),
+                                  Text(
+                                    compact &&
+                                            !m.audioKnown &&
+                                            m.mp3Path.isNotEmpty
+                                        ? 'MP3 non vérifié'
+                                        : m.availability(e),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: missing ? c.alert : c.muted,
+                                      fontWeight: missing
+                                          ? FontWeight.w600
+                                          : null,
+                                    ),
+                                  ),
                                 ],
                               ),
-                            ),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     );
                   },
-                ),
-        ),
-      ),
-    ],
+                );
+              },
+            ),
+    ),
   );
   Widget _futurePlayer(EditorialColors c) {
     final p = m.playback;

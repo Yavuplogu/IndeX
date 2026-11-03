@@ -337,3 +337,10 @@ configuré ne déclenche pas cet avertissement.
   exécution et libération audio pour renommage. Conserver la réconciliation des
   anciens journaux et le stockage MP3 géré, sans nouveau renommage proposé.
   La demande finale ne comprend aucune réorganisation des listes/panneaux.
+
+- Retour physique du 3 novembre : l’utilisateur valide les contrôles précédemment
+  listés sauf adaptation à l’écran. Correction paysage Android autorisée : recherche
+  à gauche (3/8), liste à droite (5/8), filtres à côté de Bibliothèque/Favoris,
+  défilements indépendants. Préserver portrait/Windows, critères et suivi. Adapter
+  la hauteur des lignes Android au texte agrandi. Ce correctif ne lance pas le
+  service audio/notification du Lot 6C.

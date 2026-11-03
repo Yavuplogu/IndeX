@@ -170,3 +170,27 @@ relancer : reprise au dernier checkpoint. Après Pause, la reprise conserve la
 position de pause. Vérifier les filtres En cours/Écouté lors du début et de la fin,
 le seek au terme, l’arrêt/reset et l’enchaînement. Recette Windows également requise
 pour ces parcours partagés ; ne pas déduire une validation physique des tests Linux.
+
+
+### Paysage Android et caractères agrandis (3 novembre 2026)
+
+Retour utilisateur : les points de vérification précédents sont validés sur son
+appareil, sauf l’adaptation à l’écran. Les bandes jaunes/noires signalées en
+paysage sont un débordement Flutter ; elles ne doivent pas être simplement masquées.
+
+En paysage, la recherche et ses champs occupent une colonne gauche (3/8 de la
+largeur), les épisodes une colonne droite plus large (5/8). Les filtres de tri et
+d’état sont sur la ligne Bibliothèque/Favoris ; le compteur reste juste dessous.
+Les libellés longs des filtres sont tronqués dans le bouton si nécessaire, avec
+leur texte complet dans le menu. La recherche est indépendante du défilement des
+épisodes ; sa colonne reste défilable séparément si le texte agrandi dépasse sa
+hauteur. Les lignes Android grandissent avec la taille de police système.
+
+À confirmer sur téléphone avec et sans lecture, thèmes clair/sombre :
+- Tourner en paysage : les épisodes sont visibles, aucun débordement rayé.
+- Faire défiler les épisodes : le cadre de recherche reste à sa place.
+- Chercher un terme, changer les champs et les filtres, ouvrir une fiche.
+- Tourner en portrait puis revenir : saisie, critères et suivi restent conservés.
+- Refaire avec caractères système agrandis et avec le clavier affiché.
+La présentation Windows et l’organisation portrait restent conservées. Cette
+correction ne comprend pas la lecture en arrière-plan ni les notifications 6C.

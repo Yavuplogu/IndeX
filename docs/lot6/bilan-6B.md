@@ -277,3 +277,30 @@ renommage Windows simulé). Compilation APK ARM64 et inspection réussies, sans 
 SHA-256 local `d8be515d229baba2801e42b52f3f4cf2188b4fb008da39db7abd45aa80e16145`.
 La recette physique native est adaptée mais n’a pas été exécutée ici. Aucun numéro
 de distribution réservé et aucune nouvelle validation physique Windows revendiquée.
+
+
+## Ajustement Android du 3 novembre — paysage
+
+L’utilisateur confirme les contrôles précédents sur son téléphone, à l’exception
+de l’adaptation à l’écran : le bloc de recherche vertical provoquait un débordement
+et ne laissait plus de hauteur aux épisodes en paysage. Remplacer cette disposition
+Android paysage par deux colonnes : recherche 3/8, liste 5/8. Regrouper le titre et
+les filtres sur une même ligne à droite ; laisser le compteur dessous et la liste
+prendre toute la hauteur restante. La recherche ne défile pas avec les épisodes.
+Prévoir son propre défilement en cas de manque de hauteur et dimensionner les
+lignes Android selon le grossissement du texte, au lieu de masquer les erreurs.
+
+Réutiliser contrôleur de recherche, champs, filtres et contrôleur de liste existants.
+Préserver la sélection, le lecteur et les sauvegardes ; ne pas modifier l’organisation
+Windows ou portrait. Les ticks audio restent limités aux régions PlaybackBuilder.
+Aucun changement SQLite, dépendance, compteur de version ni service média 6C.
+
+
+Vérifications : 14 tests UI ciblés réussis (tests paysage, Android et régression
+widget Windows). Les trois tests paysage passent aussi après ajout d’une lecture
+simulée active et du libellé de tri long, aux tailles de texte 100/150/200 %, en
+clair/sombre ; rotation 844×390 → 390×844 → 740×360, recherche et ancrage vérifiés.
+Analyse Flutter sans anomalie. APK ARM64 compilé et inspecté : aucun MP3 embarqué,
+SHA-256 local `accd8909fcb90f009cd5bb48b2687a37dbbc1affe2a385132b9aa0a5fa1be135`.
+Aucun numéro de distribution réservé. Le correctif paysage reste à confirmer sur
+le téléphone ; les tests de widgets ne constituent pas une nouvelle recette physique.
