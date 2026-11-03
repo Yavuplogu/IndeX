@@ -104,10 +104,7 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
         val partial = privateFile(args["partial"] as String)
         val target = privateFile(args["target"] as String)
         require(partial.isFile && target.parentFile!!.isDirectory)
-        Os.link(partial.path,target.path) // EEXIST au lieu d’écraser une cible.
-        IndeXDocumentsProvider.syncDirectory(target.parentFile!!)
-        Os.remove(partial.path)
-        IndeXDocumentsProvider.syncDirectory(partial.parentFile!!)
+        IndeXDocumentsProvider.movePrivate(activity, partial, target)
     }
     private fun checkDestination(tree: Uri, name: String) {
         IndeXDocumentsProvider.checkedName(name)
@@ -137,9 +134,10 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
                     require(!IndeXDocumentsProvider.collision(parent,name)) { "Cible existante : aucun écrasement." }
                     val file = IndeXDocumentsProvider.file(activity,IndeXDocumentsProvider.id(activity,File(parent,name)))
                     target = DocumentsContract.buildDocumentUriUsingTree(tree,IndeXDocumentsProvider.id(activity,file))
-                    Os.link(source.path,file.path)
+                    // Conserver l’identité de la cible AVANT la tentative de déplacement.
+                    entry.put("uri",target.toString()); update(entry)
                     started = true
-                    IndeXDocumentsProvider.syncDirectory(parent)
+                    IndeXDocumentsProvider.movePrivate(activity, source, file)
                 }
             } else {
                 val parent = DocumentsContract.buildDocumentUriUsingTree(tree,DocumentsContract.getTreeDocumentId(tree))

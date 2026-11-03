@@ -149,3 +149,13 @@ flutter test integration_test/android_storage_test.dart -d <identifiant-appareil
 Relancer sur un jeu de copies originales restauré : le test exige un renommage
 à effectuer et ne remet pas les noms en sens inverse. Ce test ne remplace pas les
 essais d’arrêt brutal, de fournisseur externe et l’échange physique avec Windows.
+
+
+### Régression export JSON EACCES (3 novembre 2026)
+
+Installer le nouvel APK en mise à jour, sans effacer les données. Exporter le suivi :
+le sélecteur de destination externe doit s’ouvrir sans erreur `link failed`.
+Enregistrer une copie et vérifier l’import sur Windows. Annuler un deuxième export :
+la copie interne et le suivi restent conservés. Le test physique automatisé vérifie
+également qu’une cible privée existante n’est pas écrasée. Retester téléchargement
+et renommage sur copies dans IndeX · MP3 : ils utilisaient la même primitive refusée.

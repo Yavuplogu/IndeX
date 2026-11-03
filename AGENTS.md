@@ -311,10 +311,17 @@ configuré ne déclenche pas cet avertissement.
   à partir d’un diagnostic ambigu. Écriture MP3 limitée aux fournisseurs locaux
   Android et IndeX. HTTP limité au domaine du journal, politique à chaque redirect.
 - Renommage Android seulement dans IndeX · MP3 : provider local exposant uniquement
-  files/mp3, link exclusif + fsync + retrait même parent, journal SQLite avant
-  mutation, reprise par même inode et empreinte. Autres fournisseurs refusés
+  files/mp3, déplacement privé contrôlé + fsync même parent, journal SQLite avant
+  mutation, reprise par empreinte et compatibilité des anciens liens durs. Autres fournisseurs refusés
   sans garantie. Dossier privé optionnel : avertir de l’effacement à la
   désinstallation. Aucun déplacement automatique ni réécriture des MP3/ID3.
 - JSON Android : copie interne exports puis copie externe ACTION_CREATE_DOCUMENT ;
   import borné ACTION_OPEN_DOCUMENT. Pas d’atomicité SAF externe inventée ;
   parseur et fusion partagés, lecteur libéré, aperçu, backup et transaction.
+
+- Correctif Android EACCES du 3 novembre : aucun nouvel Os.link. Les déplacements
+  privés passent par PrivateFileMoves : confinement canonique, cible absente par
+  lstat, rename et fsync sous le mutex partagé de tous les écrivains privés.
+  Provider et worker restent dans le même processus ; ne pas étendre ce protocole
+  aux fournisseurs SAF externes ni à un stockage partagé. Test JVM reproductible :
+  bash tools/lot6/test_private_moves.sh ; recette physique encore nécessaire.

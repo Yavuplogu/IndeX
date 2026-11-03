@@ -43,6 +43,19 @@ class IndeXDocumentsProvider : DocumentsProvider() {
             val fd = Os.open(directory.path, android.system.OsConstants.O_RDONLY, 0)
             try { Os.fsync(fd) } finally { Os.close(fd) }
         }
+        private val privateOperations = object : PrivateFileMoves.Operations {
+            override fun existsNoFollow(target: File): Boolean = try {
+                Os.lstat(target.path); true
+            } catch (error: android.system.ErrnoException) {
+                if (error.errno != android.system.OsConstants.ENOENT) throw error
+                false
+            }
+            override fun rename(source: File, target: File) { Os.rename(source.path, target.path) }
+            override fun syncDirectory(directory: File) { IndeXDocumentsProvider.syncDirectory(directory) }
+        }
+        fun movePrivate(context: android.content.Context, source: File, target: File) {
+            PrivateFileMoves.move(context.filesDir, source, target, lock, privateOperations)
+        }
         fun rename(context: android.content.Context, before: File, name: String): File = synchronized(lock) {
             checkedName(name)
             require(before.isFile && name.endsWith(".mp3", true))
@@ -50,16 +63,14 @@ class IndeXDocumentsProvider : DocumentsProvider() {
             if (before == after) return@synchronized before
             if (after.exists()) {
                 val a = Os.stat(before.path); val b = Os.stat(after.path)
-                // Reprise d’une opération journalisée : deux noms, même inode.
+                // Compatibilité avec une ancienne opération interrompue utilisant un lien dur.
                 require(a.st_dev == b.st_dev && a.st_ino == b.st_ino) { "Cible existante : aucun écrasement." }
+                Os.remove(before.path)
+                syncDirectory(before.parentFile!!)
             } else {
                 require(!collision(before.parentFile!!, name)) { "Collision de casse ou Unicode." }
-                // link échoue atomiquement avec EEXIST : jamais de renameTo qui écrase.
-                Os.link(before.path, after.path)
+                movePrivate(context, before, after)
             }
-            syncDirectory(before.parentFile!!)
-            Os.remove(before.path)
-            syncDirectory(before.parentFile!!)
             after
         }
     }

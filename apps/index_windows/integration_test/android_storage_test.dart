@@ -57,6 +57,26 @@ void main() {
           );
           await model.configure('${root.path}/user', tree, false);
           expect(model.error, isEmpty);
+          // Régression EACCES : publication réelle sans création de lien dur.
+          final partial = File('${root.path}/export.partial');
+          final published = File('${root.path}/export.json');
+          await partial.writeAsString('{"test":"complet"}', flush: true);
+          await AppModel.androidChannel.invokeMethod<void>('publishPrivate', {
+            'partial': partial.path,
+            'target': published.path,
+          });
+          expect(await partial.exists(), isFalse);
+          expect(await published.readAsString(), '{"test":"complet"}');
+          await partial.writeAsString('ne pas remplacer', flush: true);
+          await expectLater(
+            AppModel.androidChannel.invokeMethod<void>('publishPrivate', {
+              'partial': partial.path,
+              'target': published.path,
+            }),
+            throwsA(isA<Exception>()),
+          );
+          expect(await partial.readAsString(), 'ne pas remplacer');
+          expect(await published.readAsString(), '{"test":"complet"}');
           await model.previewRename();
           expect(model.error, isEmpty);
           expect(model.renamePlan!.planned, greaterThan(0));

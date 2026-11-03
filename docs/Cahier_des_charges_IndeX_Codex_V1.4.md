@@ -660,3 +660,14 @@ refusés sans garantie. Les originaux ne sont ni déplacés ni réécrits.
 JSON externe via sélecteurs Android, sauvegarde et fusion commune, aucune donnée
 de chemin/permission/audio transférée. Confirmer sur appareil avant 6C ; écran
 éteint et commandes de verrouillage non lancés par cette demande.
+
+
+### Correctif Lot 6B — 3 novembre 2026
+
+L’export Android ne doit pas dépendre de la possibilité de créer des liens durs
+(refus EACCES constaté sur téléphone). Publication interne, préparation des MP3 et
+renommage géré : déplacement atomique contrôlé dans le seul espace privé, refus
+préalable de cible existante sous mutex commun à tous les écrivains, puis fsync.
+Cette garantie ne s’étend pas aux fournisseurs SAF externes. Préserver le journal
+et la réconciliation après interruption, sans ajout de permission ni changement Windows.
+Voir `docs/lot6/bilan-6B.md` et la recette EACCES ; aucun lancement du Lot 6C.

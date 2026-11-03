@@ -17,8 +17,10 @@ fournisseurs externes ; aucune déduction de leur chemin physique.
 ### JSON Windows ↔ Android
 
 Export d’abord dans le dossier privé user/exports au nom court existant. Publication
-interne par lien dur exclusif, synchronisation du dossier puis retrait du temporaire :
-pas de File.rename pouvant écraser une cible. Ensuite ACTION_CREATE_DOCUMENT
+interne par déplacement atomique contrôlé dans le stockage privé : sous le mutex
+commun à tous les écrivains, vérifier l’absence de cible sans suivre les liens,
+déplacer puis synchroniser les dossiers concernés. Une cible existante est refusée.
+Ensuite ACTION_CREATE_DOCUMENT
 permet d’enregistrer une copie externe avec contrôle SHA-256 après copie. Annuler
 le sélecteur conserve la copie interne ; échouer ne modifie pas le suivi.
 Sur un fournisseur SAF externe, la copie n’est pas une publication atomique au
@@ -51,7 +53,7 @@ journal et nom système. Politique Android réappliquée à chaque redirection :
 ou HTTP sur rendezvousavecmrx.free.fr seulement. INTERNET ajouté au manifeste ;
 cleartext natif limité à ce domaine, jamais TLS désactivé ni accès réseau automatique.
 
-Dans le dossier géré IndeX, publication par lien dur exclusif sans remplacement.
+Dans le dossier géré IndeX, même déplacement privé contrôlé sans remplacement.
 Ailleurs, créer un nouveau document SAF, vérifier son nom exact, copier le fichier
 complet et comparer l’empreinte avant toute association. La création SAF peut
 refuser une collision ou choisir un autre nom ; ce dernier cas est refusé. La
@@ -96,10 +98,13 @@ Renommage même parent, nom historique → nom système uniquement : aperçu,
 confirmation globale, collisions casse/NFC et doublons, choix manuels et lecteur
 protégés, taille/mtime/SHA-256 contrôlés avant et après. Journal rename_runs/items
 commun avant toute mutation ; aucune modification du suivi/favori ni des octets/ID3.
-Le fournisseur effectue link exclusif (EEXIST) puis fsync parent et retrait de
-l’ancien nom, puis fsync : les deux noms peuvent exister après interruption.
-La réconciliation achève ce retrait seulement avec le même inode et la même
-empreinte. Deux fichiers distincts, droits absents, modifications ou choix manuel
+Le fournisseur vérifie la cible puis effectue un déplacement atomique et fsync
+sous le même mutex que ses autres mutations. Il reste dans le processus de
+l’application. La garantie de non-écrasement dépend de cet espace privé et du
+mutex partagé ; elle ne s’applique jamais aux fournisseurs externes. La reprise
+reconnaît une source absente et une cible complète. Pour les anciennes versions
+utilisant des liens durs, la réconciliation conserve aussi le retrait de l’ancien
+nom seulement avec le même inode et la même empreinte. Deux fichiers distincts, droits absents, modifications ou choix manuel
 retiré/modifié restent bloqués sans changer les fichiers ni rétablir le suivi.
 Le récupérateur Windows ignore content:// ; celui d’Android ne traite pas file://.
 Un contrôle partagé protège aussi un MP3 associé manuellement à un autre épisode.
@@ -166,3 +171,36 @@ Le test physique `android_storage_test.dart` est analysé statiquement ; aucun
 appareil Android/essai SAF réel n’est revendiqué depuis ce cloud. La recette
 Windows native et les échanges Windows ↔ Android physiques restent séparés de
 ces vérifications. Aucun commit, push ni publication automatique effectué.
+
+
+## Correctif du 3 novembre 2026 — export JSON refusé (EACCES)
+
+Sur téléphone, `Os.link` échouait avec `link failed: EACCES` lors de la publication
+interne du JSON, avant même le sélecteur externe. Le système refuse cette primitive ;
+le message seul ne permet pas d’identifier la règle système exacte. Demander une
+permission de dossier supplémentaire ne corrige pas cette opération privée.
+
+Tous les nouveaux liens durs sont supprimés : export JSON, préparation du MP3,
+publication MP3 gérée et renommage géré utilisent `PrivateFileMoves`. Ce protocole
+valide le confinement canonique sous filesDir et refuse les liens symboliques,
+vérifie la cible par lstat sous mutex partagé, puis utilise rename et fsync.
+Tous les écrivains du fournisseur restent dans le même processus et prennent ce
+mutex ; ne pas déplacer le fournisseur dans un processus séparé sans revoir le
+protocole. Aucun changement Windows, aucun nouveau package ni droit de stockage.
+Le journal de publication mémorise la cible avant le déplacement pour permettre
+la reprise si la synchronisation échoue après la mutation.
+
+Tests reproductibles : `bash tools/lot6/test_private_moves.sh` (JDK 21), aussi en
+CI Android. Ils couvrent cible vide/non vide/dossier, liens symboliques, sortie de
+racine, concurrence, échec avant déplacement et échec après déplacement. La recette
+physique automatisée vérifie aussi la publication privée et le refus d’une cible
+existante avant de poursuivre l’export JSON. Ces tests JVM ne qualifient pas le
+système de fichiers du téléphone : retester l’export avec le nouvel APK.
+
+
+Vérifications exécutées sur le correctif : test JVM réussi ; `flutter analyze`
+sans anomalie ; 11 tests Flutter ciblés (`android_documents_test.dart` et
+`android_publication_test.dart`) réussis. `bash tools/lot5/build_android.sh` réussit
+et inspecte l’APK ARM64 : aucun MP3, seed inchangé. SHA-256 de cet APK intermédiaire
+local : `c884c485b3d1d42ccdeb2c457dd2682c378fb5d774e9bdce4697d60c877ec10c`.
+Aucun numéro de distribution réservé ; aucune recette physique exécutée ici.

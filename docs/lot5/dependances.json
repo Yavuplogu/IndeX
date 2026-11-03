@@ -60,7 +60,7 @@
   {
     "component": "Android DocumentsProvider / DocumentsContract / AtomicFile / Os",
     "api": "Android API 24 minimum, compile/target 36",
-    "usage": "Lot 6B : URI SAF opaques, copie JSON bornée, publication MP3 journalisée, dossier MP3 privé optionnel et lien dur exclusif synchronisé pour le renommage",
+    "usage": "Lot 6B : URI SAF opaques, copie JSON bornée, publication MP3 journalisée, dossier MP3 privé optionnel et déplacement privé contrôlé sous mutex et synchronisé pour le renommage",
     "redistributed_binary": false,
     "license": "API Android système ; adaptateur Kotlin propre au projet, aucun nouveau package runtime",
     "risk": "Fournisseurs externes sans garantie de renommage refusés ; recette réelle des permissions, interruptions et du fournisseur IndeX requise"
