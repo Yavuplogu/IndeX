@@ -387,3 +387,8 @@ configuré ne déclenche pas cet avertissement.
   validés, même épisode/position proche/délai court, et réserver l’action du second
   clic à playEpisode. Annuler la paire sur glissement, changement de ligne, clavier
   ou fin de fenêtre ; ne pas déclencher sur pointer-down. Android reste inchangé.
+
+- Icône Android du 4 novembre : manifeste vers mipmap/ic_launcher et roundIcon
+  mipmap/ic_launcher_round ; API 26+ en adaptive-icon, fond beige opaque séparé
+  du X vectoriel centré dans la zone sûre. Conserver les replis Android 7/7.1,
+  le pictogramme DocumentsProvider et l’icône monochrome de notification.

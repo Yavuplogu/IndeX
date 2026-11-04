@@ -284,3 +284,15 @@ reste un échec de recette même si l’APK compile.
 Aucun accès à l’état des appels n’est demandé : un Android qui retire définitivement
 le focus ou ne le restitue pas exige une reprise manuelle. Les tests simulés ne
 qualifient pas le comportement du téléphone et des applications qui le sollicitent.
+
+
+### Icône de lancement — correction du 4 novembre
+
+Après mise à jour de l’APK, vérifier l’icône dans le lanceur et le tiroir d’applications :
+X inchangé, fond beige remplissant tout le masque sur Android 8+, y compris pour
+les formes ronde, carrée et carrée arrondie. Refaire en thème système clair/sombre.
+Vérifier le repli sur Android 7/7.1 si ces versions figurent dans la recette finale.
+La notification conserve son X blanc système ; le pictogramme du fournisseur MP3
+IndeX reste inchangé. Si le lanceur garde l’ancienne image, le fermer/rouvrir ou
+redémarrer le téléphone pour renouveler son cache ; ne pas effacer les données
+IndeX ni désinstaller l’application pour rafraîchir une icône.

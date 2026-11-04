@@ -211,3 +211,24 @@ Linux, analyse sans anomalie. Le dépassement fractionnaire spécifique Windows 
 être confirmé corrigé par la prochaine exécution de son workflow ; aucune nouvelle
 qualification native Windows revendiquée ici. 0.6.24 reste consommé, sans reset du
 compteur ni réservation locale supplémentaire.
+
+
+## Icône adaptative Android — 4 novembre 2026, avant 6D
+
+Retour utilisateur : le carré beige de l’icône classique reste visible dans les
+icônes rondes de certains lanceurs. Le manifeste pointe désormais vers des ressources
+mipmap normale/roundIcon. Sur Android 8/API 26+, les deux sont des adaptive-icon :
+fond opaque #F5F1E9 couvrant toute la couche et X vectoriel #99533D indépendant,
+centré dans la zone sûre. Le lanceur applique son masque rond/carré/arrondi sans
+traiter un carré beige comme une image collée au milieu. Aucun monochrome teinté
+n’est ajouté ; garder la couleur de marque. Replis classique Android 7 et rond 7.1,
+ancien pictogramme DocumentsProvider et icône blanche de notification conservés.
+Aucun changement Windows, de données, de permissions ou de signature.
+
+Validation : XML sources conformes ; compilation APK ARM64 réussie, contrôle seed
+et absence de MP3. AAPT confirme dans l’APK les couches adaptatives normale/ronde
+v26, les replis et le fond compilé opaque #FFF5F1E9. Le linker qualifie les replis
+en anydpi-v21, compatibles avec le minimum API 24. SHA-256 local de l’APK :
+`6cb357aec2227ef4ff6a7b0e27499efd1908d74c7de6198a2f698dd1b9f4248a`.
+Aucun mineur de distribution réservé ; aspect réel à confirmer sur les lanceurs.
+Le Lot 6D n’est pas lancé par cet ajustement.

@@ -1,0 +1,3 @@
+<!-- Repli Android 7 : conserver l'icône IndeX au lieu du pictogramme Flutter. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/index_icon" />
