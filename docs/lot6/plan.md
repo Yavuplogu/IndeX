@@ -27,8 +27,8 @@ de test manuel. Il s’agit d’un socle à réévaluer, pas d’une version qua
   limites décrites dans [le bilan 6B](bilan-6B.md)) ;
 - le lecteur de MainActivity est suspendu dans onStop, sans service de lecture
   continue en arrière-plan ;
-- la configuration release utilise actuellement la clé debug et l’identifiant
-  historique `fr.index.index_windows`.
+- la configuration release utilisait la clé debug avant le 6D ; l’identifiant
+  historique `fr.index.index_windows` reste conservé.
 
 ## 6A — Audit Android et décisions de plateforme
 
@@ -115,5 +115,7 @@ le portage ne vaut pas passage en version finale. Avant un APK distribuable,
 aligner son versionnement sur la politique du projet sans réinitialiser le compteur.
 iOS demeure exclu. Aucun nouveau package runtime ajouté. Les adaptateurs 6B sont
 implémentés ; 6B et le paysage sont validés par l’utilisateur sur son appareil.
-6C est lancé, avec bilan et recette physique à suivre avant 6D. Voir [l’audit 6A](audit-6A.md)
+Le dernier 6C est validé par l’utilisateur le 4 novembre 2026 ; le 6D est lancé.
+La préparation release est décrite dans [le bilan 6D](bilan-6D.md), avec
+[signature/distribution](DISTRIBUTION_ANDROID.md) et [recette du candidat](RECETTE_6D.md). Voir [l’audit 6A](audit-6A.md)
 et [la recette](RECETTE_ANDROID.md).

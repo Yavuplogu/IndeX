@@ -6,3 +6,9 @@ dist/
 index-portable.json
 index-utilisateur.sqlite*
 .index.lock
+
+# Contrôles Python et secrets de signature Android (jamais versionnés).
+__pycache__/
+*.pyc
+*.jks
+*.keystore

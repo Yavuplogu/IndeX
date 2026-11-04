@@ -11,16 +11,18 @@ Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 6C lancé — lecture Android en arrière-plan et commandes système.**
-L’utilisateur valide 6B et le paysage le 3 novembre. Windows reste validé,
-Release GitHub séparément à préparer. [Bilan 6C](docs/lot6/bilan-6C.md) et
-[recette Android](docs/lot6/RECETTE_ANDROID.md) : service média, écran verrouillé,
-notification, priorité audio et suivi partagé. Recette 6C physique à confirmer.
-Téléchargement dans un dossier SAF local et transfert JSON restent disponibles ;
-renommage réservé à Windows. Le dossier optionnel IndeX · MP3 est privé et supprimé
-à la désinstallation : conserver les originaux ailleurs.
-Workflows Windows et Android uniquement manuels ; Android : Verification Android
-Lot 6C → Run workflow. Compteur/verrou partagé, aucun déclenchement sur push.
+**État : Lot 6D lancé — préparation de la distribution Android.**
+Le dernier 6C est validé par l’utilisateur le 4 novembre. Le 6D ajoute un mode
+release AOT signé, ses contrôles et son dossier de recette, sans publication.
+[Bilan 6D](docs/lot6/bilan-6D.md), [guide de signature/distribution](docs/lot6/DISTRIBUTION_ANDROID.md)
+et [fiche de recette](docs/lot6/RECETTE_6D.md). Une clé durable sauvegardée et une
+recette du candidat signé restent nécessaires avant diffusion qualifiée.
+Téléchargement SAF et transfert JSON disponibles ; renommage réservé à Windows.
+Le dossier « IndeX · MP3 » est privé et supprimé à la désinstallation : sauvegarder
+les originaux ailleurs. Windows reste validé ; sa Release GitHub reste distincte.
+Workflows manuels uniquement ; **Verification Android Lot 6D → Run workflow** :
+mode diagnostic par défaut, ou release après configuration des secrets.
+Compteur/verrou partagé Windows/Android, aucun déclenchement sur push.
 
 L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
 la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
@@ -30,7 +32,7 @@ sont détaillées dans le bilan du Lot 5.
 
 Depuis le 28 octobre, le lecteur Windows utilise **just_audio + just_audio_windows**
 (WinRT MediaPlayer), en remplacement de MCI. Android conserve MediaPlayer, désormais possédé par un service média ;
-la lecture écran éteint et les commandes système sont en recette Lot 6C.
+la lecture écran éteint et les commandes système du 6C sont validées par l’utilisateur.
 
 Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
 une lettrine corrigée sur deux lignes, la navigation entre correspondances dans

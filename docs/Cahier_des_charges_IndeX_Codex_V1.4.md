@@ -712,3 +712,21 @@ ou changement manuel intervenu et ne jamais relancer une piste déjà en pause.
 Les pertes définitives et déconnexions casque restent à reprise manuelle. Conserver
 le suivi, les favoris et la logique Windows ; aucune permission téléphonique ajoutée.
 Voir bilan-6C et recette Android pour les notifications imbriquées et validations.
+
+
+## Avenant du 4 novembre 2026 — lancement du Lot 6D
+
+L’utilisateur valide le dernier 6C et autorise le 6D. Préparer la recette et la
+distribution Android : APK release AOT ARM64, signature durable gérée hors dépôt,
+contrôle du certificat et des permissions, catalogue intégré sans MP3, SHA-256,
+guide d’installation/mise à jour et dossier de recette. Identifiant
+`fr.index.index_windows`, Android API 24 minimum/cible 36, majeur 0.6 conservés.
+Les versions distribuables utilisent le compteur partagé Windows/Android.
+Aucune publication GitHub, passage en finale ou activation iOS automatique.
+Le diagnostic debug reste disponible ; aucune release ne reprend sa clé de test.
+Les clés, mots de passe et sauvegardes de signature restent sous contrôle du
+propriétaire, hors dépôt/artefacts. Avant passage de debug à release avec un autre
+certificat, sauvegarder hors application le JSON et les éventuels MP3 privés.
+La recette physique du candidat release et sa mise à jour restent distinctes
+de la compilation et de la validation utilisateur du 6C.
+Voir `docs/lot6/DISTRIBUTION_ANDROID.md` et `RECETTE_6D.md`.

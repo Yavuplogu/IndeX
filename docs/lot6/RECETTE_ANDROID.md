@@ -1,16 +1,21 @@
-# IndeX — diagnostic Android Lot 6C
+> 4 novembre 2026 : dernier 6C validé par l’utilisateur, 6D lancé.
+> Pour la signature et la qualification de l’APK release, consulter
+> [DISTRIBUTION_ANDROID.md](DISTRIBUTION_ANDROID.md) et [RECETTE_6D.md](RECETTE_6D.md).
+> Les mentions « à confirmer » plus anciennes ci-dessous sont historiques.
+
+# IndeX — recette Android et diagnostic Lot 6D
 
 APK ARM64 pour Android 7.0 ou plus récent. Il s’agit du socle de diagnostic,
-pas du portage complet : téléchargement local et import/export JSON sont disponibles.
+distinct du mode release signé : téléchargement local et import/export JSON sont disponibles.
 Le renommage est réservé à Windows. Le Lot 6C ajoute le service média pour la lecture
-écran éteint et en arrière-plan, à qualifier sur téléphone avec la recette ci-dessous.
+écran éteint et en arrière-plan, validé par l’utilisateur au dernier 6C.
 Aucun MP3 n’est embarqué. Préparer un dossier de **copies** de MP3 avec les noms
 historiques ou système du catalogue. Les tags COMM ne participent pas au scan.
 
 ## Récupérer et utiliser l’APK
 
-Après commit/push des changements, GitHub → Actions → Verification Android Lot 6C
-→ Run workflow sur la branche contenant le lot. Rien n’est lancé automatiquement.
+Après commit/push des changements, GitHub → Actions → Verification Android Lot 6D
+→ Run workflow, mode diagnostic, sur la branche contenant le lot. Rien n’est lancé automatiquement.
 Le résultat contient IndeX-<version>-Android-arm64-test : APK, empreinte SHA-256,
 rapport de contenu et ce guide. L’APK est signé pour le développement ; conserver
 le profil existant et sa sauvegarde avant toute réinstallation. L’identité et la

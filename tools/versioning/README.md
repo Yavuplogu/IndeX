@@ -107,3 +107,13 @@ numérotation/compteur inchangés. Cache Actions pour le keystore debug afin de
 maintenir la signature des APK de diagnostic successifs ; aucune clé dans Git
 ou les artefacts. Une ancienne clé non conservée ne peut pas être récupérée.
 La signature définitive et son cycle de vie restent au Lot 6D.
+
+
+## Lot 6D — 4 novembre 2026
+
+Le workflow manuel Android propose diagnostic (défaut) ou release avec clé durable.
+Les deux réservent le même compteur avant compilation, sans réinitialisation.
+La release produit `IndeX_<version>_android_arm64_release.apk` et l’artefact
+`IndeX-<version>-Android-arm64-release`, sans publication automatique.
+La signature durable et le passage depuis les APK debug sont documentés dans
+[le guide Android](../../docs/lot6/DISTRIBUTION_ANDROID.md).

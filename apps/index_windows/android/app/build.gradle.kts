@@ -4,6 +4,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Une release ne doit jamais être signée silencieusement avec la clé debug.
+val releaseKeys = listOf("INDEX_ANDROID_KEYSTORE", "INDEX_ANDROID_STORE_PASSWORD",
+    "INDEX_ANDROID_KEY_ALIAS", "INDEX_ANDROID_KEY_PASSWORD")
+val releaseSigning = releaseKeys.associateWith { System.getenv(it).orEmpty() }
+val releaseRequested = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+if (releaseRequested && releaseSigning.values.any { it.isBlank() }) {
+    throw GradleException("Signature release absente : configurer les variables INDEX_ANDROID_* (guide Lot 6D).")
+}
+
 android {
     namespace = "fr.index.index_windows"
     compileSdk = flutter.compileSdkVersion
@@ -29,11 +38,18 @@ android {
         versionName = flutter.versionName
     }
 
+    if (releaseSigning.values.all { it.isNotBlank() }) {
+        signingConfigs.create("distribution") {
+            storeFile = file(releaseSigning.getValue("INDEX_ANDROID_KEYSTORE"))
+            storePassword = releaseSigning.getValue("INDEX_ANDROID_STORE_PASSWORD")
+            keyAlias = releaseSigning.getValue("INDEX_ANDROID_KEY_ALIAS")
+            keyPassword = releaseSigning.getValue("INDEX_ANDROID_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("distribution")
         }
     }
 }
