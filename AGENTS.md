@@ -374,3 +374,9 @@ configuré ne déclenche pas cet avertissement.
   qu’Écouter (reprise/réécoute, favori conservé). Simple clic = fiche seulement.
   Android ne reçoit aucun gestionnaire double clic. Une ligne MP3 absente ne
   déclenche ni lecture ni téléchargement ; les gardes d’occupation restent partagées.
+
+- Incident CI Windows 0.6.24 du 4 novembre : libellés FilterMenu toujours Flexible,
+  sur une ligne avec ellipsis, pas uniquement en paysage. Ne pas ignorer les
+  débordements de quelques fractions de pixel ; texte complet dans le menu.
+  Le test Android simulé est aussi exécuté sur Windows : vérifier les exceptions
+  avant démontage pour conserver le diagnostic du widget d’origine.

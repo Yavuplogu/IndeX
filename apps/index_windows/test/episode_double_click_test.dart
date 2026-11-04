@@ -146,6 +146,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(EpisodeDialog), findsOneWidget);
         expect(model.playback.episodeId, isNull);
+        expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       } finally {
         await tester.runAsync(model.release);

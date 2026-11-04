@@ -624,18 +624,15 @@ class FilterMenu<T> extends StatelessWidget {
       onPressed: () =>
           controller.isOpen ? controller.close() : controller.open(),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: constrained ? MainAxisSize.max : MainAxisSize.min,
         children: [
-          if (constrained)
-            Flexible(
-              child: Text(
-                labels[value]!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            )
-          else
-            Text(labels[value]!),
+          Flexible(
+            child: Text(
+              labels[value]!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           const SizedBox(width: 6),
           const Icon(Icons.arrow_drop_down, size: 20),
         ],

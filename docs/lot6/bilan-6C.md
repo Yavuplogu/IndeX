@@ -183,3 +183,31 @@ Aucun mineur réservé localement, package ou permission ajouté, aucun workflow
 GitHub déclenché. Les notifications/appels et la reprise écran éteint restent
 à retester sur le téléphone : les callbacks Android réels ne sont pas qualifiés
 par ces tests simulés/JVM. Le Lot 6D n’est pas lancé.
+
+
+## Échec Windows du 4 novembre — libellé de filtre à la limite de largeur
+
+Archive `logs_113401415949.zip`, version réservée 0.6.24 (code 25). Le cœur passe
+(256 tests et un ignoré prévu sur Windows). La suite Flutter s’arrête avec un échec :
+`episode_double_click_test.dart`, scénario Android simulé. Le scénario de double
+clic Windows passe ; aucun nouveau binaire applicatif Windows n’est construit
+après l’échec des contrôles.
+
+Cause : Row du FilterMenu non contraint, avec libellé « MP3 · Disponibles d’abord »
+plus flèche, à la limite de 350 px. Le runner Windows signale un dépassement de
+0,000244 px. Les erreurs ultérieures « deactivated widget’s ancestor » surviennent
+pendant la description du débordement après démontage du widget, et sont secondaires.
+
+Le libellé est désormais Flexible sur une ligne avec ellipsis dans tous les modes,
+et pas seulement dans la disposition paysage. La largeur reste compacte par défaut,
+remplie en disposition contrainte. Le menu conserve les libellés complets et le choix
+de tri. Aucune erreur de rendu n’est ignorée ni masquée. Le test d’ouverture Android
+contrôle aussi l’absence d’exception avant de démonter la fiche.
+
+Régression : avant correctif, le test de filtre à 200 px reproduit un débordement.
+Après correction, largeurs 357,9997 / 358 / 200 px, ouverture et sélection du menu,
+interaction Windows/Android, paysage et suite widget : **18 tests réussis** sous
+Linux, analyse sans anomalie. Le dépassement fractionnaire spécifique Windows doit
+être confirmé corrigé par la prochaine exécution de son workflow ; aucune nouvelle
+qualification native Windows revendiquée ici. 0.6.24 reste consommé, sans reset du
+compteur ni réservation locale supplémentaire.
