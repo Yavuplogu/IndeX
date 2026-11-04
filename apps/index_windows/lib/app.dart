@@ -1253,6 +1253,22 @@ class _LibraryPageState extends State<LibraryPage> {
                         : heard
                         ? c.heardInk
                         : c.ink;
+                    void openEpisode() {
+                      listFocus.requestFocus();
+                      m.select(e);
+                      if (compact)
+                        unawaited(
+                          showDialog<void>(
+                            context: context,
+                            builder: (context) => EpisodeDialog(
+                              model: m,
+                              onRelated: related,
+                              pickDirectory: widget.pickDirectory,
+                            ),
+                          ),
+                        );
+                    }
+
                     return Material(
                       color: missing
                           ? c.missing
@@ -1261,21 +1277,14 @@ class _LibraryPageState extends State<LibraryPage> {
                           : c.panel,
                       child: InkWell(
                         mouseCursor: SystemMouseCursors.click,
-                        onTap: () {
-                          listFocus.requestFocus();
-                          m.select(e);
-                          if (compact)
-                            unawaited(
-                              showDialog<void>(
-                                context: context,
-                                builder: (context) => EpisodeDialog(
-                                  model: m,
-                                  onRelated: related,
-                                  pickDirectory: widget.pickDirectory,
-                                ),
-                              ),
-                            );
-                        },
+                        key: ValueKey('episode-row-${e.id}'),
+                        onTap: openEpisode,
+                        onDoubleTap: !m.android && e.audioAvailable
+                            ? () {
+                                openEpisode();
+                                unawaited(m.playEpisode(e));
+                              }
+                            : null,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: !missing && !heard && m.progress(e) > 0

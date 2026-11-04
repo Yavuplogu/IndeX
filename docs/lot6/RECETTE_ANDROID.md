@@ -219,7 +219,9 @@ réglage de batterie. Les tests Linux et la compilation ne valident pas ces poin
    le fichier depuis le checkpoint. Aucun autoplay imposé au redémarrage du processus.
 4. Pendant une écoute, recevoir un appel, démarrer un autre lecteur puis débrancher
    un casque filaire/déconnecter le Bluetooth : pause immédiate, position sauvegardée.
-   Reprise explicite seulement ; aucune reprise automatique après l’appel/reconnexion.
+   Après notification/appel transitoire : reprise automatique au retour de priorité
+   audio Android, au même endroit. Après lancement d’un autre lecteur avec perte
+   permanente ou retrait du casque : reprise manuelle, aucun son inattendu.
    Vérifier aussi les boutons du casque, la priorité audio refusée et une source
    inaccessible : erreur sélectionnable et absence de lecture concurrente.
 5. Écran verrouillé, atteindre la fin naturellement puis après seek vers la dernière
@@ -260,3 +262,25 @@ Pour diagnostiquer sur un poste ADB : `adb shell dumpsys media_session`,
 `adb logcat -v time` pendant la reproduction. Retirer les informations personnelles
 avant partage. Une erreur FGS, une notification incorrecte ou un checkpoint absent
 reste un échec de recette même si l’APK compile.
+
+
+### Régression du 4 novembre — notifications et appels
+
+- En lecture, recevoir une notification sonore/message/mail : pause pendant
+  l’interruption puis reprise à la restitution du focus, position et favori conservés.
+  Les notifications ne demandant pas de focus ne doivent pas interrompre la lecture.
+- Recevoir puis terminer/refuser un appel : reprise à la restitution du focus ;
+  refaire écran verrouillé et IndeX en arrière-plan.
+- Déclencher plusieurs notifications rapprochées, puis un appel : pas de double
+  reprise, retour au même épisode. Déjà en pause avant la notification/appel :
+  rester en pause après celui-ci.
+- Pendant l’interruption, utiliser Arrêt, Pause du casque ou changer de piste :
+  aucune ancienne reprise ne doit annuler ce choix. Déconnecter le casque/Bluetooth
+  ne doit jamais lancer le son sur le haut-parleur au retour d’une notification.
+- Vérifier les commandes lecture/pause normales, les sauts, la fin/auto-suivant et
+  la sauvegarde/reprise après fermeture. Contrôler qu’une pause manuelle quitte
+  le foreground/libère le focus, contrairement à l’attente temporaire d’un appel.
+
+Aucun accès à l’état des appels n’est demandé : un Android qui retire définitivement
+le focus ou ne le restitue pas exige une reprise manuelle. Les tests simulés ne
+qualifient pas le comportement du téléphone et des applications qui le sollicitent.

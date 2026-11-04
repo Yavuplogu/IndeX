@@ -64,6 +64,7 @@ void main() {
       expect(queue.length, greaterThan(2));
       final first = queue.first;
       model.select(first);
+      model.favorite(first);
       controls = AndroidMediaControls(
         playback: model.playback,
         onCommand: model.systemAudioCommand,
@@ -92,6 +93,14 @@ void main() {
       expect(model.playback.state.playing, isFalse);
       expect(model.session!.listeningState(first.id)!['position_ms'], 6000);
       await send('play');
+      await send('focusPause', 7);
+      expect(model.playback.state.playing, isFalse);
+      await send('focusResume', 7);
+      expect(model.playback.state.position, 6000);
+      expect(
+        model.catalog.firstWhere((e) => e.id == first.id).favorite,
+        isTrue,
+      );
       await send('play');
       expect(model.playback.state.playing, isTrue);
       await send('forward');
@@ -133,6 +142,10 @@ void main() {
       );
       expect(errors, isEmpty);
       await expectLater(send('seek', -1), throwsA(isA<PlatformException>()));
+      await expectLater(
+        send('focusResume', -1),
+        throwsA(isA<PlatformException>()),
+      );
       await expectLater(send('unknown'), throwsA(isA<PlatformException>()));
       await send('pause');
       audio.value = const AudioSnapshot(7000, 120000, false);

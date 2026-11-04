@@ -701,3 +701,14 @@ sans son inattendu. Force-stop/kill ne déclenche pas de redémarrage/autoplay ;
 ultérieure depuis le dernier checkpoint. Aucun réseau ajouté, compte ni télémétrie.
 Pas de nouveau package runtime, de signature finale ni de lancement de 6D.
 Voir bilan-6C et recette Android pour les garanties et validations physiques restantes.
+
+
+### Correction du 4 novembre 2026 — reprise après interruption temporaire
+
+Remplacer la reprise manuelle après toute perte de focus du premier 6C : une piste
+qui jouait avant une interruption audio temporaire reprend au retour de priorité
+Android, sans remise à zéro ni changement d’épisode. Respecter toute pause/arrêt
+ou changement manuel intervenu et ne jamais relancer une piste déjà en pause.
+Les pertes définitives et déconnexions casque restent à reprise manuelle. Conserver
+le suivi, les favoris et la logique Windows ; aucune permission téléphonique ajoutée.
+Voir bilan-6C et recette Android pour les notifications imbriquées et validations.

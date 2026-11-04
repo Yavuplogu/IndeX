@@ -50,7 +50,7 @@ ne produit pas de faux acquittement. Une pause UI sans confirmation a un garde-f
 après son watchdog de 35 secondes. Ces bornes sont des garde-fous de ressource,
 pas une promesse de sauvegarde si SQLite ou l’isolate sont bloqués.
 
-En pause, le service quitte le foreground après sauvegarde et libère le focus/CPU ;
+En pause manuelle, le service quitte le foreground après sauvegarde et libère le focus/CPU ;
 la notification média et la session restent disponibles tant que le service vit.
 Android peut détruire ce service inactif : `backendLost` sauvegarde le dernier état
 connu et libère la référence Dart pour réouvrir le fichier à la prochaine Lecture.
@@ -85,8 +85,10 @@ du même épisode. La session Android extrapole la position ; aucun rafraîchiss
 global de l’UI ni publication de métadonnées à chaque tick à 250 ms. Les régions
 PlaybackBuilder et les optimisations de fluidité sont conservées.
 
-Perte de focus, appel ou ACTION_AUDIO_BECOMING_NOISY : pause immédiate et reprise
-explicite seulement, pas de reprise sonore inattendue au retour du focus/casque.
+Depuis le correctif du 4 novembre, perte temporaire de focus (notification/appel) :
+pause immédiate puis reprise à GAIN si la piste était en lecture et qu’aucun choix
+manuel n’a annulé la réserve. Perte définitive ou ACTION_AUDIO_BECOMING_NOISY :
+reprise explicite seulement, sans son inattendu au retour du casque.
 La priorité audio doit être accordée avant start. Aucun accès aux contacts,
 appels, périphériques Bluetooth ou SMS demandé pour cela.
 
@@ -140,3 +142,44 @@ dans cet environnement. La validation physique 6C (verrouillage, contrôles syst
 interruptions, consommation, recréation Activity) et la nouvelle recette Windows
 native restent à réaliser. Les validations utilisateur 6A/6B/paysage sont conservées
 mais ne constituent pas une qualification des nouveaux changements 6C.
+
+
+## Correctif du 4 novembre — reprise après notification ou appel
+
+Retour utilisateur : notifications et appels suspendent le lecteur sans reprise.
+La première version 6C abandonnait le focus dans idle(), après toute perte de
+priorité. Elle ne pouvait donc plus recevoir le GAIN attendu pour une interruption
+passagère. Ce comportement historique exigeant une reprise manuelle est remplacé.
+
+`AudioInterruptionPolicy` réserve la reprise d’une piste qui jouait avant un
+LOSS_TRANSIENT ou LOSS_TRANSIENT_CAN_DUCK. Garder la demande de focus et le service
+foreground pendant cette pause, sans conserver le verrou CPU après sauvegarde.
+AudioAttributes SPEECH et setWillPauseWhenDucked(true) demandent une pause des
+paroles plutôt qu’une baisse automatique du volume. Au retour GAIN, réacquérir
+brièvement le CPU et reprendre par le canal partagé focusResume. Pas de permission
+téléphone/Bluetooth ni de nouvelle dépendance ajoutée.
+
+Le jeton et la révision de source sont revalidés juste avant la pause/reprise
+native. Pause/arrêt manuel, seek, changement de source, déconnexion casque, erreur
+et perte permanente annulent l’intention. Une piste déjà en pause ne repart pas.
+Une nouvelle perte après GAIN invalide la reprise déjà mise en file. Les notifications
+imbriquées conservent l’intention initiale ; GAIN avant l’acquittement de pause reste
+ordonné par la file Dart. Une reprise refusée ne change pas l’état courant.
+
+La reprise conserve épisode, position, favori et suivi : aucun open/reset à zéro,
+polling relancé et checkpoint au retour. Les pertes définitives restent manuelles ;
+la reprise d’un appel dépend de la restitution du focus par Android. Aucun polling
+de l’état téléphonique ni READ_PHONE_STATE demandé. En cas d’erreur, les garde-fous
+existants annulent la reprise et suspendent la lecture.
+
+
+Vérifications du correctif : test JVM de la politique native réussi (gain, pause
+préalable, notifications imbriquées, gain précoce, annulation et source différente),
+16 tests ciblés puis **89 tests Flutter complets réussis**, formatage et analyse
+`--fatal-infos` conformes. Le test JVM est ajouté à la CI Android après le JDK.
+APK debug ARM64 compilé et inspecté, aucun MP3, seed inchangé ; SHA-256 local
+`bdd7b756d2f24b01cd7163adef8575662c447959d78c22b0aab3d1736f70f3d7`.
+Aucun mineur réservé localement, package ou permission ajouté, aucun workflow
+GitHub déclenché. Les notifications/appels et la reprise écran éteint restent
+à retester sur le téléphone : les callbacks Android réels ne sont pas qualifiés
+par ces tests simulés/JVM. Le Lot 6D n’est pas lancé.

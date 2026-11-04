@@ -355,6 +355,22 @@ configuré ne déclenche pas cet avertissement.
   Ne pas réintroduire suspend() dans les transitions Android hidden/paused/detached.
   Retour racine avec piste chargée met la tâche en arrière-plan ; fermeture explicite
   après sauvegarde arrête le service et détruit le moteur conservé.
-  Pause/focus/casque exigent une reprise explicite. Verrou CPU libéré après checkpoint,
+  Pause manuelle/casque/perte définitive de focus exigent une reprise explicite.
+  Depuis le 4 novembre, une perte temporaire reprend au GAIN si la piste était en
+  lecture, sans choix manuel intervenu. Verrou CPU libéré après checkpoint,
   aucun redémarrage automatique après force-stop/kill. Recette physique obligatoire
   pour verrouillage, notifications, interruptions, batterie et retour par notification.
+
+- Correctif du 4 novembre : AudioInterruptionPolicy réserve une reprise par jeton
+  et révision de source pour LOSS_TRANSIENT/CAN_DUCK ; conserver AudioFocusRequest
+  et le foreground pendant cette pause, libérer le verrou CPU après checkpoint.
+  GAIN reprend via Dart/AudioPort avec revalidation native du jeton ; pas de reset.
+  Pause/arrêt/seek/source changée/casque/erreur/perte permanente annulent la réserve.
+  Notifications imbriquées et GAIN précoce ne doivent ni relancer une autre piste
+  ni annuler un choix récent. Test JVM tools/lot6/test_audio_interruptions.sh en CI.
+
+- Révision Windows du 4 novembre : double clic sur une ligne disponible de la
+  bibliothèque = sélection/ouverture de fiche puis playEpisode, mêmes règles
+  qu’Écouter (reprise/réécoute, favori conservé). Simple clic = fiche seulement.
+  Android ne reçoit aucun gestionnaire double clic. Une ligne MP3 absente ne
+  déclenche ni lecture ni téléchargement ; les gardes d’occupation restent partagées.

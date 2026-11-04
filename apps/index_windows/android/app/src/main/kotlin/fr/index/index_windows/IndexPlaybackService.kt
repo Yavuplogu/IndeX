@@ -37,13 +37,30 @@ class IndexPlaybackService : Service() {
     private var destroyed = false
     private var engineClosed = false
     private var pauseEpoch = 0
-    private var sourceRevision = 0
+    private var sourceRevision = 0L
+    private val interruption = AudioInterruptionPolicy()
     private val noisy = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) { interrupt() }
     }
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        // Une interruption exige une reprise explicite : pas de son inattendu après un appel.
-        if (change < 0) handler.post { interrupt() }
+        handler.post {
+            if (destroyed || engineClosed) return@post
+            when (change) {
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT, AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    // Pause des paroles pendant notification/appel, sans abandonner le focus reçu.
+                    val token = interruption.transientLoss(prepared && audioError == null && player?.isPlaying == true, sourceRevision)
+                    if (token != AudioInterruptionPolicy.NONE) control("focusPause", token, pauseFirst = true)
+                }
+                AudioManager.AUDIOFOCUS_GAIN -> {
+                    val token = interruption.gain(sourceRevision)
+                    if (token != AudioInterruptionPolicy.NONE) {
+                        if (!wake.isHeld) wake.acquire()
+                        control("focusResume", token)
+                    }
+                }
+                AudioManager.AUDIOFOCUS_LOSS -> interrupt()
+            }
+        }
     }
     private val pulse = object : Runnable {
         override fun run() {
@@ -130,9 +147,11 @@ class IndexPlaybackService : Service() {
     private fun releaseWake() { if (wake.isHeld) wake.release() }
     private fun idle() {
         handler.removeCallbacks(pulse)
-        abandonFocus()
+        if (!interruption.retainFocus()) {
+            abandonFocus()
+            if (foreground) { stopForeground(STOP_FOREGROUND_DETACH); foreground = false }
+        }
         releaseWake()
-        if (foreground) { stopForeground(STOP_FOREGROUND_DETACH); foreground = false }
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (media.isActive) manager.notify(NOTIFICATION, notification()) else manager.cancel(NOTIFICATION)
     }
@@ -159,11 +178,13 @@ class IndexPlaybackService : Service() {
     }
     private fun control(action: String, value: Long? = null, pauseFirst: Boolean = false, complete: (Boolean) -> Unit = {}) {
         if (engineClosed || destroyed) { complete(false); return }
+        if (action !in listOf("tick", "focusPause", "focusResume")) interruption.cancel()
         pendingControls++
         var completed = false
         val watchdog = Runnable {
             if (!completed && !destroyed) {
                 completed = true; pendingControls--
+                interruption.cancel()
                 pauseNative()
                 audioError = "Commande système non confirmée : lecture suspendue."
                 idle(); publish()
@@ -176,13 +197,13 @@ class IndexPlaybackService : Service() {
             if (destroyed || engineClosed || completed) return@emit
             completed = true; handler.removeCallbacks(watchdog)
             pendingControls--
-            if (!ok) pauseNative()
+            if (!ok) { interruption.cancel(); pauseNative() }
             if (pendingControls == 0 && (!prepared || audioError != null || player?.isPlaying != true)) idle()
             complete(ok)
         }
     }
 
-    private fun interrupt() { control("pause", pauseFirst = true) }
+    private fun interrupt() { interruption.cancel(); control("pause", pauseFirst = true) }
     private fun pauseNative(keepAwake: Boolean = false) {
         try { if (prepared && player?.isPlaying == true) player?.pause() }
         catch (_: Exception) { player?.release(); player = null; prepared = false }
@@ -203,10 +224,28 @@ class IndexPlaybackService : Service() {
         preparing?.error("audio_replaced", "Ouverture remplacée ou libérée.", null); preparing = null
         seeking?.error("audio_replaced", "Déplacement remplacé ou libéré.", null); seeking = null
     }
+    private fun startPlayback(): Boolean {
+        check(prepared && audioError == null) { audioError ?: "Audio non préparé." }
+        // La réécoute passe par open en Dart ; un seek au terme ne doit pas repartir à zéro.
+        if (ended) return false
+        if (player?.isPlaying == true) return true
+        pauseEpoch++
+        ensureForeground() // Android 15 : FGS avant la demande de focus.
+        val granted = if (Build.VERSION.SDK_INT >= 26) {
+            focus = focus ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()).setWillPauseWhenDucked(true).setOnAudioFocusChangeListener(focusListener, handler).build()
+            audio.requestAudioFocus(focus!!)
+        } else { @Suppress("DEPRECATION") audio.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) }
+        check(granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { "Priorité audio refusée." }
+        ended = false; player!!.start(); if (!wake.isHeld) wake.acquire()
+        handler.removeCallbacks(pulse); handler.postDelayed(pulse, 1000)
+        publish()
+        return true
+    }
     fun command(call: MethodCall, result: MethodChannel.Result) {
         try {
             when (call.method) {
                 "open" -> {
+                    interruption.cancel()
                     pauseEpoch++; sourceRevision++
                     val uri = Uri.parse(call.arguments as String)
                     require(uri.scheme == "content") { "URI locale SAF requise." }
@@ -230,6 +269,7 @@ class IndexPlaybackService : Service() {
                         }
                         setOnCompletionListener { completed ->
                             if (completed !== player) return@setOnCompletionListener
+                            interruption.cancel()
                             ended = true; publish()
                             val finished = player
                             val revision = sourceRevision
@@ -240,6 +280,7 @@ class IndexPlaybackService : Service() {
                         }
                         setOnErrorListener { failed, what, extra ->
                             if (failed !== player) return@setOnErrorListener true
+                            interruption.cancel()
                             audioError = "Audio indisponible ($what/$extra)."
                             preparing?.error("audio_prepare", audioError, null); preparing = null
                             seeking?.error("audio_seek", audioError, null); seeking = null
@@ -249,24 +290,25 @@ class IndexPlaybackService : Service() {
                     }
                     return
                 }
-                "play" -> {
-                    check(prepared && audioError == null) { audioError ?: "Audio non préparé." }
-                    // La réécoute passe par open en Dart ; un seek au terme ne doit pas repartir à zéro.
-                    if (ended || player?.isPlaying == true) { result.success(null); return }
-                    pauseEpoch++
-                    ensureForeground() // Android 15 : FGS avant la demande de focus.
-                    val granted = if (Build.VERSION.SDK_INT >= 26) {
-                        focus = focus ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()).setOnAudioFocusChangeListener(focusListener, handler).build()
-                        audio.requestAudioFocus(focus!!)
-                    } else { @Suppress("DEPRECATION") audio.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) }
-                    check(granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { "Priorité audio refusée." }
-                    ended = false; player!!.start(); if (!wake.isHeld) wake.acquire()
-                    handler.removeCallbacks(pulse); handler.postDelayed(pulse, 1000)
-                    publish()
+                "play" -> { interruption.cancel(); startPlayback() }
+                "pauseTransient" -> {
+                    val token = (call.arguments as Number).toLong()
+                    val valid = interruption.owns(token, sourceRevision)
+                    if (valid) pauseNative()
+                    result.success(valid); return
+                }
+                "resumeAfterInterruption" -> {
+                    val token = (call.arguments as Number).toLong()
+                    if (!interruption.canResume(token, sourceRevision)) { result.success(false); return }
+                    val resumed = startPlayback()
+                    interruption.resumed(token, sourceRevision)
+                    if (!resumed) idle()
+                    result.success(resumed); return
                 }
                 "checkpointed" -> { if (pendingControls == 0 && (!prepared || audioError != null || player?.isPlaying != true)) idle() }
-                "pause" -> pauseNative()
+                "pause" -> { interruption.cancel(); pauseNative() }
                 "seek" -> {
+                    interruption.cancel()
                     sourceRevision++
                     check(prepared && audioError == null) { audioError ?: "Audio non préparé." }
                     val value = (call.arguments as Number).toLong(); require(value in 0..Int.MAX_VALUE.toLong())
@@ -281,6 +323,7 @@ class IndexPlaybackService : Service() {
                     result.success(mapOf("position" to player!!.currentPosition, "duration" to player!!.duration, "playing" to player!!.isPlaying, "ended" to ended)); return
                 }
                 "release" -> {
+                    interruption.cancel()
                     pauseEpoch++; sourceRevision++
                     destroyPlayer(); media.isActive = false
                     stopForeground(STOP_FOREGROUND_REMOVE); foreground = false
@@ -291,6 +334,7 @@ class IndexPlaybackService : Service() {
             }
             result.success(null)
         } catch (e: Exception) {
+            interruption.cancel()
             audioError = e.toString()
             // Échec fermé : aucune lecture après une commande native refusée.
             try { pauseNative() } catch (_: Exception) { releaseWake() }
@@ -300,6 +344,7 @@ class IndexPlaybackService : Service() {
         }
     }
     private fun destroyPlayer() {
+        interruption.cancel()
         handler.removeCallbacks(pulse)
         cancelPending(); player?.release(); player = null; prepared = false; ended = false
         abandonFocus(); releaseWake()

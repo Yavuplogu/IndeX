@@ -26,7 +26,12 @@ abstract interface class AudioPort {
   Future<void> dispose();
 }
 
-final class NativeAudioPort implements AudioPort {
+abstract interface class InterruptionAudioPort implements AudioPort {
+  Future<bool> pauseForInterruption(int token);
+  Future<bool> resumeAfterInterruption(int token);
+}
+
+final class NativeAudioPort implements InterruptionAudioPort {
   const NativeAudioPort();
   static const channel = MethodChannel('index/audio');
   @override
@@ -46,6 +51,13 @@ final class NativeAudioPort implements AudioPort {
   Future<void> play() => channel.invokeMethod<void>('play');
   @override
   Future<void> pause() => channel.invokeMethod<void>('pause');
+  @override
+  Future<bool> pauseForInterruption(int token) async =>
+      await channel.invokeMethod<bool>('pauseTransient', token) ?? false;
+  @override
+  Future<bool> resumeAfterInterruption(int token) async =>
+      await channel.invokeMethod<bool>('resumeAfterInterruption', token) ??
+      false;
   @override
   Future<void> seek(int milliseconds) => channel
       .invokeMethod<void>('seek', milliseconds)
@@ -335,6 +347,40 @@ final class Playback extends ChangeNotifier {
       flush('paused');
     });
   }
+
+  /// Le jeton natif empêche une interruption ancienne d'annuler un choix récent.
+  Future<void> pauseForInterruption(int token) => _command(() async {
+    if (episodeId == null) return;
+    await _waitPoll();
+    final interrupted = port;
+    if (interrupted is InterruptionAudioPort) {
+      if (!await interrupted.pauseForInterruption(token)) return;
+    } else {
+      await port.pause();
+    }
+    await _capture();
+    flush('paused');
+  });
+
+  Future<void> resumeAfterInterruption(int token) => _command(() async {
+    if (episodeId == null) return;
+    await _waitPoll();
+    final interrupted = port;
+    if (interrupted is InterruptionAudioPort) {
+      if (!await interrupted.resumeAfterInterruption(token)) return;
+    } else if (!state.playing) {
+      await port.play();
+    }
+    await _capture();
+    guard.discontinuity(state.position);
+    flush(state.playing ? 'playing' : 'paused');
+    if (state.playing && autoPoll) {
+      _timer ??= Timer.periodic(
+        const Duration(milliseconds: 250),
+        (_) => unawaited(poll()),
+      );
+    }
+  });
 
   /// Sauvegarde de transition sans suspendre une lecture en arrière-plan.
   Future<void> checkpointCurrent() => _command(() async {

@@ -706,3 +706,20 @@ Révision du 2 novembre 2026, Windows et Android : retirer du cadre « Résultat
 la recherche » la phrase « Correspondances encadrées en rouge, utilisez les boutons
 pour parcourir. » et l’espace correspondant. Conserver le titre et le compteur
 de correspondances, ainsi que les boutons précédent/suivant et les surbrillances.
+
+
+## Interaction Windows du 4 novembre 2026 — double clic pour écouter
+
+Dans le listing de la vue principale Windows, un double clic sur un épisode dont
+le MP3 est disponible ouvre sa fiche et lance sa lecture avec les mêmes règles
+que le bouton Écouter : reprise si activée, réécoute d’un épisode terminé sans
+perte du favori. Changer ainsi d’épisode remplace la lecture en cours ; le simple
+clic continue de sélectionner la fiche sans changer le lecteur. Critères et tri
+restent conservés. Une ligne dont le MP3 est absent ne déclenche pas de lecture
+ni de téléchargement. Les protections busy/accès fichier existantes s’appliquent.
+Android conserve le simple appui et l’ouverture de sa fiche sans double clic.
+
+Validation : 12 tests UI ciblés réussis (interaction souris Windows, reprise,
+favori, MP3 absent, non-régression Android et suite widget existante), analyse
+Flutter sans anomalie. Pas de nouvelle compilation/qualification native Windows
+revendiquée depuis Linux ; les règles de lecteur existantes sont réutilisées.

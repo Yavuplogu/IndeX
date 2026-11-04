@@ -511,6 +511,10 @@ final class AppModel extends ChangeNotifier {
         if (!playback.state.playing || playback.state.ended) await playToggle();
       case 'pause':
         await playback.pause();
+      case 'focusPause':
+        await playback.pauseForInterruption(position!);
+      case 'focusResume':
+        await playback.resumeAfterInterruption(position!);
       case 'stop':
         await stopAudio();
       case 'next':

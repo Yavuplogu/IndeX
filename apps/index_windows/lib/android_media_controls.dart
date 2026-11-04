@@ -40,6 +40,8 @@ final class AndroidMediaControls {
       'seek',
       'tick',
       'backendLost',
+      'focusPause',
+      'focusResume',
     };
     if (!supported.contains(action))
       throw ArgumentError('Commande média inconnue.');
@@ -47,6 +49,10 @@ final class AndroidMediaControls {
     if (action == 'seek' &&
         (position == null || position < 0 || position > 2147483647)) {
       throw ArgumentError('Position média invalide.');
+    }
+    if ((action == 'focusPause' || action == 'focusResume') &&
+        (position == null || position <= 0)) {
+      throw ArgumentError('Jeton de reprise invalide.');
     }
     final task = _pending.then((_) async {
       if (_disposed) throw StateError('Commandes média fermées.');

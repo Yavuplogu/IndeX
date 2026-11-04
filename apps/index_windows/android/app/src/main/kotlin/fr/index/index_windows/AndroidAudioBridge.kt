@@ -24,6 +24,7 @@ object AndroidAudioBridge {
                         call.method == "diagnostics" -> result.success(current?.diagnostics() ?: mapOf("running" to false))
                         call.method == "metadata" -> { current?.metadata(call.arguments as Map<*, *>); result.success(null) }
                         current != null -> current.command(call, result)
+                        call.method == "pauseTransient" || call.method == "resumeAfterInterruption" -> result.success(false)
                         call.method == "release" || call.method == "pause" || call.method == "checkpointed" -> result.success(null)
                         call.method == "open" -> {
                             pending.add(call to result)

@@ -25,6 +25,8 @@ jobs:
           java-version: '21'
       - name: Vérifier les publications privées sans écrasement
         run: bash tools/lot6/test_private_moves.sh
+      - name: Vérifier les reprises après interruption audio
+        run: bash tools/lot6/test_audio_interruptions.sh
       # Clé de diagnostic uniquement, pour conserver les profils entre APK de test.
       # La clé de distribution définitive sera indépendante et gérée au Lot 6D.
       - name: Réutiliser la signature de diagnostic Android
