@@ -723,3 +723,25 @@ Validation : 12 tests UI ciblés réussis (interaction souris Windows, reprise,
 favori, MP3 absent, non-régression Android et suite widget existante), analyse
 Flutter sans anomalie. Pas de nouvelle compilation/qualification native Windows
 revendiquée depuis Linux ; les règles de lecteur existantes sont réutilisées.
+
+
+## Correction du 4 novembre — sélection Windows immédiate
+
+L’ajout de InkWell.onDoubleTap retardait onTap sur les seuls épisodes disponibles
+(environ 300 ms d’attente du reconnaisseur Flutter avant le rendu de la fiche).
+Supprimer cette concurrence : le premier clic validé sélectionne et affiche la
+fiche dès le prochain rendu, sans attendre la fenêtre de double clic. Reconnaître
+la paire de clics séparément ; seule l’action Écouter attend le second clic.
+
+La paire exige le même épisode, des positions proches et le délai Flutter existant.
+Un glissement annule le candidat ; deux lignes différentes ou deux clics espacés
+n’activent pas le lecteur. L’activation clavier/accessibilité sans pointer-up reste
+une sélection. Le simple clic sur un épisode, même pendant une écoute, conserve
+le lecteur en cours. Android n’utilise pas cette détection ; MP3 absents sans lecture
+ni téléchargement, reprise/favoris et critères conservés.
+
+Vérification : 18 tests UI ciblés réussis, analyse Flutter sans anomalie. Le test
+Windows exige sélection et fiche après un seul pump, avant toute avance du délai,
+puis vérifie double clic, clics espacés, alternance de lignes, glissement et reprise.
+La recette native Windows du nouveau build reste à réaliser ; aucun binaire Windows
+compilé depuis Linux et aucun changement de moteur audio ou de données utilisateur.

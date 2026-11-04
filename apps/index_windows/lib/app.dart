@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout, kDoubleTapSlop;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:index_core/index_core.dart';
@@ -662,6 +663,41 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Timer? debounce;
+  Timer? _doubleClickTimer;
+  String? _lastClickEpisode;
+  Offset? _lastClickPosition;
+  (String, Offset)? _releasedTap;
+
+  void _clearDoubleClick() {
+    _doubleClickTimer?.cancel();
+    _doubleClickTimer = null;
+    _lastClickEpisode = null;
+    _lastClickPosition = null;
+  }
+
+  void _activateOnDoubleClick(
+    String id,
+    Offset? position,
+    VoidCallback? activate,
+  ) {
+    if (position == null || activate == null) {
+      _clearDoubleClick();
+      return;
+    }
+    final doubleClick =
+        _lastClickEpisode == id &&
+        _doubleClickTimer?.isActive == true &&
+        (position - _lastClickPosition!).distance <= kDoubleTapSlop;
+    _clearDoubleClick();
+    if (doubleClick) {
+      activate();
+    } else {
+      _lastClickEpisode = id;
+      _lastClickPosition = position;
+      _doubleClickTimer = Timer(kDoubleTapTimeout, _clearDoubleClick);
+    }
+  }
+
   final listFocus = FocusNode(debugLabel: 'Liste des épisodes');
   final listScroll = ScrollController();
   KeyEventResult navigateList(FocusNode node, KeyEvent event) {
@@ -693,6 +729,7 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   void dispose() {
     debounce?.cancel();
+    _clearDoubleClick();
     search.dispose();
     listFocus.dispose();
     listScroll.dispose();
@@ -709,6 +746,7 @@ class _LibraryPageState extends State<LibraryPage> {
     builder: (context) => IndexAboutDialog(model: m),
   );
   void section(bool files, bool favorites) {
+    _clearDoubleClick();
     m.filesView = files;
     m.favoritesOnly = favorites;
     m.reload();
@@ -1275,13 +1313,33 @@ class _LibraryPageState extends State<LibraryPage> {
                       child: InkWell(
                         mouseCursor: SystemMouseCursors.click,
                         key: ValueKey('episode-row-${e.id}'),
-                        onTap: openEpisode,
-                        onDoubleTap: !m.android && e.audioAvailable
-                            ? () {
-                                openEpisode();
-                                unawaited(m.playEpisode(e));
-                              }
-                            : null,
+                        // Un seul reconnaisseur de tap : ne pas attendre de savoir
+                        // si le simple clic deviendra un double clic avant la sélection.
+                        onTapUp: m.android
+                            ? null
+                            : (details) {
+                                _releasedTap = (e.id, details.globalPosition);
+                              },
+                        onTapCancel: m.android
+                            ? null
+                            : () {
+                                _releasedTap = null;
+                                _clearDoubleClick();
+                              },
+                        onTap: () {
+                          final released = _releasedTap;
+                          _releasedTap = null;
+                          openEpisode();
+                          if (!m.android) {
+                            _activateOnDoubleClick(
+                              e.id,
+                              released?.$1 == e.id ? released!.$2 : null,
+                              e.audioAvailable
+                                  ? () => unawaited(m.playEpisode(e))
+                                  : null,
+                            );
+                          }
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: !missing && !heard && m.progress(e) > 0

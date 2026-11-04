@@ -58,16 +58,49 @@ void main() {
         await tester.pumpAndSettle();
         Finder row(String id) => find.byKey(ValueKey('episode-row-$id'));
         await tester.tap(row(first.id), kind: PointerDeviceKind.mouse);
-        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(model.selected!.id, first.id);
+        expect(find.byKey(ValueKey('detail-${first.id}')), findsOneWidget);
         expect(model.playback.episodeId, isNull);
+        // Cliquer rapidement sur deux lignes ne constitue pas un double clic.
+        await tester.tap(row(second.id), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+        expect(model.selected!.id, second.id);
+        expect(model.playback.episodeId, isNull);
+        await tester.tap(row(first.id), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+        expect(model.playback.episodeId, isNull);
+        // Un glissement annule la paire de clics en cours.
+        final drag = await tester.startGesture(
+          tester.getCenter(row(first.id)),
+          kind: PointerDeviceKind.mouse,
+        );
+        await drag.moveBy(const Offset(0, 40));
+        await drag.up();
+        await tester.pump();
+        await tester.tap(row(first.id), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+        expect(model.playback.episodeId, isNull);
+        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
+        // Deux clics isolés ne doivent pas lancer de lecture.
+        await tester.tap(row(first.id), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+        expect(model.playback.episodeId, isNull);
+        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
         final ids = model.visible.map((e) => e.id).toList();
         await doubleClick(tester, row(second.id));
         expect(model.selected!.id, second.id);
         expect(model.playback.episodeId, second.id);
         expect(model.playback.state.playing, isTrue);
         expect(model.playback.sourceRevision, 1);
+        // Changer de fiche reste immédiat et n'interrompt pas la piste en cours.
+        await tester.tap(row(first.id), kind: PointerDeviceKind.mouse);
+        await tester.pump();
+        expect(model.selected!.id, first.id);
+        expect(find.byKey(ValueKey('detail-${first.id}')), findsOneWidget);
+        expect(model.playback.episodeId, second.id);
+        expect(model.playback.sourceRevision, 1);
+        await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 20));
         await doubleClick(tester, row(first.id));
         expect(model.selected!.id, first.id);
         expect(model.playback.episodeId, first.id);

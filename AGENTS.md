@@ -380,3 +380,10 @@ configuré ne déclenche pas cet avertissement.
   débordements de quelques fractions de pixel ; texte complet dans le menu.
   Le test Android simulé est aussi exécuté sur Windows : vérifier les exceptions
   avant démontage pour conserver le diagnostic du widget d’origine.
+
+- Sélection Windows du 4 novembre : afficher fiche/sélection dès le premier tap
+  validé. Ne pas associer InkWell.onTap et onDoubleTap sur les lignes : le
+  reconnaisseur Flutter retarde le simple clic. Détecter la paire dans les clics
+  validés, même épisode/position proche/délai court, et réserver l’action du second
+  clic à playEpisode. Annuler la paire sur glissement, changement de ligne, clavier
+  ou fin de fenêtre ; ne pas déclencher sur pointer-down. Android reste inchangé.
