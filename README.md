@@ -11,15 +11,15 @@ Projet d'application documentaire et de lecture locale pour Windows et Android,
 en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
-**État : Lot 6D lancé — préparation de la distribution Android.**
+**État : Lot 6D validé fonctionnellement par l’utilisateur en 0.7.01 ; distribution à publier sur demande.**
 Le dernier 6C est validé par l’utilisateur le 4 novembre.
 Depuis le 5 novembre, Android utilise l’identifiant définitif `fr.index.app` :
 installer la nouvelle application puis transférer le suivi par JSON et rechoisir
 le dossier MP3 ; sauvegarder les MP3 privés avant de retirer l’ancienne. Le 6D ajoute un mode
 release AOT signé, ses contrôles et son dossier de recette, sans publication.
 [Bilan 6D](docs/lot6/bilan-6D.md), [guide de signature/distribution](docs/lot6/DISTRIBUTION_ANDROID.md)
-et [fiche de recette](docs/lot6/RECETTE_6D.md). Une clé durable sauvegardée et une
-recette du candidat signé restent nécessaires avant diffusion qualifiée.
+et [fiche de recette](docs/lot6/RECETTE_6D.md). La recette et la mise à jour signée de 0.7.01 sont validées sur les appareils
+consignés. La clé durable doit être conservée et les versions suivantes retestées.
 Téléchargement SAF et transfert JSON disponibles ; renommage réservé à Windows.
 L’emplacement « IndeX · MP3 » est retiré à partir de 0.7.01, sans accès
 de récupération. Les MP3 utilisent le dossier visible choisi par l’utilisateur. Windows reste validé ; sa Release GitHub reste distincte.
@@ -178,3 +178,16 @@ Le fichier reçu est contrôlé puis associé à la fiche, sans écraser une cib
 Les autres URL documentaires ne sont pas ouvertes automatiquement. Les MP3 déjà présents sont
 des fixtures existantes : ne pas en ajouter, dupliquer ou supprimer pendant l'audit.
 Seul le SQLite documentaire sera embarqué dans les futures distributions.
+
+
+## Licence du code et validation Android
+
+Le code original d’IndeX est sous **GNU GPL v3 uniquement** (`GPL-3.0-only`) :
+[texte intégral](LICENSE) et [périmètre/exclusions](LICENSE_SCOPE.md).
+Aucune licence n’est attribuée ici aux MP3, à la documentation ou aux contenus
+documentaires du catalogue. Les éléments tiers conservent leurs propres licences.
+
+L’utilisateur valide **0.7.01**, y compris la mise à jour signée, sur Pixel 9/10
+et OnePlus 15 sous Android 17, et Galaxy S21 sous Android 14. Voir la
+[recette consignée](docs/lot6/RECETTE_6D.md). La publication GitHub reste distincte.
+Le bouton GitHub d’À propos ouvre le dépôt dans le navigateur uniquement sur clic.

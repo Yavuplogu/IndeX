@@ -26,6 +26,10 @@ class MainActivity : FlutterActivity() {
             try {
                 if (documents.handle(call, result)) return@setMethodCallHandler
                 when (call.method) {
+                    "openGithub" -> {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Yavuplogu/IndeX")))
+                        result.success(null)
+                    }
                     "backgroundTask" -> { moveTaskToBack(true); result.success(null) }
                     "closeApplication" -> { IndexEngine.closing = true; result.success(null); stopService(Intent(this, IndexPlaybackService::class.java)); finishAndRemoveTask() }
                     "privateDirectory" -> result.success(File(filesDir, "user").apply { mkdirs() }.absolutePath)

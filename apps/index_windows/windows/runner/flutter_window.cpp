@@ -80,6 +80,17 @@ bool FlutterWindow::OnCreate() {
           }
           return;
         }
+        if (call.method_name() == "openGithub") {
+          const auto opened = reinterpret_cast<INT_PTR>(ShellExecuteW(
+              GetHandle(), L"open", L"https://github.com/Yavuplogu/IndeX",
+              nullptr, nullptr, SW_SHOWNORMAL));
+          if (opened <= 32) {
+            result->Error("open_failed", "Impossible d'ouvrir le lien GitHub.");
+          } else {
+            result->Success();
+          }
+          return;
+        }
         if (call.method_name() != "openDirectory") {
           result->NotImplemented();
           return;

@@ -119,3 +119,13 @@ Le dernier 6C est validé par l’utilisateur le 4 novembre 2026 ; le 6D est lan
 La préparation release est décrite dans [le bilan 6D](bilan-6D.md), avec
 [signature/distribution](DISTRIBUTION_ANDROID.md) et [recette du candidat](RECETTE_6D.md). Voir [l’audit 6A](audit-6A.md)
 et [la recette](RECETTE_ANDROID.md).
+
+
+## Clôture fonctionnelle 6D et licence
+
+L’utilisateur valide 0.7.01 et la mise à jour signée sur Pixel 9/10 et OnePlus 15
+(Android 17) ainsi que Samsung S21 (Android 14). Voir RECETTE_6D.md pour le périmètre
+exact de cette attestation. La publication reste une action distincte.
+Code original sous GPL-3.0-only, documentation/MP3/catalogue hors champ ; voir
+LICENSE et LICENSE_SCOPE.md. Les prochains correctifs poursuivent la série 0.7
+sans majorer de nouveau ni passer en finale automatiquement.

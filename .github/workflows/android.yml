@@ -107,6 +107,9 @@ jobs:
           python - <<'PYTHON'
           import gzip, json, os, pathlib, zipfile
           dist = pathlib.Path('dist')
+          import shutil
+          shutil.copyfile('LICENSE', dist / 'LICENSE')
+          shutil.copyfile('LICENSE_SCOPE.md', dist / 'LICENSE_SCOPE.md')
           apks = list(dist.glob('*.apk'))
           assert len(apks) == 1, 'Un seul APK attendu par artefact'
           with zipfile.ZipFile(apks[0]) as archive:

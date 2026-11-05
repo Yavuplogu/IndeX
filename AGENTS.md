@@ -1,3 +1,13 @@
+# Licence et recette utilisateur
+
+- Code original sous GNU GPL v3 uniquement (GPL-3.0-only), LICENSE et LICENSE_SCOPE.md.
+  MP3, documentation et contenus du catalogue hors champ ; licences tierces intactes.
+- Recette 0.7.01 et mise à jour signée validées par l’utilisateur : Pixel 9/10 et
+  OnePlus 15 sous Android 17, Galaxy S21 sous Android 14. Aucune publication
+  autorisée par cette validation ; distinguer les changements du build suivant.
+- Lien GitHub natif et explicite vers https://github.com/Yavuplogu/IndeX ; Android
+  version sous le logo, lien à droite, aucune dépendance nouvelle.
+
 # Décision actuelle du 5 novembre 2026
 
 - Série 0.7 autorisée explicitement, premier build public 0.7.01 ; conserver le

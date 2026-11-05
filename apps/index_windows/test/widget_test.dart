@@ -24,6 +24,17 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      final githubCalls = <MethodCall>[];
+      const githubChannel = MethodChannel('index/local_folders');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(githubChannel, (call) async {
+            githubCalls.add(call);
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(githubChannel, null),
+      );
       final contactCalls = <MethodCall>[];
       const contactChannel = SystemChannels.platform;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -100,12 +111,9 @@ void main() {
             expect(material.backgroundColor, EditorialColors(dark).panel);
             await tester.tap(find.byKey(const ValueKey('about-github')));
             await tester.pumpAndSettle();
-            expect(
-              find.text(
-                'Lien GitHub de démonstration : aucun site n’est ouvert.',
-              ),
-              findsOneWidget,
-            );
+            expect(githubCalls.last.method, 'openGithub');
+            expect(githubCalls.last.arguments, isNull);
+            expect(find.text('Ouverture du lien impossible'), findsNothing);
             final contact = find.byKey(const ValueKey('about-contact'));
             await tester.ensureVisible(contact);
             await tester.pumpAndSettle();

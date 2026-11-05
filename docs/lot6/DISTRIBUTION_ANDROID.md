@@ -1,3 +1,8 @@
+> Recette 0.7.01 et mise à jour signée validées par l’utilisateur sur Pixel 9/10,
+> OnePlus 15 (Android 17) et Galaxy S21 (Android 14). Aucune publication automatique.
+> Le bouton GitHub ouvre le navigateur uniquement sur clic ; le programme ne
+> contacte pas GitHub au démarrage ou pour vérifier des mises à jour.
+
 > Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
 > « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
 > Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
@@ -139,8 +144,9 @@ figurent dans `docs/lot5/dependances.json`, les lockfiles et les notices Flutter
 `NOTICES.Z` de l’APK. L’icône GitHub Octicons conserve sa notice MIT. Les API Android
 MediaPlayer/MediaSession/SAF sont fournies par le système, pas redistribuées.
 Le contrôle vérifie la présence des notices, pas une certification juridique des
-contenus documentaires ou MP3 externes. Le dépôt n’a pas de licence globale à sa
-racine ; aucune licence de réutilisation du code n’est inventée par ce lot.
+contenus documentaires ou MP3 externes. Le code original est désormais sous GNU GPL v3 uniquement (GPL-3.0-only) :
+voir LICENSE et LICENSE_SCOPE.md à la racine. MP3, documentation et contenus
+documentaires sont hors de cette licence du code ; notices tierces inchangées.
 
 Permissions fusionnées autorisées :
 

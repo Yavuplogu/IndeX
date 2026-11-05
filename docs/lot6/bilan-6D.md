@@ -1,3 +1,31 @@
+## Clôture fonctionnelle utilisateur — IndeX 0.7.01
+
+L’utilisateur confirme tous les points de recette applicables et la mise à jour
+signée. Appareils déclarés fonctionnels : Pixel 9 et Pixel 10 / Android 17,
+OnePlus 15 / Android 17, Samsung Galaxy S21 / Android 14. Voir RECETTE_6D.md.
+Résultats utilisateur, aucun essai matériel réalisé depuis Linux. Les SHA/run et
+relevés détaillés n’ont pas été fournis. La publication reste distincte.
+
+Choix explicite de la GNU GPL v3 pour le code original : `GPL-3.0-only`, texte
+LICENSE inchangé, périmètre LICENSE_SCOPE.md. Aucun octroi de licence aux MP3,
+à la documentation et au catalogue documentaire ; notices tierces conservées.
+Les distributions Android et Windows incluent licence et indication du périmètre.
+
+Ajustements suivants : version sous le logo Android, bouton GitHub à droite ;
+Windows garde son en-tête. Sur les deux plateformes, ouverture native du navigateur
+vers https://github.com/Yavuplogu/IndeX au clic, erreur sélectionnable si échec,
+aucune nouvelle dépendance et aucun accès réseau automatique ajouté.
+
+Vérifications des ajustements À propos/licence : analyse Flutter sans problème,
+12 tests widgets ciblés réussis (Android portrait/paysage, thèmes, positions,
+canaux d’ouverture natifs et erreur copiable ; interface Windows simulée).
+APK Android diagnostic compilé et contrôlé, SHA-256
+`6b8808e5fffcc6635ee196d659e1d5cb22b5f5da2e5c032d772c377c07dfd759`.
+Packaging Android réel avec licence/périmètre/notices/provenance vérifié sur cet
+APK. Texte GPL v3 intégral comparé au texte fourni par le système, YAML et Python
+de packaging valides, script PowerShell parsé sans erreur. Aucun essai matériel
+supplémentaire, aucune compilation native Windows depuis Linux, aucune publication.
+
 ## Actualisation du 5 novembre 2026 — 0.7.01
 
 Retrait demandé du fournisseur « IndeX · MP3 » du manifeste, du bouton d’option,

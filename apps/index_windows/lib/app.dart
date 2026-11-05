@@ -2343,6 +2343,32 @@ class IndexAboutDialog extends StatelessWidget {
   const IndexAboutDialog({super.key, required this.model});
   final AppModel model;
 
+  Future<void> openGitHub(BuildContext context) async {
+    try {
+      await (model.android
+              ? AppModel.androidChannel
+              : const MethodChannel('index/local_folders'))
+          .invokeMethod<void>('openGithub');
+    } catch (error) {
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Ouverture du lien impossible'),
+          content: SelectableText(
+            'https://github.com/Yavuplogu/IndeX\n\n$error',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   Future<void> contact(BuildContext context) async {
     try {
       await Clipboard.setData(
@@ -2432,11 +2458,42 @@ class IndexAboutDialog extends StatelessWidget {
                           c,
                           heading: Row(
                             key: const ValueKey('about-links-version'),
+                            crossAxisAlignment: model.android
+                                ? CrossAxisAlignment.start
+                                : CrossAxisAlignment.center,
                             children: [
-                              const Brand(
-                                key: ValueKey('about-brand'),
-                                showSubtitle: false,
-                              ),
+                              if (model.android)
+                                const Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Brand(
+                                          key: ValueKey('about-brand'),
+                                          showSubtitle: false,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Version : $applicationVersion',
+                                          key: ValueKey('about-version'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                const Brand(
+                                  key: ValueKey('about-brand'),
+                                  showSubtitle: false,
+                                ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: FittedBox(
@@ -2445,11 +2502,13 @@ class IndexAboutDialog extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
-                                        'Version : $applicationVersion',
-                                        key: ValueKey('about-version'),
-                                      ),
-                                      const SizedBox(width: 12),
+                                      if (!model.android) ...[
+                                        const Text(
+                                          'Version : $applicationVersion',
+                                          key: ValueKey('about-version'),
+                                        ),
+                                        const SizedBox(width: 12),
+                                      ],
                                       OutlinedButton.icon(
                                         key: const ValueKey('about-github'),
                                         icon: Image.asset(
@@ -2465,14 +2524,7 @@ class IndexAboutDialog extends StatelessWidget {
                                           child: Text('Voir sur GitHub'),
                                         ),
                                         onPressed: () =>
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      'Lien GitHub de démonstration : aucun site n’est ouvert.',
-                                                    ),
-                                                  ),
-                                                ),
+                                            unawaited(openGitHub(context)),
                                       ),
                                     ],
                                   ),

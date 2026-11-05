@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:index_windows/app.dart';
 import 'package:index_windows/app_model.dart';
@@ -9,6 +10,74 @@ import 'package:index_windows/document_text.dart';
 import 'support/app_harness.dart';
 
 void main() {
+  testWidgets('Android À propos : version sous le logo et ouverture GitHub', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final root = Directory.systemTemp.createTempSync('index-about-android-');
+    final model = AppModel(portableDirectory: root, android: true);
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(AppModel.androidChannel, (call) async {
+          calls.add(call);
+          if (call.method == 'openGithub' && calls.length == 2) {
+            throw PlatformException(
+              code: 'no_browser',
+              message: 'Navigateur absent',
+            );
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(AppModel.androidChannel, null),
+    );
+    for (final size in [const Size(390, 844), const Size(844, 390)]) {
+      tester.view.physicalSize = size;
+      for (final dark in [false, true]) {
+        model.dark = dark;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: IndexAboutDialog(model: model)),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final brand = find.byKey(const ValueKey('about-brand'));
+        final version = find.byKey(const ValueKey('about-version'));
+        final github = find.byKey(const ValueKey('about-github'));
+        expect(
+          tester.getTopLeft(version).dy,
+          greaterThanOrEqualTo(tester.getBottomLeft(brand).dy),
+        );
+        expect(
+          tester.getTopLeft(github).dx,
+          greaterThan(tester.getTopRight(brand).dx),
+        );
+        expect(
+          tester.getTopLeft(github).dy,
+          lessThan(tester.getBottomLeft(brand).dy),
+        );
+        expect(tester.takeException(), isNull);
+      }
+    }
+    await tester.tap(find.byKey(const ValueKey('about-github')));
+    await tester.pumpAndSettle();
+    expect(calls.single.method, 'openGithub');
+    await tester.tap(find.byKey(const ValueKey('about-github')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ouverture du lien impossible'), findsOneWidget);
+    expect(
+      find.textContaining('https://github.com/Yavuplogu/IndeX'),
+      findsOneWidget,
+    );
+    expect(find.byType(SelectableText), findsWidgets);
+    await tester.pumpWidget(const SizedBox());
+    model.dispose();
+    root.deleteSync(recursive: true);
+  });
+
   testWidgets(
     'Android : données privées proposées, pas de barre Windows, retour sauvegardé',
     (tester) async {

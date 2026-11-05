@@ -43,6 +43,8 @@ try {
   foreach ($required in @('vcruntime140.dll','vcruntime140_1.dll','msvcp140.dll')) {
     if (-not (Test-Path (Join-Path $bundle $required))) { throw "Runtime incomplet : $required" }
   }
+  Copy-Item (Join-Path $projectDir 'LICENSE') (Join-Path $documentation 'LICENSE')
+  Copy-Item (Join-Path $projectDir 'LICENSE_SCOPE.md') (Join-Path $documentation 'LICENSE_SCOPE.md')
   $licences = Join-Path $documentation 'licences'
   New-Item -ItemType Directory -Force $licences | Out-Null
   Copy-Item (Join-Path $app 'assets/icons/LICENSE-octicons.txt') (Join-Path $licences 'primer-octicons-LICENSE.txt')

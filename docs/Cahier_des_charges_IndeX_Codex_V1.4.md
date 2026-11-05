@@ -753,3 +753,19 @@ Les MP3 passent par le dossier choisi ; le profil privé et les exports JSON
 restent distincts et inchangés. Majeur 7 autorisé, premier numéro 0.7.01, mineur
 incrémenté selon le compteur partagé. Code technique 7001 pour préserver les
 mises à jour Android ; conserver la clé de signature et fr.index.app.
+
+
+## Avenant — validation 0.7.01, licence du code et À propos
+
+L’utilisateur confirme la recette et la mise à jour signée en 0.7.01 sur Pixel 9,
+Pixel 10 et OnePlus 15 sous Android 17, ainsi que Samsung S21 sous Android 14.
+Ces résultats sont déclarés par l’utilisateur, sans recette matérielle cloud.
+
+Le code original est placé sous GNU GPL v3 uniquement (GPL-3.0-only), périmètre
+précisé dans LICENSE_SCOPE.md, texte GPL intégral dans LICENSE. Aucun choix de
+licence pour les MP3, la documentation ou les contenus documentaires. Les composants
+tiers conservent leurs licences et notices. Pas de publication automatique.
+
+Android : numéro de version sous le logo dans À propos, lien GitHub à droite du
+logo. Windows : disposition conservée. Les deux boutons ouvrent effectivement
+https://github.com/Yavuplogu/IndeX dans le navigateur sur demande explicite.

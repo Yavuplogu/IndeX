@@ -1,3 +1,8 @@
+> 0.7.01 validée par l’utilisateur sur Pixel 9/10 et OnePlus 15 sous Android 17,
+> Galaxy S21 sous Android 14, y compris la mise à jour signée. Les modifications
+> suivantes de l’en-tête À propos et du bouton GitHub restent à vérifier dans
+> le prochain build. Code original sous GPL-3.0-only ; voir LICENSE_SCOPE.md.
+
 > Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
 > « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
 > Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
