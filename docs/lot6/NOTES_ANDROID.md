@@ -1,3 +1,11 @@
+> Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
+> « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
+> Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
+> dans le sélecteur Android. Aucun fichier existant n’est supprimé par ce retrait.
+> Le stockage privé du profil (favoris, progression, réglages) reste nécessaire
+> et distinct. Les exports JSON utilisent toujours une destination choisie.
+> Identifiant `fr.index.app` et clé durable conservés.
+
 # IndeX Android — notes du Lot 6D
 
 Depuis le 5 novembre 2026, l’identifiant Android définitif est **`fr.index.app`**.
@@ -7,7 +15,7 @@ avant toute suppression de l’ancienne application. La clé de signature déjà
 créée reste utilisable ; ne pas la recréer pour ce changement.
 Le X de l’icône est réduit de 12 %, centré sur le même fond beige adaptatif.
 
-Version bêta de la série **0.6** ; le mineur exact figure dans le nom de l’APK,
+Version bêta de la série **0.7** ; le mineur exact figure dans le nom de l’APK,
 À propos et `release-apk.json`. Android 7+/API 24, appareil ARM64.
 
 - Catalogue intégré de 716 émissions, sans MP3 embarqué ; recherche dans titres,

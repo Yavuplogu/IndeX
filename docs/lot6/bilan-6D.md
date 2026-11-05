@@ -1,3 +1,23 @@
+## Actualisation du 5 novembre 2026 — 0.7.01
+
+Retrait demandé du fournisseur « IndeX · MP3 » du manifeste, du bouton d’option,
+de son message dans Fichiers et de la commande native managedTree. Aucun accès
+historique n’est réservé, aucune suppression de MP3 n’est effectuée. Les fonctions
+internes de publication privée JSON restent nécessaires et ne sont pas exposées
+par un fournisseur. Les téléchargements MP3 acceptent les fournisseurs locaux
+Android, sans l’ancien fournisseur IndeX. Le profil privé reste inchangé.
+
+Série publique 0.7.01 (Flutter 0.7.1), premier code technique 7001 pour conserver
+la progression Android depuis 0.6. Alias, certificat et identifiant inchangés.
+Tests de versionnement couvrant le changement de majeur et l’historique : 8
+réussis ; tests de distribution : 5 réussis, dont refus de l’ancien fournisseur
+s’il réapparaît dans le manifeste. Analyse Flutter et 9 tests ciblés Android (documents, export/import JSON,
+téléchargement et interface) réussis. Compilation release finale réussie avec clé jetable de validation retirée après
+le test : fournisseur absent du manifeste réel, refus des anciennes URI présent
+dans le DEX compilé, versionName 0.7.1 et versionCode 7001 contrôlés. SHA-256 de
+cet APK local de contrôle : `e022a25b746c8ddf4f23e0dba773721663570d6eef5631da4b2fbc2add01275a`.
+Aucune recette physique ou nouvelle construction CI n’est revendiquée.
+
 # Lot 6D — préparation de recette et distribution Android
 
 Lancé le **4 novembre 2026**, après validation utilisateur du dernier 6C.

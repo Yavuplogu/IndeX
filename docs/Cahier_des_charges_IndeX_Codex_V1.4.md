@@ -743,3 +743,13 @@ MP3 ; sauvegarder les MP3 privés avant toute désinstallation de l’ancienne.
 Une clé de signature déjà créée reste utilisable sans modifier ses secrets GitHub.
 Réduire légèrement le X de l’icône Android : réduction de 12 % centrée, fond beige
 adaptatif conservé, replis Android 7/7.1 cohérents. Majeur 0.6 inchangé.
+
+
+## Avenant du 5 novembre 2026 — série 0.7.01 et retrait du dossier MP3 privé
+
+Supprimer l’emplacement Android « IndeX · MP3 », son bouton et son fournisseur,
+sans accès réservé aux anciens utilisateurs ni suppression de leurs fichiers.
+Les MP3 passent par le dossier choisi ; le profil privé et les exports JSON
+restent distincts et inchangés. Majeur 7 autorisé, premier numéro 0.7.01, mineur
+incrémenté selon le compteur partagé. Code technique 7001 pour préserver les
+mises à jour Android ; conserver la clé de signature et fr.index.app.

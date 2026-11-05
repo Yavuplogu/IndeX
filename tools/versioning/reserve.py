@@ -42,6 +42,9 @@ def reserve(ci=False):
     policy = json.loads((ROOT / 'tools/versioning/version.json').read_text())
     if policy['stage'] not in (0, 1) or policy['major'] < 0 or policy['first_minor'] < 0:
         raise ValueError('Politique de version invalide')
+    build_base = policy.get('build_number_base', 0)
+    if type(build_base) is not int or build_base < 0:
+        raise ValueError('Base de build invalide')
     width = policy.get('minor_width', 2)
     if type(width) is not int or width < 1 or width > 6:
         raise ValueError('Largeur de version invalide')
@@ -81,7 +84,7 @@ def reserve(ci=False):
         with os.fdopen(fd, 'w') as out:
             out.write(content)
         os.replace(temporary, state_path)
-    return {'display': f'{key}.{minor:0{width}d}', 'build_name': f'{key}.{minor}', 'build_number': minor + (1 if policy['first_minor'] == 0 else 0)}
+    return {'display': f'{key}.{minor:0{width}d}', 'build_name': f'{key}.{minor}', 'build_number': build_base + minor + (1 if policy['first_minor'] == 0 else 0)}
 
 
 def main():

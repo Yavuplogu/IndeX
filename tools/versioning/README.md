@@ -1,3 +1,16 @@
+# Série actuelle 0.7 — décision du 5 novembre 2026
+
+Premier numéro distribué **0.7.01**, puis 0.7.02, etc., même compteur/verrou
+Windows/Android. Les compteurs 0.5/0.6 ne sont ni supprimés ni remis à zéro.
+Flutter/SemVer reçoit 0.7.1 ; À propos et les artefacts affichent 0.7.01.
+Le champ `build_number_base: 7000` donne un premier build technique **7001**,
+puis 7002. Cela préserve un versionCode supérieur aux APK 0.6 existants
+(compteur distant vérifié : dernier mineur 29) et reste compatible avec les
+champs numériques Windows. La numérotation publique et celle des archives
+restent distinctes de ce code technique. Les constructions locales de contrôle
+ne réservent pas le compteur officiel. Les numéros historiques ci-dessous
+restent une description des anciennes séries.
+
 # Numérotation IndeX
 
 ## Série actuelle — décision du 31 octobre 2026

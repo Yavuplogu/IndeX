@@ -1,7 +1,15 @@
+> Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
+> « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
+> Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
+> dans le sélecteur Android. Aucun fichier existant n’est supprimé par ce retrait.
+> Le stockage privé du profil (favoris, progression, réglages) reste nécessaire
+> et distinct. Les exports JSON utilisent toujours une destination choisie.
+> Identifiant `fr.index.app` et clé durable conservés.
+
 # Distribution Android — Lot 6D
 
 Le dernier 6C est validé par l’utilisateur le 4 novembre 2026. Le 6D prépare un
-APK **release bêta 0.6**, sans publication automatique. Une compilation réussie
+APK **release bêta 0.7**, sans publication automatique. Une compilation réussie
 ne remplace pas la recette de cet APK sur téléphone : voir [la fiche 6D](RECETTE_6D.md).
 
 ## Deux modes dans GitHub Actions
@@ -75,9 +83,9 @@ de confiance. Exécuter la release sur une révision relue et contrôlée du dé
 
 ## Identifiant Android définitif — 5 novembre 2026
 
-`fr.index.app` remplace `fr.index.index_windows`. Le namespace, le service média,
-le fournisseur documentaire `fr.index.app.documents` et les contrôles APK sont
-alignés. Android considère cette version comme une nouvelle application, même
+`fr.index.app` remplace `fr.index.index_windows`. Le namespace, le service média
+et les contrôles APK sont alignés. L’ancien fournisseur `fr.index.app.documents`
+est retiré en 0.7.01, sans accès réservé. Android considère cette version comme une nouvelle application, même
 avec la même signature : elle peut coexister avec l’ancienne, mais ne récupère pas
 son profil privé ni ses autorisations SAF. Exporter le JSON et copier les MP3
 privés hors de l’ancienne application avant toute désinstallation. Installer la
@@ -96,9 +104,8 @@ Un diagnostic récent sous `fr.index.app` ne peut donc normalement pas être mis
 `fr.index.index_windows` restent, eux, une application distincte : la nouvelle
 peut s’installer à côté, sans désinstallation préalable.
 **Avant toute désinstallation**, exporter le suivi JSON vers un dossier extérieur
-à l’application et le vérifier. Copier également ailleurs tous les MP3 du dossier
-privé « IndeX · MP3 » : ils sont supprimés à la désinstallation, comme le profil.
-Les MP3 d’un dossier externe choisi par SAF restent à leur emplacement.
+à l’application et le vérifier. Les MP3 du dossier externe choisi par SAF restent à leur emplacement.
+La version 0.7.01 ne propose aucun accès de récupération à l’ancien dossier MP3 privé.
 
 Après sauvegarde, réinstaller avec la clé durable si nécessaire, rechoisir le
 dossier MP3 puis importer/fusionner le JSON. Les droits SAF devront être redonnés.
@@ -146,8 +153,8 @@ Permissions fusionnées autorisées :
 | `fr.index.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Récepteurs internes AndroidX, permission propre à l’application |
 
 Pas de lecture des appels, permission globale de stockage ou accès contacts.
-Le fournisseur documentaire exposé est protégé par MANAGE_DOCUMENTS ; le service
-média n’est pas exporté. Le profil privé n’est pas exposé par ce fournisseur.
+Le fournisseur documentaire IndeX est retiré du manifeste. Le service média
+n’est pas exporté. Le profil privé n’est pas exposé dans Fichiers Android.
 `allowBackup=false` désactive la sauvegarde Android automatique du profil.
 
 La revue des points d’entrée du code ne relève pas de télémétrie ni de serveur

@@ -1,6 +1,7 @@
 {
   "stage": 0,
-  "major": 6,
-  "first_minor": 0,
-  "minor_width": 2
+  "major": 7,
+  "first_minor": 1,
+  "minor_width": 2,
+  "build_number_base": 7000
 }

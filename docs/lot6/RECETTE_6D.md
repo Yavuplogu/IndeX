@@ -1,3 +1,11 @@
+> Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
+> « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
+> Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
+> dans le sélecteur Android. Aucun fichier existant n’est supprimé par ce retrait.
+> Le stockage privé du profil (favoris, progression, réglages) reste nécessaire
+> et distinct. Les exports JSON utilisent toujours une destination choisie.
+> Identifiant `fr.index.app` et clé durable conservés.
+
 # Fiche de recette Android — Lot 6D
 
 ## État et identification

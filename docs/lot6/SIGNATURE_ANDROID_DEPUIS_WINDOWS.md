@@ -1,3 +1,11 @@
+> Décision du 5 novembre 2026 — série **0.7.01** : l’emplacement privé
+> « IndeX · MP3 » est supprimé, ainsi que son bouton et le fournisseur Android.
+> Aucun accès de récupération n’est conservé. Choisir un dossier MP3 visible
+> dans le sélecteur Android. Aucun fichier existant n’est supprimé par ce retrait.
+> Le stockage privé du profil (favoris, progression, réglages) reste nécessaire
+> et distinct. Les exports JSON utilisent toujours une destination choisie.
+> Identifiant `fr.index.app` et clé durable conservés.
+
 # Signer IndeX Android depuis un PC Windows, puis avec GitHub
 
 Ce guide concerne **la signature de l’application Android**, même si vous créez
@@ -274,7 +282,7 @@ cette référence. Les droits d’administration du dépôt restent importants.
 La construction peut attendre le verrou partagé si un autre build IndeX est déjà
 en cours. Le numéro mineur est réservé automatiquement ; ne pas le choisir à la
 main. Un échec consomme son numéro. **Release est ici le mode de compilation et
-de signature : la version publique reste bêta 0.6.** Ce lancement ne crée pas de
+de signature : la version publique reste bêta 0.7.** Ce lancement ne crée pas de
 GitHub Release publique et ne met pas les sources en ligne à votre place.
 
 Le workflow :

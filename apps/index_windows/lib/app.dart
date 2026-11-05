@@ -2985,36 +2985,6 @@ class ScanPage extends StatelessWidget {
       ),
     ),
   );
-  Future<void> managedFolder(BuildContext context) async {
-    final yes = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Utiliser le dossier MP3 IndeX ?'),
-        content: const SelectableText(
-          'Ce dossier est accessible dans le gestionnaire de fichiers Android sous « IndeX · MP3 » et permet le renommage sûr. Les MP3 existants ne seront pas déplacés. Attention : les MP3 de ce dossier, comme les données privées, sont supprimés si vous désinstallez IndeX ou effacez ses données. Conservez vos originaux ailleurs.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Utiliser ce dossier'),
-          ),
-        ],
-      ),
-    );
-    if (yes != true) return;
-    try {
-      final tree = await model.documentOperation('managedTree', {});
-      if (tree is String) await model.scan(tree);
-    } catch (error) {
-      model.error = 'Dossier géré inaccessible : $error';
-      model.changed();
-    }
-  }
-
   Future<void> associate(
     BuildContext context,
     Map<String, dynamic> decision,
@@ -3176,12 +3146,6 @@ class ScanPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     SelectableText(model.folderLabel),
-                    if (model.android &&
-                        Uri.tryParse(model.mp3Path)?.authority ==
-                            'fr.index.app.documents')
-                      const Text(
-                        'Dossier géré accessible dans Fichiers Android sous IndeX · MP3. Stockage privé : les MP3 de ce dossier sont supprimés à la désinstallation. Conservez vos originaux ailleurs.',
-                      ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 18,
@@ -3212,11 +3176,6 @@ class ScanPage extends StatelessWidget {
                           icon: const Icon(Icons.folder_open),
                           label: const Text('Choisir un dossier MP3'),
                         ),
-                        if (model.android)
-                          OutlinedButton(
-                            onPressed: () => unawaited(managedFolder(context)),
-                            child: const Text('Utiliser le dossier MP3 IndeX'),
-                          ),
                         OutlinedButton(
                           onPressed: model.mp3Path.isEmpty
                               ? null

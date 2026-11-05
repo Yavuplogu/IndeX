@@ -36,8 +36,8 @@ def validate_release_output(badging, xml, permissions, signature, expected_cert,
         raise ValueError('APK debuggable ou testOnly interdit en release.')
     if not re.search(r'android:allowBackup\([^\n]*\)=\(type 0x12\)0x0\b', xml):
         raise ValueError('La sauvegarde automatique Android doit rester désactivée.')
-    if not re.search(r'android:authorities\([^\n]*\)="fr\.index\.app\.documents"', xml):
-        raise ValueError('Fournisseur documentaire Android inattendu.')
+    if 'fr.index.app.documents' in xml or 'IndeXDocumentsProvider' in xml:
+        raise ValueError('Ancien fournisseur MP3 privé interdit dans le manifeste.')
     found = set(re.findall(r"uses-permission: name='([^']+)'", permissions))
     if found != PERMISSIONS:
         raise ValueError(f'Permissions inattendues : ajoutées={sorted(found - PERMISSIONS)}, absentes={sorted(PERMISSIONS - found)}')

@@ -1,6 +1,6 @@
 # IndeX
 
-Version de départ **0.6.0** (bêta, Lot 5 bis) ; numéro mineur réservé automatiquement à
+Série actuelle **0.7.01** (bêta, décision du 5 novembre 2026) ; numéro mineur réservé automatiquement à
 chaque construction Windows distribuable. [Politique et compteur](tools/versioning/README.md).
 
 [Lot 5 : architecture et lecteur](docs/lot5/bilan.md).
@@ -21,8 +21,8 @@ release AOT signé, ses contrôles et son dossier de recette, sans publication.
 et [fiche de recette](docs/lot6/RECETTE_6D.md). Une clé durable sauvegardée et une
 recette du candidat signé restent nécessaires avant diffusion qualifiée.
 Téléchargement SAF et transfert JSON disponibles ; renommage réservé à Windows.
-Le dossier « IndeX · MP3 » est privé et supprimé à la désinstallation : sauvegarder
-les originaux ailleurs. Windows reste validé ; sa Release GitHub reste distincte.
+L’emplacement « IndeX · MP3 » est retiré à partir de 0.7.01, sans accès
+de récupération. Les MP3 utilisent le dossier visible choisi par l’utilisateur. Windows reste validé ; sa Release GitHub reste distincte.
 Workflows manuels uniquement ; **Verification Android Lot 6D → Run workflow** :
 mode diagnostic par défaut, ou release après configuration des secrets.
 Compteur/verrou partagé Windows/Android, aucun déclenchement sur push.

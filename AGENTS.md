@@ -1,3 +1,12 @@
+# Décision actuelle du 5 novembre 2026
+
+- Série 0.7 autorisée explicitement, premier build public 0.7.01 ; conserver le
+  compteur partagé et les anciens historiques. Base technique 7000, premier
+  versionCode/build 7001, pas de retour au code 1 lors du changement de majeur.
+- Emplacement « IndeX · MP3 » et choix managedTree retirés ; fournisseur absent
+  du manifeste, aucun parcours de récupération ni effacement des fichiers.
+  Dossier MP3 utilisateur et export JSON SAF conservés, profil privé inchangé.
+
 # Consignes de travail IndeX
 
 - Répondre et documenter en français. Les demandes explicites de l'utilisateur
@@ -6,7 +15,7 @@
   utilisateur du dernier 6C. Lire docs/lot6/plan.md, bilan-6D.md,
   DISTRIBUTION_ANDROID.md et RECETTE_6D.md. Autorisés : préparation release,
   signature sécurisée hors dépôt, audit et dossier de recette. Publication distincte,
-  jamais automatique ; pas de passage en finale ni changement de majeur 0.6.
+  jamais automatique ; pas de passage en finale ni changement de majeur 0.7.
   Workflow manuel diagnostic/release, compteur/verrou commun Windows. Une release
   exige une clé durable et une empreinte attendue, aucun repli sur la clé debug.
   Ne jamais committer/cacher/exporter la clé release ou ses mots de passe. Les tests

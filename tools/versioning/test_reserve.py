@@ -63,6 +63,16 @@ class Versions(unittest.TestCase):
         self.assertEqual(reserve.reserve()['display'], '0.6.99')
         self.assertEqual(reserve.reserve()['display'], '0.6.100')
 
+    def test_major_seven_preserves_history_and_increases_android_code(self):
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":7,"first_minor":1,"minor_width":2,"build_number_base":7000}')
+        counter = reserve.ROOT / 'dist/build-version-counter.json'
+        counter.parent.mkdir()
+        counter.write_text('{"0.6":60}')
+        self.assertEqual(reserve.reserve(), {'display':'0.7.01', 'build_name':'0.7.1', 'build_number':7001})
+        self.assertEqual(reserve.reserve()['build_number'], 7002)
+        self.assertEqual(json.loads(counter.read_text()), {'0.6':60,'0.7':2})
+
     def init_remote(self):
         remote = Path(self.temporary.name) / 'origin.git'
         subprocess.run(['git', 'init', '--bare', str(remote)], check=True, capture_output=True)

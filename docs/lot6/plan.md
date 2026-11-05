@@ -110,7 +110,7 @@ Un Lot 6 avec quatre étapes suffit : pas besoin de rouvrir les Lots 5 bis/ter n
 de créer une seconde application indépendante. Éviter une seule livraison massive :
 SAF et le cycle de vie audio peuvent imposer des choix structurants. Les étapes
 peuvent préparer certaines tâches en parallèle, mais leurs portes restent ordonnées.
-Le majeur reste 0.6 tant qu’aucune nouvelle instruction explicite ne le change ;
+Le majeur 0.7 est autorisé le 5 novembre 2026, à partir de 0.7.01 ;
 le portage ne vaut pas passage en version finale. Avant un APK distribuable,
 aligner son versionnement sur la politique du projet sans réinitialiser le compteur.
 iOS demeure exclu. Aucun nouveau package runtime ajouté. Les adaptateurs 6B sont

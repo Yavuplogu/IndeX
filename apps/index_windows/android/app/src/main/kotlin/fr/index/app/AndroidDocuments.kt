@@ -38,7 +38,12 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
         if (!remove) all.add(entry)
         writeLedger(all)
     }
-    private fun uri(raw: String): Uri = Uri.parse(raw).also { require(it.scheme == "content") { "URI SAF requise." } }
+    private fun uri(raw: String): Uri = Uri.parse(raw).also {
+        require(it.scheme == "content") { "URI SAF requise." }
+        require(it.authority != IndeXDocumentsProvider.AUTHORITY) {
+            "L’ancien dossier MP3 privé est retiré. Choisissez un dossier MP3 local dans Fichiers."
+        }
+    }
     private fun privateFile(path: String): File {
         val file = File(path)
         require(file.canonicalPath == file.absolutePath && file.path.startsWith(activity.filesDir.canonicalPath + "/")) { "Fichier hors du stockage privé." }
@@ -79,7 +84,7 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
     }
     private fun renameInfo(reference: String, name: String): Map<String, Any> {
         val before = uri(reference)
-        if (before.authority != IndeXDocumentsProvider.AUTHORITY) return mapOf("supported" to false, "reason" to "Ce fournisseur ne garantit pas le renommage sans écrasement. Utilisez le dossier géré « IndeX · MP3 » pour cette fonction.")
+        if (before.authority != IndeXDocumentsProvider.AUTHORITY) return mapOf("supported" to false, "reason" to "Ce fournisseur ne garantit pas le renommage sans écrasement. Le renommage est disponible uniquement sur Windows.")
         IndeXDocumentsProvider.checkedName(name)
         require(name.endsWith(".mp3",true))
         return synchronized(IndeXDocumentsProvider.lock) {
@@ -109,7 +114,7 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
     private fun checkDestination(tree: Uri, name: String) {
         IndeXDocumentsProvider.checkedName(name)
         require(name.endsWith(".mp3",true))
-        require(tree.authority in setOf(IndeXDocumentsProvider.AUTHORITY,"com.android.externalstorage.documents","com.android.providers.downloads.documents")) { "Publication MP3 limitée aux fournisseurs locaux Android ou IndeX. Choisissez un dossier local." }
+        require(tree.authority in setOf("com.android.externalstorage.documents","com.android.providers.downloads.documents")) { "Publication MP3 limitée aux fournisseurs locaux Android. Choisissez un dossier local." }
         if (tree.authority != IndeXDocumentsProvider.AUTHORITY) {
             require(activity.checkUriPermission(tree,android.os.Process.myPid(),android.os.Process.myUid(),Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == android.content.pm.PackageManager.PERMISSION_GRANTED) { "Autorisation d’écriture manquante : resélectionnez ce dossier dans Fichiers et associations." }
         }
@@ -202,7 +207,6 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
     }
     fun handle(call: MethodCall, result: MethodChannel.Result): Boolean {
         when (call.method) {
-            "managedTree" -> { result.success(DocumentsContract.buildTreeDocumentUri(IndeXDocumentsProvider.AUTHORITY,"mp3:").toString()); return true }
             "pickJson" -> {
                 check(picker == null) { "Sélecteur déjà ouvert." }; picker = result
                 activity.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
