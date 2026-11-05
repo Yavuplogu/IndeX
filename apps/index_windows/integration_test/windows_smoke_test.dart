@@ -51,6 +51,39 @@ void main() {
       var model = AppModel(portableDirectory: portable);
       expect(model.playback.port, isA<JustAudioPort>());
       try {
+        // Suppression native uniquement sur nos fichiers temporaires ; aucune fixture touchée.
+        await tester.runAsync(() async {
+          const channel = MethodChannel('index/local_folders');
+          final candidate = File('${root.path}/suppression-épreuve.mp3')
+            ..writeAsStringSync('audio temporaire');
+          Future<Map<Object?, Object?>> inspect(String scope) async =>
+              (await channel.invokeMapMethod<Object?, Object?>(
+                'inspectAudioDeletion',
+                {'scope': scope, 'path': candidate.path},
+              ))!;
+          final before = await inspect(root.path);
+          expect(before['eligible'], true);
+          candidate.writeAsStringSync('contenu remplacé et plus long');
+          await expectLater(
+            channel.invokeMethod<void>('deleteHeardAudio', {
+              'scope': root.path,
+              'path': candidate.path,
+              'signature': before['signature'],
+            }),
+            throwsA(isA<PlatformException>()),
+          );
+          expect(candidate.existsSync(), isTrue);
+          final outside = Directory('${root.path}/autre-dossier')..createSync();
+          final excluded = await inspect(outside.path);
+          expect(excluded['eligible'], false);
+          final fresh = await inspect(root.path);
+          await channel.invokeMethod<void>('deleteHeardAudio', {
+            'scope': root.path,
+            'path': candidate.path,
+            'signature': fresh['signature'],
+          });
+          expect(candidate.existsSync(), isFalse);
+        });
         // Vérifie que le runner expose bien le canal natif de dossiers.
         await tester.runAsync(() async {
           await expectLater(

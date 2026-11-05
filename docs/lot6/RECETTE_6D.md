@@ -85,3 +85,13 @@ release sauvegardée par son propriétaire, un APK contrôlé signé par cette c
 les résultats physiques du candidat et une mise à jour N → N+1. Les essais sans
 appareil restent distincts. La publication GitHub n’est pas déclenchée par cette
 fiche ; elle reste soumise à une demande explicite.
+
+
+## Ajout postérieur à 0.7.01 — suppression des MP3 écoutés
+
+La validation 0.7.01 ne couvre pas cette nouvelle fonction. Tester sur des copies
+sur Windows et Android : Paramètres/Fichiers audio, aperçu/filtres, annulation,
+confirmation définitive, piste chargée exclue (pause comprise), droits retirés,
+fichier/état/association modifiés après aperçu, échecs partiels et interruption.
+Vérifier Écouté/favoris/progressions inchangés et liste actualisée après scan.
+Le journal n’est pas rejoué automatiquement. Détails : ../suppression-mp3-ecoutes.md.

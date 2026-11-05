@@ -205,6 +205,46 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
         }
         writeLedger(remaining)
     }
+    private fun deletionInfo(args: Map<*,*>, deleting: Boolean): Map<String, Any> {
+        val tree = uri(args["tree"] as String)
+        val document = uri(args["reference"] as String)
+        val identity = document.authority + ":" + DocumentsContract.getDocumentId(document)
+        val rootId = DocumentsContract.getTreeDocumentId(tree)
+        val id = DocumentsContract.getDocumentId(document)
+        val sameTree = DocumentsContract.isTreeUri(document) &&
+            DocumentsContract.getTreeDocumentId(document) == rootId
+        val parent = DocumentsContract.buildDocumentUriUsingTree(tree, rootId)
+        val scoped = document.authority == tree.authority && id != rootId &&
+            (sameTree || try { DocumentsContract.isChildDocument(resolver, parent, document) } catch (_: Exception) { false })
+        val columns = arrayOf(Document.COLUMN_DISPLAY_NAME,Document.COLUMN_SIZE,Document.COLUMN_LAST_MODIFIED,
+            Document.COLUMN_FLAGS,Document.COLUMN_MIME_TYPE)
+        val metadata = resolver.query(document,columns,null,null,null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            fun text(column: String) = cursor.getString(cursor.getColumnIndexOrThrow(column)) ?: ""
+            fun number(column: String) = cursor.getLong(cursor.getColumnIndexOrThrow(column))
+            val name = text(Document.COLUMN_DISPLAY_NAME)
+            val flags = number(Document.COLUMN_FLAGS)
+            val writable = activity.checkUriPermission(document,android.os.Process.myPid(),android.os.Process.myUid(),
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val eligible = scoped && writable && number(Document.COLUMN_LAST_MODIFIED) > 0 &&
+                !cursor.isNull(cursor.getColumnIndexOrThrow(Document.COLUMN_SIZE)) && name.endsWith(".mp3",true) &&
+                text(Document.COLUMN_MIME_TYPE) != Document.MIME_TYPE_DIR &&
+                flags and Document.FLAG_SUPPORTS_DELETE.toLong() != 0L
+            val signature = identity + ":" + number(Document.COLUMN_SIZE) + ":" +
+                number(Document.COLUMN_LAST_MODIFIED) + ":" + name
+            mapOf("exists" to true,"eligible" to eligible,"identity" to identity,
+                "signature" to signature,"name" to name,
+                "reason" to if (eligible) "" else "Fichier hors du dossier ou suppression non autorisée par le fournisseur.")
+        } ?: mapOf("exists" to false,"eligible" to false,"identity" to identity,"signature" to "")
+        if (deleting) {
+            require(metadata["eligible"] == true && metadata["signature"] == args["signature"]) {
+                "Fichier modifié, accès retiré ou dossier différent : suppression refusée."
+            }
+            require(DocumentsContract.deleteDocument(resolver,document)) { "Suppression refusée par le fournisseur Android." }
+        }
+        return metadata
+    }
+
     fun handle(call: MethodCall, result: MethodChannel.Result): Boolean {
         when (call.method) {
             "pickJson" -> {
@@ -225,11 +265,13 @@ class AndroidDocuments(private val activity: Activity, private val worker: Execu
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 },714); return true
             }
-            "readDocument", "publishPrivate", "publishDocument", "checkDestination", "publicationState", "ackPublication", "quarantinePublication", "renameInfo", "renameDocument", "fingerprint" -> {
+            "inspectAudioDeletion", "deleteHeardAudio", "readDocument", "publishPrivate", "publishDocument", "checkDestination", "publicationState", "ackPublication", "quarantinePublication", "renameInfo", "renameDocument", "fingerprint" -> {
                 worker.execute {
                     try {
                         val args = call.arguments as Map<*,*>
                         val value: Any? = when(call.method) {
+                            "inspectAudioDeletion" -> deletionInfo(args,false)
+                            "deleteHeardAudio" -> { deletionInfo(args,true); null }
                             "readDocument" -> {
                                 val document = uri(args["reference"] as String)
                                 require(documentName(document).endsWith(".json",true)) { "Fichier JSON requis." }

@@ -201,3 +201,9 @@ Le premier build après migration intégrera les dernières valeurs de l’ancie
 branche et la supprimera dans la même transaction ; aucun compteur remis à zéro.
 Le code compilé reste le commit sélectionné au lancement, consigné séparément du
 commit de compteur. Voir [la procédure et les protections](tools/versioning/README.md).
+
+
+Suppression facultative des MP3 écoutés sur Windows/Android : **Paramètres →
+Fichiers audio**, aperçu filtrable et confirmation explicite, suivi et favoris
+conservés. Voir [le fonctionnement et la recette](docs/suppression-mp3-ecoutes.md).
+Cette fonction est postérieure au build 0.7.01 validé sur téléphone.

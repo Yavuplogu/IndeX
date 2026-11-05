@@ -11,3 +11,5 @@ export 'src/desktop/mp3_rename.dart';
 export 'src/desktop/listening_sync.dart';
 
 export 'src/io/local_audio_paths.dart' show documentReferenceKey;
+
+export 'src/desktop/mp3_delete.dart';

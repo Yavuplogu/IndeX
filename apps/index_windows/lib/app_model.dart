@@ -313,6 +313,96 @@ final class AppModel extends ChangeNotifier {
     if (renamer.unresolved) error = 'Un résultat est à réconcilier. Consultez le journal du renommage ; aucun autre fichier n’a été déplacé.';
   });
 
+  AudioDeletionPlan? deletionPlan;
+  HeardAudioDeletion get _audioDeletion => HeardAudioDeletion(
+    session!.store,
+    inspect: (scope, reference) async {
+      final raw = android
+          ? await documentOperation('inspectAudioDeletion', {
+              'tree': scope,
+              'reference': reference,
+            })
+          : await const MethodChannel('index/local_folders')
+                .invokeMethod<Object?>('inspectAudioDeletion', {
+                  'scope': scope,
+                  'path': File.fromUri(Uri.parse(reference)).path,
+                });
+      return Map<String, Object?>.from(raw as Map);
+    },
+    remove: (scope, reference, signature) async {
+      if (android) {
+        await documentOperation('deleteHeardAudio', {
+          'tree': scope,
+          'reference': reference,
+          'signature': signature,
+        });
+      } else {
+        await const MethodChannel('index/local_folders')
+            .invokeMethod<void>('deleteHeardAudio', {
+              'scope': scope,
+              'path': File.fromUri(Uri.parse(reference)).path,
+              'signature': signature,
+            });
+      }
+    },
+  );
+
+  String get deletionJournal =>
+      session?.setting(HeardAudioDeletion.journalKey) ?? '';
+
+  void _requireAudioDeletionReady() {
+    if (session == null ||
+        Mp3Renamer(session!.store).unresolved ||
+        (android &&
+            (_documentRenamer.unresolved ||
+                session!.setting('android_publication_pending') == 'true'))) {
+      throw StateError(
+        'Réconciliez les opérations interrompues dans Fichiers avant de supprimer des MP3.',
+      );
+    }
+  }
+
+  Future<void> previewAudioDeletion() =>
+      runWork('Vérification des MP3 écoutés…', () async {
+        deletionPlan = null;
+        _requireAudioDeletionReady();
+        if (playback.busy)
+          throw StateError('Attendez la fin du chargement du lecteur.');
+        deletionPlan = await _audioDeletion.preview(
+          mp3Path,
+          inUse: playback.reference,
+        );
+      });
+
+  Future<void> releaseAudioForDeletion() async {
+    await runWork('Sauvegarde et libération de la piste…', () async {
+      await playback.unload();
+      deletionPlan = null;
+    });
+    if (!busy && error.isEmpty) await previewAudioDeletion();
+  }
+
+  Future<void>
+  executeAudioDeletion() => runWork('Suppression des MP3 écoutés…', () async {
+    _requireAudioDeletionReady();
+    final plan = deletionPlan;
+    if (plan == null || plan.planned == 0) return;
+    try {
+      await _audioDeletion.execute(
+        plan,
+        currentScope: mp3Path,
+        inUse: () => playback.reference,
+        onProgress: changed,
+      );
+    } finally {
+      reload();
+      _refreshAssociationReport();
+    }
+    await _scan(mp3Path);
+    message =
+        '${plan.entries.where((e) => e.status == 'deleted').length} MP3 supprimé(s). Suivi et favoris conservés.';
+  });
+
   final DownloadPublisher downloadPublisher;
   Mp3Download? activeDownload;
   Future<void>? _downloadTask;

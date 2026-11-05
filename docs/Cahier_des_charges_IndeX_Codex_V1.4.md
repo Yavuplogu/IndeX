@@ -782,3 +782,20 @@ reset ni écrasement du code main ; échec explicite si protections/concurrence.
 Verrou Windows/Android et constructions manuelles inchangés. Le checkout compilé
 reste le commit sélectionné et est tracé séparément du commit de réservation.
 La suppression réelle de la branche attend le premier nouveau workflow déployé.
+
+
+## Avenant — suppression facultative des MP3 écoutés
+
+Sur instruction utilisateur, ajouter Windows/Android un bouton dans Paramètres,
+section Fichiers audio. Il ouvre un panneau similaire à Renommer les MP3 : mêmes
+couleurs, filtres et typographie, dimensions stables. Aperçu en lecture seule puis
+confirmation explicite d’une suppression potentiellement définitive. Les filtres
+ne restreignent pas les fichiers du lot confirmé. Aucun reset de suivi/favori.
+
+Utiliser uniquement les associations confirmées d’épisodes Écouté dans le dossier
+MP3 configuré. Exclure les fichiers chargés, ambigus ou non vérifiables. Revalider
+avant chaque appel, journaliser avant la suppression, gérer les échecs partiels,
+actualiser les disponibilités et ne jamais rejouer un effacement automatiquement.
+Windows : handle de fichier ; Android : suppression SAF avec droits existants et
+capacité du fournisseur, sans permission générale. Voir docs/suppression-mp3-ecoutes.md.
+La série 0.7 reste inchangée ; recette de cette nouveauté distincte de 0.7.01.

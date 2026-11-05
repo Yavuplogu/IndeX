@@ -9,6 +9,35 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
+namespace {
+std::wstring DeletionArgument(const flutter::EncodableMap* args, const char* key) {
+  if (!args) return {};
+  const auto it = args->find(flutter::EncodableValue(key));
+  if (it == args->end()) return {};
+  const auto* text = std::get_if<std::string>(&it->second);
+  if (!text || text->empty() || text->find('\0') != std::string::npos || text->size() > 32767) return {};
+  const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text->data(), static_cast<int>(text->size()), nullptr, 0);
+  if (size <= 0) return {};
+  std::wstring value(static_cast<size_t>(size), L'\0');
+  MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text->data(), static_cast<int>(text->size()), value.data(), size);
+  return value;
+}
+std::wstring DeletionFinalPath(HANDLE file) {
+  const DWORD size = GetFinalPathNameByHandleW(file, nullptr, 0, FILE_NAME_NORMALIZED);
+  if (!size) return {};
+  std::wstring path(size, L'\0');
+  const DWORD written = GetFinalPathNameByHandleW(file, path.data(), size, FILE_NAME_NORMALIZED);
+  if (!written || written >= size) return {};
+  path.resize(written);
+  return path;
+}
+struct DeletionHandle {
+  HANDLE value;
+  explicit DeletionHandle(HANDLE handle) : value(handle) {}
+  ~DeletionHandle() { if (value != INVALID_HANDLE_VALUE) CloseHandle(value); }
+};
+}  // namespace
+
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
@@ -36,6 +65,68 @@ bool FlutterWindow::OnCreate() {
   folder_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "inspectAudioDeletion" || call.method_name() == "deleteHeardAudio") {
+          const bool deleting = call.method_name() == "deleteHeardAudio";
+          const auto* args = call.arguments() ? std::get_if<flutter::EncodableMap>(call.arguments()) : nullptr;
+          const auto path = DeletionArgument(args, "path");
+          const auto scope = DeletionArgument(args, "scope");
+          if (path.empty() || scope.empty() || !std::filesystem::path(path).is_absolute() || !std::filesystem::path(scope).is_absolute()) {
+            result->Error("invalid_delete", "Chemin ou dossier MP3 invalide."); return;
+          }
+          DeletionHandle root(CreateFileW(scope.c_str(), FILE_READ_ATTRIBUTES,
+              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+              FILE_FLAG_BACKUP_SEMANTICS, nullptr));
+          DeletionHandle file(CreateFileW(path.c_str(), FILE_READ_ATTRIBUTES | (deleting ? DELETE : 0),
+              deleting ? FILE_SHARE_READ : FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+              nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+          const DWORD file_error = GetLastError();
+          if (!deleting && root.value != INVALID_HANDLE_VALUE && file.value == INVALID_HANDLE_VALUE &&
+              (file_error == ERROR_FILE_NOT_FOUND || file_error == ERROR_PATH_NOT_FOUND)) {
+            result->Success(flutter::EncodableValue(flutter::EncodableMap{
+              {flutter::EncodableValue("exists"), flutter::EncodableValue(false)},
+              {flutter::EncodableValue("eligible"), flutter::EncodableValue(false)}
+            })); return;
+          }
+          if (root.value == INVALID_HANDLE_VALUE || file.value == INVALID_HANDLE_VALUE) {
+            result->Error("delete_access", "Fichier ou dossier absent, inaccessible ou utilise par un autre programme."); return;
+          }
+          BY_HANDLE_FILE_INFORMATION info{};
+          if (!GetFileInformationByHandle(file.value, &info) || (info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT))) {
+            result->Error("delete_type", "Seul un MP3 regulier, sans lien symbolique, est admis."); return;
+          }
+          auto root_path = DeletionFinalPath(root.value);
+          const auto file_path = DeletionFinalPath(file.value);
+          if (!root_path.empty() && root_path.back() != L'\\') root_path += L'\\';
+          const bool scoped = !root_path.empty() && file_path.size() > root_path.size() &&
+              _wcsnicmp(root_path.c_str(), file_path.c_str(), root_path.size()) == 0 &&
+              _wcsicmp(std::filesystem::path(file_path).extension().c_str(), L".mp3") == 0;
+          const bool eligible = scoped && !(info.dwFileAttributes & FILE_ATTRIBUTE_READONLY);
+          const auto identity = std::to_string(info.dwVolumeSerialNumber) + ":" +
+              std::to_string(info.nFileIndexHigh) + ":" + std::to_string(info.nFileIndexLow);
+          const auto signature = identity + ":" + std::to_string(info.nFileSizeHigh) + ":" +
+              std::to_string(info.nFileSizeLow) + ":" + std::to_string(info.ftLastWriteTime.dwHighDateTime) + ":" +
+              std::to_string(info.ftLastWriteTime.dwLowDateTime);
+          if (deleting) {
+            const auto expected = DeletionArgument(args, "signature");
+            const std::wstring actual(signature.begin(), signature.end());
+            if (!eligible || expected != actual) {
+              result->Error("stale_delete", "Fichier modifie ou hors du dossier : suppression refusee."); return;
+            }
+            FILE_DISPOSITION_INFO disposition{}; disposition.DeleteFile = TRUE;
+            // Suppression par handle verrouille, jamais par un nouveau parcours du chemin.
+            if (!SetFileInformationByHandle(file.value, FileDispositionInfo, &disposition, sizeof(disposition))) {
+              result->Error("delete_failed", "Suppression impossible (droits, protection ou fichier utilise)."); return;
+            }
+            result->Success(); return;
+          }
+          result->Success(flutter::EncodableValue(flutter::EncodableMap{
+            {flutter::EncodableValue("exists"), flutter::EncodableValue(true)},
+            {flutter::EncodableValue("eligible"), flutter::EncodableValue(eligible)},
+            {flutter::EncodableValue("identity"), flutter::EncodableValue(identity)},
+            {flutter::EncodableValue("signature"), flutter::EncodableValue(signature)},
+            {flutter::EncodableValue("reason"), flutter::EncodableValue(eligible ? "" : "Fichier protege ou hors du dossier MP3 choisi.")}
+          })); return;
+        }
         if (call.method_name() == "publishDownload" || call.method_name() == "renameMp3" || call.method_name() == "publishExport") {
           const bool renaming = call.method_name() == "renameMp3";
           const bool exporting = call.method_name() == "publishExport";

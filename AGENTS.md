@@ -1,3 +1,14 @@
+# Suppression facultative des MP3 écoutés
+
+- Autorisée explicitement sur Windows et Android depuis Paramètres/Fichiers audio.
+  Aperçu en lecture seule, confirmation destructive distincte et journal durable.
+  Conserver statuts, progressions et favoris ; ne jamais appeler unlinkAudio.
+  Aucun effacement automatique pendant scan, import, démarrage ou reprise de journal.
+- Contrôler dossier, association, statut frais, identité/métadonnées et lecteur.
+  Exclure piste chargée (même pause), ambiguïtés, liens symboliques et refus du fournisseur.
+  Windows : suppression par handle validé. Android : SAF existant, pas de permission
+  générale. Tests uniquement sur copies temporaires ; voir docs/suppression-mp3-ecoutes.md.
+
 # Compteurs sur main
 
 - Décision utilisateur : versionnement centralisé sur main dans

@@ -1386,7 +1386,7 @@ class _LibraryPageState extends State<LibraryPage> {
                                       ),
                                     ),
                                     Text(
-                                      dateLabel(e.date),
+                                      e.date!.split('-').reversed.join('/'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -1897,7 +1897,7 @@ class _EpisodeDetailState extends State<EpisodeDetail> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          dateLabel(e.date),
+                          e.date!.split('-').reversed.join('/'),
                           style: TextStyle(color: c.muted, fontSize: 13),
                         ),
                         const SizedBox(height: 18),
@@ -2963,6 +2963,25 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 'Prévisualiser le renommage des MP3',
                               ),
                             ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Supprimez les MP3 des épisodes écoutés après aperçu et confirmation. Les favoris et le suivi sont conservés. Les fichiers chargés dans le lecteur sont exclus.',
+                            ),
+                            OutlinedButton.icon(
+                              key: const ValueKey('open-heard-audio-deletion'),
+                              icon: const Icon(Icons.delete_outline),
+                              label: const Text('Supprimer les MP3 écoutés'),
+                              onPressed: m.busy
+                                  ? null
+                                  : () => unawaited(
+                                      showDialog<void>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) =>
+                                            HeardAudioDeletionDialog(model: m),
+                                      ),
+                                    ),
+                            ),
                           ], c),
                         ],
                       ),
@@ -3481,7 +3500,7 @@ class _ManualEpisodePickerState extends State<ManualEpisodePicker> {
                     final e = episodes[i];
                     return ListTile(
                       title: Text(e.title),
-                      subtitle: Text(dateLabel(e.date)),
+                      subtitle: Text(e.date!.split('-').reversed.join('/')),
                       onTap: () => Navigator.pop(context, e),
                     );
                   },
@@ -4068,7 +4087,8 @@ class _ListeningImportDialogState extends State<ListeningImportDialog> {
         }
       }
       final titles = {
-        for (final e in m.catalog) e.id: '${e.title} · ${dateLabel(e.date)}',
+        for (final e in m.catalog)
+          e.id: '${e.title} · ${e.date!.split('-').reversed.join('/')}',
       };
       final grouped = <String, List<SyncChange>>{};
       for (final change in plan?.changes ?? const <SyncChange>[]) {
@@ -4408,5 +4428,259 @@ class ResultFilters extends StatelessWidget {
           ),
       ],
     ),
+  );
+}
+
+class HeardAudioDeletionDialog extends StatefulWidget {
+  const HeardAudioDeletionDialog({super.key, required this.model});
+  final AppModel model;
+  @override
+  State<HeardAudioDeletionDialog> createState() =>
+      _HeardAudioDeletionDialogState();
+}
+
+class _HeardAudioDeletionDialogState extends State<HeardAudioDeletionDialog> {
+  String filter = 'all';
+  final _headerScroll = ScrollController();
+  final _listScroll = ScrollController();
+  final _footerScroll = ScrollController();
+  @override
+  void dispose() {
+    _headerScroll.dispose();
+    _listScroll.dispose();
+    _footerScroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.model.deletionPlan = null;
+    scheduleMicrotask(() => unawaited(widget.model.previewAudioDeletion()));
+  }
+
+  Future<void> confirm() async {
+    final count = widget.model.deletionPlan?.planned ?? 0;
+    if (count == 0) return;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer définitivement les MP3 ?'),
+        content: SelectableText(
+          '$count fichier(s) seront supprimés du dossier MP3, sans passage garanti par une corbeille. Cette action est irréversible. Le statut Écouté, la progression et les favoris seront conservés.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer définitivement'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true && mounted) await widget.model.executeAudioDeletion();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: widget.model,
+    builder: (context, _) {
+      final m = widget.model;
+      final c = EditorialColors(m.dark);
+      final plan = m.deletionPlan;
+      final entries = plan?.entries ?? <AudioDeletionEntry>[];
+      const labels = {
+        'all': 'Tous les résultats',
+        'planned': 'À supprimer',
+        'excluded': 'Exclus',
+        'missing': 'Absents',
+        'deleted': 'Supprimés',
+        'failed': 'Échecs',
+        'deleting': 'À vérifier',
+      };
+      final counts = <String, int>{'all': entries.length};
+      for (final e in entries) {
+        counts.update(e.status, (n) => n + 1, ifAbsent: () => 1);
+      }
+      final header = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Supprimer les MP3 écoutés',
+                  style: TextStyle(fontFamily: 'Georgia', fontSize: 24),
+                ),
+              ),
+              TextButton(
+                onPressed: m.busy ? null : () => Navigator.pop(context),
+                child: const Text('Fermer'),
+              ),
+            ],
+          ),
+          const Text(
+            'Seuls les MP3 associés à un épisode Écouté sont proposés. Suppression définitive après confirmation ; suivi et favoris conservés. Les fichiers chargés, ambigus ou hors du dossier sont exclus. La confirmation porte sur tous les fichiers proposés, même masqués par les filtres.',
+          ),
+          const SizedBox(height: 10),
+          if (m.busy) const LinearProgressIndicator(),
+          if (m.error.isNotEmpty)
+            SelectableText(m.error, style: TextStyle(color: c.alert)),
+          if (plan != null)
+            Text(
+              '${entries.length} résultats · ${plan.planned} à supprimer · ${counts['deleted'] ?? 0} supprimés',
+            ),
+          ResultFilters(
+            prefix: 'audio-delete-filter',
+            labels: labels,
+            counts: counts,
+            selected: filter,
+            onSelected: (value) => setState(() => filter = value),
+            colors: c,
+          ),
+        ],
+      );
+      final footer = Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 10,
+        runSpacing: 8,
+        children: [
+          if (m.deletionJournal.isNotEmpty)
+            TextButton(
+              onPressed: m.busy
+                  ? null
+                  : () => showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Dernier journal de suppression'),
+                        content: SizedBox(
+                          width: 650,
+                          height: 420,
+                          child: Scrollbar(
+                            child: SingleChildScrollView(
+                              child: SelectableText(m.deletionJournal),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Fermer'),
+                          ),
+                        ],
+                      ),
+                    ),
+              child: const Text('Dernier journal'),
+            ),
+          if (m.playback.reference != null)
+            OutlinedButton(
+              onPressed: m.busy
+                  ? null
+                  : () => unawaited(m.releaseAudioForDeletion()),
+              child: const Text('Libérer la piste chargée'),
+            ),
+          OutlinedButton(
+            onPressed: m.busy
+                ? null
+                : () => unawaited(m.previewAudioDeletion()),
+            child: const Text('Actualiser l’aperçu'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-heard-audio-deletion'),
+            onPressed: m.busy || plan == null || plan.used || plan.planned == 0
+                ? null
+                : () => unawaited(confirm()),
+            child: const Text('Confirmer la suppression'),
+          ),
+          TextButton(
+            onPressed: m.busy ? null : () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+        ],
+      );
+      return PopScope(
+        canPop: !m.busy,
+        child: Dialog(
+          backgroundColor: c.panel,
+          surfaceTintColor: Colors.transparent,
+          child: SizedBox(
+            key: const ValueKey('audio-deletion-dialog-size'),
+            width: 850,
+            height: 760,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: LayoutBuilder(
+                builder: (context, limits) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: limits.maxHeight * .45,
+                      ),
+                      child: SingleChildScrollView(
+                        controller: _headerScroll,
+                        child: header,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: SelectionArea(
+                        child: Scrollbar(
+                          controller: _listScroll,
+                          child: ListView(
+                            controller: _listScroll,
+                            children: [
+                              if (!m.busy && entries.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: Text(
+                                    'Aucun MP3 écouté associé à proposer.',
+                                  ),
+                                ),
+                              for (final e in entries.where(
+                                (e) => filter == 'all' || e.status == filter,
+                              ))
+                                panelGroup(
+                                  '${e.title}${e.date == null ? '' : ' · ${e.date!.split('-').reversed.join('/')}'}',
+                                  [
+                                    Text('${labels[e.status]} · ${e.name}'),
+                                    Text(displayDiagnosticPath(e.reference)),
+                                    Text(
+                                      e.reason,
+                                      style: TextStyle(
+                                        color: e.status == 'failed'
+                                            ? c.alert
+                                            : null,
+                                      ),
+                                    ),
+                                  ],
+                                  c,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: limits.maxHeight * .30,
+                      ),
+                      child: SingleChildScrollView(
+                        controller: _footerScroll,
+                        child: footer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
   );
 }
