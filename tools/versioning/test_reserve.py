@@ -17,7 +17,7 @@ class Versions(unittest.TestCase):
         reserve.ROOT.mkdir()
         policy = reserve.ROOT / 'tools/versioning/version.json'
         policy.parent.mkdir(parents=True)
-        policy.write_text('{"stage":0,"major":5,"first_minor":1}')
+        policy.write_text('{"stage":0,"major":5,"first_minor":1}', encoding='utf-8')
 
     def test_local_increment_and_explicit_major(self):
         self.assertEqual(reserve.reserve()['display'], '0.5.01')
@@ -25,54 +25,54 @@ class Versions(unittest.TestCase):
         self.assertEqual(reserve.reserve()['build_name'], '0.5.3')
         self.assertEqual(reserve.reserve()['build_number'], 4)
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":1,"major":5,"first_minor":1}')
+        policy.write_text('{"stage":1,"major":5,"first_minor":1}', encoding='utf-8')
         self.assertEqual(reserve.reserve()['display'], '1.5.01')
 
     def test_authorized_major_six_starts_at_zero_and_preserves_old_counter(self):
         self.assertEqual(reserve.reserve()['display'], '0.5.01')
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}')
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}', encoding='utf-8')
         first = reserve.reserve()
         self.assertEqual(first, {'display': '0.6.0', 'build_name': '0.6.0', 'build_number': 1})
         self.assertEqual(reserve.reserve()['display'], '0.6.1')
-        self.assertEqual(json.loads((reserve.ROOT / 'dist/build-version-counter.json').read_text()), {'0.5': 1, '0.6': 1})
+        self.assertEqual(json.loads((reserve.ROOT / 'dist/build-version-counter.json').read_text(encoding='utf-8')), {'0.5': 1, '0.6': 1})
 
     def test_ci_major_six_does_not_reset_historical_counter(self):
         self.init_remote()
         self.assertEqual(reserve.reserve(True)['display'], '0.5.01')
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}')
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}', encoding='utf-8')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.0')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.1')
-        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}')
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}', encoding='utf-8')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.02')
         reserve.git('fetch', 'origin', reserve.BRANCH)
         self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {'0.5': 1, '0.6': 2})
 
     def test_padding_boundaries_preserve_counter_and_semver(self):
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}')
+        policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}', encoding='utf-8')
         counter = reserve.ROOT / 'dist/build-version-counter.json'
         counter.parent.mkdir()
-        counter.write_text('{"0.5":42,"0.6":7}')
+        counter.write_text('{"0.5":42,"0.6":7}', encoding='utf-8')
         self.assertEqual(reserve.reserve(), {'display': '0.6.08', 'build_name': '0.6.8', 'build_number': 9})
         self.assertEqual(reserve.reserve()['display'], '0.6.09')
         self.assertEqual(reserve.reserve()['display'], '0.6.10')
         self.assertEqual(reserve.reserve()['display'], '0.6.11')
-        self.assertEqual(json.loads(counter.read_text()), {'0.5':42,'0.6':11})
-        counter.write_text('{"0.5":42,"0.6":98}')
+        self.assertEqual(json.loads(counter.read_text(encoding='utf-8')), {'0.5':42,'0.6':11})
+        counter.write_text('{"0.5":42,"0.6":98}', encoding='utf-8')
         self.assertEqual(reserve.reserve()['display'], '0.6.99')
         self.assertEqual(reserve.reserve()['display'], '0.6.100')
 
     def test_major_seven_preserves_history_and_increases_android_code(self):
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":0,"major":7,"first_minor":1,"minor_width":2,"build_number_base":7000}')
+        policy.write_text('{"stage":0,"major":7,"first_minor":1,"minor_width":2,"build_number_base":7000}', encoding='utf-8')
         counter = reserve.ROOT / 'dist/build-version-counter.json'
         counter.parent.mkdir()
-        counter.write_text('{"0.6":60}')
+        counter.write_text('{"0.6":60}', encoding='utf-8')
         self.assertEqual(reserve.reserve(), {'display':'0.7.01', 'build_name':'0.7.1', 'build_number':7001})
         self.assertEqual(reserve.reserve()['build_number'], 7002)
-        self.assertEqual(json.loads(counter.read_text()), {'0.6':60,'0.7':2})
+        self.assertEqual(json.loads(counter.read_text(encoding='utf-8')), {'0.6':60,'0.7':2})
 
     def init_remote(self):
         remote = Path(self.temporary.name) / 'origin.git'
@@ -80,7 +80,7 @@ class Versions(unittest.TestCase):
         reserve.git('init', '-b', 'main')
         reserve.git('config', 'user.name', 'test')
         reserve.git('config', 'user.email', 'test@example.invalid')
-        (reserve.ROOT / reserve.COUNTER_FILE).write_text('{}\n')
+        (reserve.ROOT / reserve.COUNTER_FILE).write_text('{}\n', encoding='utf-8')
         reserve.git('add', '.')
         reserve.git('commit', '-m', 'initial')
         reserve.git('remote', 'add', 'origin', str(remote))
@@ -118,7 +118,7 @@ class Versions(unittest.TestCase):
 
     def set_main_counters(self, counters):
         path = reserve.ROOT / reserve.COUNTER_FILE
-        path.write_text(json.dumps(counters) + '\n')
+        path.write_text(json.dumps(counters) + '\n', encoding='utf-8')
         reserve.git('add', reserve.COUNTER_FILE)
         reserve.git('commit', '-m', 'compteur main')
         reserve.git('push', 'origin', 'main')
@@ -132,7 +132,7 @@ class Versions(unittest.TestCase):
 
     def test_migration_merges_live_legacy_maxima_and_removes_old_branch(self):
         policy = reserve.ROOT / 'tools/versioning/version.json'
-        policy.write_text('{"stage":0,"major":7,"first_minor":1,"minor_width":2,"build_number_base":7000}')
+        policy.write_text('{"stage":0,"major":7,"first_minor":1,"minor_width":2,"build_number_base":7000}', encoding='utf-8')
         self.init_remote()
         self.set_main_counters({'0.5':16, '0.6':29, '0.7':1})
         self.create_legacy({'0.5':15, '0.6':30, '0.7':4})
@@ -148,18 +148,18 @@ class Versions(unittest.TestCase):
     def test_remote_new_code_and_local_index_are_preserved_with_exact_provenance(self):
         self.init_remote()
         source = reserve.git('rev-parse', 'HEAD')
-        (reserve.ROOT / 'local-only.txt').write_text('ne pas toucher')
+        (reserve.ROOT / 'local-only.txt').write_text('ne pas toucher', encoding='utf-8')
         reserve.git('add', 'local-only.txt')
         index_before = reserve.git('write-tree')
         other = Path(self.temporary.name) / 'developer'
         def other_git(*args):
             return subprocess.run(['git', '-C', str(other), *args], check=True,
-                                  capture_output=True, text=True).stdout.strip()
+                                  capture_output=True, text=True, encoding='utf-8').stdout.strip()
         subprocess.run(['git', 'clone', '--branch', 'main', str(Path(self.temporary.name) / 'origin.git'), str(other)],
                        check=True, capture_output=True)
         other_git('config', 'user.name', 'developer')
         other_git('config', 'user.email', 'developer@example.invalid')
-        (other / 'nouveau code.txt').write_text('nouvelle fonctionnalité')
+        (other / 'nouveau code.txt').write_text('nouvelle fonctionnalité', encoding='utf-8')
         other_git('add', '.')
         other_git('commit', '-m', 'avancement main')
         new_main = other_git('rev-parse', 'HEAD')
@@ -168,7 +168,7 @@ class Versions(unittest.TestCase):
         self.assertEqual(result['source_commit'], source)
         self.assertEqual(reserve.git('rev-parse', 'HEAD'), source)
         self.assertEqual(reserve.git('write-tree'), index_before)
-        self.assertEqual((reserve.ROOT / 'local-only.txt').read_text(), 'ne pas toucher')
+        self.assertEqual((reserve.ROOT / 'local-only.txt').read_text(encoding='utf-8'), 'ne pas toucher')
         reserve.git('fetch', 'origin', 'main')
         self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD'), result['counter_commit'])
         self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD^'), new_main)
@@ -249,12 +249,20 @@ class Versions(unittest.TestCase):
         env_file = Path(self.temporary.name) / 'github-env'
         with patch.dict(os.environ, {'GITHUB_ENV':str(env_file)}), patch('sys.argv', ['reserve.py','--ci']):
             reserve.main()
-        values = dict(line.split('=', 1) for line in env_file.read_text().splitlines())
+        values = dict(line.split('=', 1) for line in env_file.read_text(encoding='utf-8').splitlines())
         self.assertEqual(values['INDEX_SOURCE_COMMIT'], source)
         self.assertEqual(values['INDEX_VERSION'], '0.5.01')
         reserve.git('fetch', 'origin', 'main')
         self.assertEqual(values['INDEX_COUNTER_COMMIT'], reserve.git('rev-parse', 'FETCH_HEAD'))
         self.assertFalse((reserve.ROOT / 'dist/version-reservation.lock').exists())
+
+    def test_unicode_git_content_with_windows_default_encoding(self):
+        # Simule Windows-1252 même sur Linux : sans encoding explicite, Path
+        # écrit é en 0xe9 alors que le helper Git exige des octets UTF-8.
+        def windows_encoding(encoding, stacklevel=2):
+            return 'cp1252' if encoding is None else encoding
+        with patch('pathlib.io.text_encoding', side_effect=windows_encoding):
+            self.test_remote_new_code_and_local_index_are_preserved_with_exact_provenance()
 
 
 if __name__ == '__main__':

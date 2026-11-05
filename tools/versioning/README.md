@@ -113,3 +113,18 @@ CRLF, fusion des maxima, suppression atomique, refus d’un compteur absent/inva
 refus d’une suppression protégée, courses sur les deux branches, préservation du
 checkout/index et des nouveaux commits main, export des SHA de traçabilité.
 Ils ne réservent aucun numéro sur GitHub et ne suppriment aucune branche réelle.
+
+
+## Correctif Windows — encodage des fichiers de test
+
+Le run Windows `113934417860` a réservé 0.7.03 puis échoué pendant les tests
+Python : le fichier temporaire contenant « nouvelle fonctionnalité » était écrit
+avec l’encodage Windows-1252 par défaut et relu par Git en UTF-8. Ce défaut
+concernait le test de préservation du nouveau code, pas la réservation distante.
+
+Les lectures/écritures texte des tests et des fichiers locaux du compteur sont
+maintenant explicitement UTF-8 ; le helper de subprocess texte du second checkout
+précise également cet encodage. Un test impose un encodage par défaut Windows-1252
+même sous Linux : il reproduit le UnicodeDecodeError avant correction et passe
+après. **16 tests réussis** dans l’environnement Linux. La vérification native
+Windows reste le prochain workflow, sans réattribuer le numéro 0.7.03 consommé.

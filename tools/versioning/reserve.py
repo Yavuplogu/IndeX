@@ -76,7 +76,7 @@ def reserve_on_main(parent, legacy_parent, content, message):
 
 
 def reserve(ci=False):
-    policy = json.loads((ROOT / 'tools/versioning/version.json').read_text())
+    policy = json.loads((ROOT / 'tools/versioning/version.json').read_text(encoding='utf-8'))
     if policy['stage'] not in (0, 1) or policy['major'] < 0 or policy['first_minor'] < 0:
         raise ValueError('Politique de version invalide')
     build_base = policy.get('build_number_base', 0)
@@ -104,7 +104,7 @@ def reserve(ci=False):
         elif counters is None:
             raise ValueError('Compteur main absent ; reservation refusee sans remise a zero.')
     else:
-        counters = validate_counters(json.loads(state_path.read_text())) if state_path.exists() else {}
+        counters = validate_counters(json.loads(state_path.read_text(encoding='utf-8'))) if state_path.exists() else {}
     minor = max(policy['first_minor'], counters.get(key, policy['first_minor'] - 1) + 1)
     counters[key] = minor
     content = json.dumps(counters, indent=2) + '\n'
@@ -115,7 +115,7 @@ def reserve(ci=False):
         # Verrou exclusif : deux builds locaux ne réservent pas le même numéro.
         # L'appelant garde ce verrou pendant toute l'opération reserve().
         fd, temporary = tempfile.mkstemp(dir=state_path.parent)
-        with os.fdopen(fd, 'w') as out:
+        with os.fdopen(fd, 'w', encoding='utf-8') as out:
             out.write(content)
         os.replace(temporary, state_path)
     result = {'display': f'{key}.{minor:0{width}d}', 'build_name': f'{key}.{minor}',
