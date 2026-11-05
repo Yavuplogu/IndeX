@@ -58,6 +58,8 @@ try {
   }
   Get-ChildItem $runtime.RedistDirectory -File | Where-Object { $_.Name -match 'license|licence|eula' } | ForEach-Object { Copy-Item $_.FullName (Join-Path $licences ('Microsoft-' + $_.Name)) }
   'Runtime Microsoft Visual C++ x64 app-local. Redistribution sous les conditions de licence Visual Studio/Microsoft Visual C++. UCRT fourni par Windows 10/11. Voir https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files' | Set-Content (Join-Path $licences 'Microsoft-runtime.txt') -Encoding utf8
+  if ($env:INDEX_SOURCE_COMMIT) { $version | Add-Member -NotePropertyName source_commit -NotePropertyValue $env:INDEX_SOURCE_COMMIT -Force }
+  if ($env:INDEX_COUNTER_COMMIT) { $version | Add-Member -NotePropertyName counter_commit -NotePropertyValue $env:INDEX_COUNTER_COMMIT -Force }
   $version | ConvertTo-Json | Set-Content (Join-Path $documentation 'version.json') -Encoding utf8
   Copy-Item (Join-Path $projectDir 'docs/lot4/UTILISATION_WINDOWS.md') (Join-Path $documentation 'LISEZ-MOI.md')
   if (Get-ChildItem $portable -Recurse -File -Filter '*.mp3') { throw 'Un MP3 serait embarqué : distribution refusée.' }

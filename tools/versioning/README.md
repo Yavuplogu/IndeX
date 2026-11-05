@@ -1,132 +1,115 @@
-# Série actuelle 0.7 — décision du 5 novembre 2026
+# Versionnement IndeX — compteurs centralisés sur main
 
-Premier numéro distribué **0.7.01**, puis 0.7.02, etc., même compteur/verrou
-Windows/Android. Les compteurs 0.5/0.6 ne sont ni supprimés ni remis à zéro.
-Flutter/SemVer reçoit 0.7.1 ; À propos et les artefacts affichent 0.7.01.
-Le champ `build_number_base: 7000` donne un premier build technique **7001**,
-puis 7002. Cela préserve un versionCode supérieur aux APK 0.6 existants
-(compteur distant vérifié : dernier mineur 29) et reste compatible avec les
-champs numériques Windows. La numérotation publique et celle des archives
-restent distinctes de ce code technique. Les constructions locales de contrôle
-ne réservent pas le compteur officiel. Les numéros historiques ci-dessous
-restent une description des anciennes séries.
+## Série actuelle
 
-# Numérotation IndeX
+Série bêta **0.7**, premier numéro **0.7.01**, mineur affiché sur au moins deux
+chiffres : 0.7.08, 0.7.09, 0.7.10, puis 0.7.99, 0.7.100. Ne pas changer le majeur
+ou passer en finale sans ordre utilisateur. `version.json` fixe la politique.
+Flutter reçoit la forme SemVer sans zéro initial (0.7.1). L’interface et le nom
+des artefacts reçoivent la version publique (0.7.01).
 
-## Série actuelle — décision du 31 octobre 2026
+`build_number_base: 7000` et `first_minor: 1` donnent les codes techniques 7001,
+7002, etc., supérieurs aux APK de la série 0.6. Windows et Android conservent
+le compteur et le verrou de concurrence communs. Une construction officielle
+réserve un numéro avant les tests : un échec ultérieur consomme ce numéro.
 
-La série 0.6 a commencé à **0.6.0**. À compter de la nouvelle décision du
-31 octobre, le mineur s’affiche sur **au moins deux chiffres** : 0.6.03, 0.6.08,
-0.6.09, 0.6.10, 0.6.11, puis 0.6.99, 0.6.100, etc.
-État 0 bêta, majeur 6 autorisé explicitement ; ne pas modifier à nouveau le majeur
-ou passer en finale sans ordre utilisateur. `first_minor: 0` est conservé et
-`minor_width: 2` fixe la largeur d’affichage minimale. Le compteur poursuit sa
-valeur actuelle, y compris les numéros consommés par les builds échoués ; aucun
-compteur historique n’est réinitialisé.
+## Stockage sur main
 
-Le numéro technique de build vaut mineur + 1 pour cette série afin de rester
-strictement positif. Flutter/SemVer reçoit la forme sans zéro initial (`0.6.3`),
-la version publique conserve le zéro (`0.6.03`).
+Décision utilisateur : centraliser le versionnement sur `main`. Le script,
+la politique et **`tools/versioning/counters.json`** y sont désormais réunis.
+Ce fichier contient le dernier mineur réservé par série, pas le prochain numéro.
+Ne jamais le supprimer, le réduire ou supprimer ses anciennes séries.
 
-Exemple d’archive : `IndeX_0.6.03_windows_x64_portable.zip` ; artefact
-`IndeX-0.6.03-windows-x64-portable`. À propos reçoit la même version publique.
+La migration préparée importe les valeurs effectivement lues dans l’ancienne
+branche : `0.5: 16`, `0.6: 29`, `0.7: 1`. Le prochain numéro est donc 0.7.02 si
+aucune nouvelle réservation n’intervient avant le premier nouveau build.
+Les anciens historiques ne sont pas réinitialisés.
 
-## Historique — décision du 28 octobre 2026
+Les workflows Windows/Android restent exclusivement manuels (`workflow_dispatch`),
+avec `contents: write` et le même groupe `index-windows-version-counter`.
+Le nom historique du verrou est conservé afin de sérialiser aussi une ancienne
+construction encore en cours. Les commits de réservation ne lancent pas de build.
 
-Version initiale : **0.5.01**. Format `état.majeur.mineur` : état 0 (bêta) ou 1
-(finale), majeur alors fixé à 5 tant que l’utilisateur n’a pas explicitement demandé de le
-changer, mineur incrémenté et affiché sur au moins deux chiffres (01…99,100…).
-`version.json` fixe l’état, le majeur et le premier mineur ; aucun changement
-automatique d’état ou de majeur. La forme Flutter/SemVer enlève le zéro initial
-(`0.5.1+1`) ; la version publique et les archives gardent `0.5.01`.
+À chaque `reserve.py --ci` :
 
-## Constructions GitHub Actions
+1. Lire le dernier `main` distant, pas seulement le compteur du checkout du run.
+2. Pendant la migration, lire aussi le dernier ancien compteur distant et garder
+   le maximum de chaque série. Un ancien nom `counters.json` suivi d’un CR est
+   accepté uniquement sur cette branche historique.
+3. Réserver le mineur suivant et créer un commit basé sur le dernier `main`,
+   ne changeant que `tools/versioning/counters.json`.
+4. Pousser ce commit sans forcer l’historique de `main`. Si l’ancien compteur
+   existe, supprimer sa branche **dans la même transaction Git atomique**, avec
+   vérification de son SHA attendu. Soit les deux opérations réussissent, soit
+   aucune n’est appliquée.
+5. Exporter le numéro et les identifiants de traçabilité aux étapes de construction.
 
-Chaque exécution manuelle de construction Windows ou Android (y compris
-relance) réserve le prochain mineur **avant** les contrôles et la compilation.
-Un build en échec consomme donc son numéro : il n’est pas réattribué. Le premier
-nouveau build réserve 01, le suivant 02. Le numéro n’est pas basé sur le nombre
-de commits ou sur le nom de l’artefact précédent.
+Après la première transaction réussie, `index-build-versions` n’est plus utilisée
+et n’existe plus sur le serveur. Ne pas la supprimer manuellement avant cette
+migration. Si l’ancienne branche avance entre sa lecture et la transaction,
+le lease fait échouer toute la transaction ; relancer un nouveau run depuis main.
+Un push concurrent de code sur main fait également refuser le push plutôt que
+l’écraser. Aucun retry silencieux avec un numéro déjà utilisé. Si la réservation
+elle-même est refusée, aucun numéro n’est attribué et aucun artefact n’est produit.
 
-Le workflow sérialise les constructions et `reserve.py --ci` conserve les
-compteurs dans la branche technique **`index-build-versions`**, créée à la première
-réservation. Cette branche contient uniquement `counters.json` ; elle ne modifie
-ni `main` ni le code. Les deux workflows se déclenchent uniquement avec workflow_dispatch ;
-un push, y compris sur la branche de compteurs, ne lance aucune construction. Ne pas effacer
-cette branche ou réinitialiser son compteur, pour éviter de réutiliser des versions.
+Le jeton Actions doit pouvoir créer un commit sur `main` et, pour la première
+migration, supprimer la branche historique. Des règles de protection peuvent
+refuser ces opérations : le build échoue alors explicitement. Le script ne
+contourne pas les protections et ne réinitialise jamais un compteur absent,
+ambigu ou invalide. Si le serveur ne prend pas en charge les pushs atomiques,
+il refuse la réservation, sans repli partiel.
 
-L’écriture requiert `contents: write` pour le jeton Actions. Une règle du dépôt
-qui refuse la création/écriture de cette branche fera échouer explicitement la
-réservation, sans produire une archive avec une version de repli. Les pull requests ne déclenchent plus ces workflows ; leurs contrôles doivent
-être lancés explicitement sur la branche à vérifier. Cette numérotation vise les builds de distribution ;
-`flutter test` et les compilations intermédiaires de tests n’incrémentent pas le mineur.
+Après migration, **utiliser Run workflow sur le main actuel**. Ne pas relancer
+un ancien run utilisant l’ancien script : une révision historique ne connaît pas
+le compteur centralisé et pourrait recréer l’ancienne branche. Les anciennes
+révisions restent dans l’historique Git, elles ne sont pas modifiées rétroactivement.
 
-Sorties : `IndeX_0.5.01_windows_x64_portable.zip`, son SHA256 et artefact
-`IndeX-0.5.01-windows-x64-portable` (puis 02,03…). Le même numéro est passé à
-Flutter et enregistré dans `documentation/version.json` dans l’archive.
+## Code compilé et traçabilité
+
+Le checkout du run reste celui sélectionné au lancement. Ni son HEAD, ni son
+index ni ses fichiers ne sont modifiés par la réservation : un index Git temporaire
+sert à construire le commit du compteur. Les nouveaux fichiers que des développeurs
+ont poussés sur main entre-temps sont préservés dans le commit distant, mais ne
+remplacent pas silencieusement les sources choisies pour le build en cours.
+
+Deux identifiants sont donc conservés :
+
+| Variable CI | Signification |
+| --- | --- |
+| `INDEX_SOURCE_COMMIT` | HEAD réellement compilé, à utiliser pour le tag de la Release |
+| `INDEX_COUNTER_COMMIT` | Commit distant enregistrant cette réservation sur main |
+
+`GITHUB_SHA` conserve sa signification d’origine. Android écrit ces valeurs dans
+`build-info.json` ; Windows dans `documentation/version.json` (`source_commit`,
+`counter_commit`). Le compteur fournit aussi `INDEX_VERSION`, `INDEX_BUILD_NAME`
+et `INDEX_BUILD_NUMBER`. Les fichiers publiés gardent les noms existants :
+`IndeX_<version>_windows_x64_portable.zip` ou
+`IndeX_<version>_android_arm64_release.apk` / `_diagnostic.apk`.
+
+Les réservations automatiques apparaîtront dans l’historique de `main` sous
+« Réserver IndeX … ». Faire un `git pull --ff-only` avant de pousser des changements
+locaux si main a avancé depuis une construction. Ne pas écraser ces commits.
 
 ## Constructions locales
 
-`tools/lot4/package_windows.ps1` réserve lui-même un numéro local si aucune
-version CI ne lui a été fournie. Il est stocké dans `dist/build-version-counter.json`
-(ignoré par Git). Le compteur local est indépendant de celui de distribution CI ;
-les archives officielles à partager sont celles de la CI. Ne pas supprimer le
-compteur local pour réutiliser un numéro. Un verrou exclusif protège la réservation.
-Après arrêt brutal pendant la réservation, vérifier qu’aucun processus ne tourne
-avant de retirer un éventuel `dist/version-reservation.lock` résiduel.
+Le compteur local reste `dist/build-version-counter.json`, ignoré par Git et
+indépendant du compteur officiel. `package_windows.ps1` le réserve si aucune
+version CI n’a été fournie. Un build APK intermédiaire peut compiler sans
+réservation officielle. Les distributions à partager viennent de la CI.
 
-Contrôles : `python -m unittest discover -s tools/versioning -p 'test_*.py'`.
-Les tests utilisent uniquement un dépôt Git temporaire local et ne contactent pas GitHub.
+Un verrou exclusif `dist/version-reservation.lock` protège les appels locaux.
+Après un arrêt brutal, vérifier qu’aucun processus ne tourne avant de retirer
+un verrou résiduel. Ne pas supprimer le compteur local pour réutiliser un numéro.
 
+## Vérification
 
-## Compatibilité Windows (correctif du 28 octobre 2026)
+```text
+python -m unittest discover -s tools/versioning -p 'test_*.py'
+```
 
-Les échanges de plomberie Git utilisent explicitement des octets UTF-8, sans
-traduction LF → CRLF par Python. La création d’arbre utilise des entrées terminées
-par NUL (`mktree -z`). Le premier compteur Windows a pu créer le nom Git
-`counters.json` suivi d’un retour chariot : le script récupère ce blob uniquement,
-conserve sa valeur et écrit le nom canonique à la prochaine réservation. Aucun
-reset du compteur ni suppression de branche n’est nécessaire. Un compteur absent,
-ambigu ou invalide bloque la réservation plutôt que de réattribuer un numéro.
-
-
-Depuis le 29 octobre, le packaging Windows passe aussi
-`--dart-define=INDEX_VERSION=<version publique réservée>` à Flutter : À propos
-affiche le même numéro que l’archive, avec le mineur complété de zéros. Sans cette
-valeur (lancement de développement), le panneau affiche « Développement ».
-Cela ne réserve aucun numéro supplémentaire et n’ajoute aucune dépendance.
-
-
-## Diagnostic Android — Lot 6A, 1er novembre 2026
-
-Le workflow Android manuel réserve désormais dans le même compteur et sous le
-même groupe de concurrence que Windows (`index-windows-version-counter`, nom
-historique conservé). Une exécution Android consomme un mineur même en échec.
-L’APK `IndeX_<version>_android_arm64_diagnostic.apk`, son artefact, À propos,
-versionName et versionCode utilisent les valeurs réservées. La compilation
-intermédiaire locale sans les variables INDEX_* ne produit pas une distribution
-numérotée. Aucun compteur n’est remis à zéro et aucun majeur n’est changé.
-
-
-Décision du 1er novembre 2026 : Windows devient exclusivement manuel, comme
-Android. Le verrou commun reste nécessaire pour le compteur : si les deux sont
-lancés manuellement en même temps, le second attend le premier. Une exécution
-déjà démarrée avant ce changement continue ; modifier les déclencheurs ne
-l’annule pas. Annuler un build ne restitue pas son numéro déjà réservé.
-
-
-Lot 6B (2 novembre) : workflow Android renommé Verification Android Lot 6B,
-numérotation/compteur inchangés. Cache Actions pour le keystore debug afin de
-maintenir la signature des APK de diagnostic successifs ; aucune clé dans Git
-ou les artefacts. Une ancienne clé non conservée ne peut pas être récupérée.
-La signature définitive et son cycle de vie restent au Lot 6D.
-
-
-## Lot 6D — 4 novembre 2026
-
-Le workflow manuel Android propose diagnostic (défaut) ou release avec clé durable.
-Les deux réservent le même compteur avant compilation, sans réinitialisation.
-La release produit `IndeX_<version>_android_arm64_release.apk` et l’artefact
-`IndeX-<version>-Android-arm64-release`, sans publication automatique.
-La signature durable et le passage depuis les APK debug sont documentés dans
-[le guide Android](../../docs/lot6/DISTRIBUTION_ANDROID.md).
+Les tests utilisent uniquement des dépôts Git locaux temporaires. Ils vérifient
+incréments et majeurs, limites de padding, conservation de l’historique, migration
+CRLF, fusion des maxima, suppression atomique, refus d’un compteur absent/invalide,
+refus d’une suppression protégée, courses sur les deux branches, préservation du
+checkout/index et des nouveaux commits main, export des SHA de traçabilité.
+Ils ne réservent aucun numéro sur GitHub et ne suppriment aucune branche réelle.

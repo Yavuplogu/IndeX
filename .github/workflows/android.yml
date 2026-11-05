@@ -115,7 +115,7 @@ jobs:
           with zipfile.ZipFile(apks[0]) as archive:
               (dist / 'NOTICES.txt').write_bytes(gzip.decompress(archive.read('assets/flutter_assets/NOTICES.Z')))
               (dist / 'LICENSE-octicons.txt').write_bytes(archive.read('assets/flutter_assets/assets/icons/LICENSE-octicons.txt'))
-          report = {key: os.environ[key] for key in ['INDEX_VERSION', 'INDEX_BUILD_NAME', 'INDEX_BUILD_NUMBER', 'INDEX_ANDROID_MODE', 'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']}
+          report = {key: os.environ[key] for key in ['INDEX_VERSION', 'INDEX_BUILD_NAME', 'INDEX_BUILD_NUMBER', 'INDEX_ANDROID_MODE', 'INDEX_SOURCE_COMMIT', 'INDEX_COUNTER_COMMIT', 'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']}
           (dist / 'build-info.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
           PYTHON
       - name: Retirer la clé du runner

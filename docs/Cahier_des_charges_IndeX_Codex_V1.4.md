@@ -769,3 +769,16 @@ tiers conservent leurs licences et notices. Pas de publication automatique.
 Android : numéro de version sous le logo dans À propos, lien GitHub à droite du
 logo. Windows : disposition conservée. Les deux boutons ouvrent effectivement
 https://github.com/Yavuplogu/IndeX dans le navigateur sur demande explicite.
+
+
+## Avenant — centralisation du versionnement sur main
+
+Décision utilisateur : stocker politique, scripts et compteurs sur main.
+`tools/versioning/counters.json` reprend les valeurs historiques (0.5:16,
+0.6:29, 0.7:1 lors de la préparation). La première réservation CI fusionnera
+les derniers maxima de l’ancienne branche puis poussera atomiquement le commit
+de compteur sur main et le retrait de index-build-versions sous lease. Aucun
+reset ni écrasement du code main ; échec explicite si protections/concurrence.
+Verrou Windows/Android et constructions manuelles inchangés. Le checkout compilé
+reste le commit sélectionné et est tracé séparément du commit de réservation.
+La suppression réelle de la branche attend le premier nouveau workflow déployé.

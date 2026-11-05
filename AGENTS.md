@@ -1,3 +1,14 @@
+# Compteurs sur main
+
+- Décision utilisateur : versionnement centralisé sur main dans
+  tools/versioning/counters.json. Migration CI atomique : fusion des maxima du
+  dernier ancien compteur, commit du compteur sur main et retrait avec lease de
+  index-build-versions. Ne jamais supprimer cette branche manuellement avant
+  déploiement, ni réinitialiser les compteurs. Aucun push forcé sur main.
+- Conserver le verrou partagé et les déclencheurs manuels. Les commits automatiques
+  de réservation sont attendus sur main. Le checkout compilé reste fixe ; consigner
+  INDEX_SOURCE_COMMIT et INDEX_COUNTER_COMMIT séparément. Tests dans dépôts temporaires.
+
 # Licence et recette utilisateur
 
 - Code original sous GNU GPL v3 uniquement (GPL-3.0-only), LICENSE et LICENSE_SCOPE.md.

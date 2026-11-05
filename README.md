@@ -191,3 +191,13 @@ L’utilisateur valide **0.7.01**, y compris la mise à jour signée, sur Pixel 
 et OnePlus 15 sous Android 17, et Galaxy S21 sous Android 14. Voir la
 [recette consignée](docs/lot6/RECETTE_6D.md). La publication GitHub reste distincte.
 Le bouton GitHub d’À propos ouvre le dépôt dans le navigateur uniquement sur clic.
+
+
+## Compteurs de construction
+
+Versionnement centralisé sur `main` : politique et compteur dans
+`tools/versioning/`. Les constructions manuelles y ajoutent un commit de réservation.
+Le premier build après migration intégrera les dernières valeurs de l’ancienne
+branche et la supprimera dans la même transaction ; aucun compteur remis à zéro.
+Le code compilé reste le commit sélectionné au lancement, consigné séparément du
+commit de compteur. Voir [la procédure et les protections](tools/versioning/README.md).

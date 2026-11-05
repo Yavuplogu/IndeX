@@ -2,7 +2,7 @@ name: Verification Windows portable
 on:
   # Construction Windows uniquement sur demande, comme Android.
   workflow_dispatch:
-# La branche de compteurs ne contient aucune donnée utilisateur ni code applicatif.
+# Réservation persistante dans tools/versioning/counters.json sur main.
 permissions:
   contents: write
 concurrency:

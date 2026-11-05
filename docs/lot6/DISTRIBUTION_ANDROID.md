@@ -179,3 +179,15 @@ les notes et le rapport de signature. Pas de clé privée. Les notes doivent pr�
 bêta, Android 7+/ARM64, téléchargement facultatif, renommage Windows uniquement,
 sauvegarde avant changement de certificat et limites des appareils réellement testés.
 La publication et un changement de version majeure/finale exigent une instruction distincte.
+
+
+## Compteur sur main et tag de publication
+
+Le compteur est maintenant préparé dans `tools/versioning/counters.json` sur
+main. Le premier build utilisant la migration fusionne les dernières valeurs
+historiques puis supprime la branche dédiée dans une transaction atomique.
+Les deux plateformes restent manuelles et partagent le verrou. Les nouvelles
+réservations créent des commits sur main. `build-info.json` distingue
+`INDEX_SOURCE_COMMIT` (code compilé, cible du tag) et `INDEX_COUNTER_COMMIT`
+(réservation). Après migration, lancer un nouveau Run workflow sur main plutôt
+que relancer un ancien run. Voir `tools/versioning/README.md`.
