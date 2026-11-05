@@ -1,209 +1,161 @@
-# IndeX
+<div align="center">
 
-Série actuelle **0.7.01** (bêta, décision du 5 novembre 2026) ; numéro mineur réservé automatiquement à
-chaque construction Windows distribuable. [Politique et compteur](tools/versioning/README.md).
+<img src="apps/index_windows/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Logo IndeX" width="80" height="80">
 
-[Lot 5 : architecture et lecteur](docs/lot5/bilan.md).
-[Lot 5 bis : renommage, contrôles et recette Windows](docs/lot5bis/bilan.md).
-[Lot 5 ter : transfert JSON et recette Windows](docs/lot5ter/bilan.md).
+<h1>IndeX</h1>
 
-Projet d'application documentaire et de lecture locale pour Windows et Android,
-en français, avec catalogue et écoute locale hors ligne. Le téléchargement d’un
-MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
+<p><strong>Rechercher, explorer et écouter les épisodes de Rendez-vous avec X.</strong></p>
 
-**État : Lot 6D validé fonctionnellement par l’utilisateur en 0.7.01 ; distribution à publier sur demande.**
-Le dernier 6C est validé par l’utilisateur le 4 novembre.
-Depuis le 5 novembre, Android utilise l’identifiant définitif `fr.index.app` :
-installer la nouvelle application puis transférer le suivi par JSON et rechoisir
-le dossier MP3 ; sauvegarder les MP3 privés avant de retirer l’ancienne. Le 6D ajoute un mode
-release AOT signé, ses contrôles et son dossier de recette, sans publication.
-[Bilan 6D](docs/lot6/bilan-6D.md), [guide de signature/distribution](docs/lot6/DISTRIBUTION_ANDROID.md)
-et [fiche de recette](docs/lot6/RECETTE_6D.md). La recette et la mise à jour signée de 0.7.01 sont validées sur les appareils
-consignés. La clé durable doit être conservée et les versions suivantes retestées.
-Téléchargement SAF et transfert JSON disponibles ; renommage réservé à Windows.
-L’emplacement « IndeX · MP3 » est retiré à partir de 0.7.01, sans accès
-de récupération. Les MP3 utilisent le dossier visible choisi par l’utilisateur. Windows reste validé ; sa Release GitHub reste distincte.
-Workflows manuels uniquement ; **Verification Android Lot 6D → Run workflow** :
-mode diagnostic par défaut, ou release après configuration des secrets.
-Compteur/verrou partagé Windows/Android, aucun déclenchement sur push.
+<p>Windows portable · Android · Interface en français · Code sous GPL v3</p>
 
-L'application Flutter Windows portable reprend l'interface Éditorial, le catalogue,
-la recherche FTS5 et les dossiers/associations. Le cœur Dart reste partagé. Le dernier build Windows du Lot 4 a été testé par l’utilisateur sans problème
-apparent ni crash. Le Lot 5 ajoute le lecteur natif et Android ; leur qualification
-sur les deux cibles reste distincte des tests Linux. La recette et les limites
-sont détaillées dans le bilan du Lot 5.
+<p>
+  <a href="https://github.com/Yavuplogu/IndeX/releases"><strong>Télécharger</strong></a> ·
+  <a href="#prise-en-main">Prise en main</a> ·
+  <a href="#fonctionnalités">Fonctionnalités</a> ·
+  <a href="https://github.com/Yavuplogu/IndeX/issues">Signaler un problème</a>
+</p>
 
-Depuis le 28 octobre, le lecteur Windows utilise **just_audio + just_audio_windows**
-(WinRT MediaPlayer), en remplacement de MCI. Android conserve MediaPlayer, désormais possédé par un service média ;
-la lecture écran éteint et les commandes système du 6C sont validées par l’utilisateur.
+</div>
 
-Les derniers ajustements ajoutent une archive avec un unique lanceur visible,
-une lettrine corrigée sur deux lignes, la navigation entre correspondances dans
-les onglets et des alignements/couleurs harmonisés. Le dossier utilisateur et les
-MP3 restent aux emplacements choisis. Au premier démarrage, `IndeX/user` est
-présélectionné pour les données (modifiable). Les ouvertures suivantes vont
-directement à la bibliothèque après chargement ; le scan automatique des MP3
-peut être désactivé dans Paramètres. Leur dossier et la récursivité se règlent
-dans Fichiers et associations, avec statistiques détaillées et ouverture du
-dossier MP3 dans l’Explorateur. Le compteur sous filtres affiche visibles / total
-du catalogue, sans rappel. Le diagnostic s’ouvre dans un panneau flottant ;
-les associations peuvent être retirées après confirmation, avec suppression du
-favori et du suivi de l’épisode, sans toucher au MP3. L’ouverture du dossier utilise l’API Windows avec le chemin cible.
+---
 
-Lorsqu’un MP3 manque, **Télécharger** remplace Écouter si le journal contient une
-URL valide. Le dossier MP3 configuré est utilisé, ou demandé. Progression et
-annulation sont affichées ; après réception et association, **Écouter** réapparaît.
-Aucun MP3 n’est ajouté à la distribution.
+IndeX rassemble le catalogue documentaire de **716 émissions**, représentant environ
+**420 heures d’écoute**, dans une interface claire. Consultez les résumés, retrouvez
+les références et écoutez vos MP3 depuis une même application.
 
-Le panneau **À propos** présente la version du build et les fonctionnalités ;
-son lien GitHub reste factice pour le moment. Dans Paramètres, décochez
-**Scanner le dossier MP3 à chaque ouverture** pour désactiver le scan automatique.
+Le catalogue est intégré : il reste entièrement consultable **sans MP3 et sans
+fichiers TXT ou CSV externes**.
 
-Les données et MP3 situés dans IndeX suivent désormais le déplacement du dossier
-entier, application fermée. Ouvrir une fois la mise à jour avant déplacement pour
-convertir les anciens profils ; les dossiers extérieurs gardent leurs chemins.
+> **Version bêta** — Disponible pour Windows et Android. Aucun MP3 n’est embarqué
+> dans les applications.
 
-- [Lot 4 : comportement, contrôles exécutés et validation Windows restante](docs/lot4/bilan.md)
-- [Application Flutter Windows et construction portable](apps/index_windows/README.md)
-- [Mode d'emploi Windows](docs/lot4/UTILISATION_WINDOWS.md)
+## Télécharger
 
-La dernière révision de la maquette Éditorial, claire et sombre, a été validée le
-25 octobre 2026 comme référence visuelle du Lot 4. Elle inclut les commandes de
-fenêtre, les cadres Sources/Musiques révisés, la lettrine et les entrées des futurs
-parcours de renommage et de transfert JSON dans Paramètres. Le lecteur HTML reste simulé.
+Les versions publiées sont disponibles dans les **[Releases](https://github.com/Yavuplogu/IndeX/releases)**.
+Choisissez le fichier correspondant à votre plateforme :
 
-- [Spécifications complémentaires Windows — Lot 4](docs/lot4/specifications.md)
-- [Interface Éditorial validée pour le Lot 4 — HTML autonome et utilisation](docs/ui/README.md)
-- [Lot 3 : recherche FTS5, extraits et validation](docs/lot3/bilan.md)
-- [Lot 2 : catalogue, import, associations, migrations et anomalies](docs/lot2/bilan.md)
-- [Rapport du corpus complet](docs/lot3/catalogue-report.json)
-- [SQLite documentaire prérempli](assets/catalogue.sqlite)
-- [Lot 1 : API, validation, dépendances et limites](docs/lot1/bilan.md)
-- [Audit, architecture, dépendances, risques et recette](docs/lot0/conception.md)
-- [Journal des décisions](docs/lot0/decisions.md)
-- [Règle actuelle : association par noms du journal, sans COMM](docs/regle-association-noms-journal.md)
-- [Résultats observés sur Linux](docs/lot0/audit-resultats.json)
-- [Versions et licences des packages inspectés](docs/lot0/dependances-observees.json)
-- [Cahier des charges V1.4 fourni](docs/Cahier_des_charges_IndeX_Codex_V1.4.md)
+| Plateforme | Distribution | Configuration minimale |
+| --- | --- | --- |
+| **Windows** | Archive portable `.zip`, sans installateur | Windows 10 ou 11 · x64 |
+| **Android** | Application `.apk` | Android 7 ou supérieur · ARM64 |
 
-Depuis la décision du 26 octobre 2026, l'association utilise exclusivement le nom
-MP3 d'origine puis le nom système du journal intégré au SQLite. Comparaison exacte
-avec NFC et casse ignorée, ambiguïtés/doublons refusés, aucun repli par titre ni
-lecture COMM. Les choix manuels et le suivi sont préservés ; un nom conforme ne
-certifie pas le contenu audio. L'[ancienne règle COMM](docs/regle-association-COMM.md)
-reste archivée pour les audits antérieurs.
+## Fonctionnalités
 
-## Vérifier les Lots 1 à 4
+| | Ce que propose IndeX |
+| --- | --- |
+| **Explorer** | Recherche dans les titres, résumés, sources et musiques ; tris, filtres et favoris. |
+| **Comprendre** | Fiches documentaires avec résumés, références, musiques et accès aux épisodes connexes. |
+| **Associer** | Reconnaissance automatique des noms de MP3, associations manuelles et diagnostic du dossier. |
+| **Écouter** | Lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes ; modes aléatoire et enchaînement. |
+| **Reprendre** | Progression sauvegardée localement, reprise d’écoute et états **Non écouté**, **En cours**, **Écouté**. |
+| **Transférer** | Export/import JSON entre Windows et Android, avec aperçu et résolution des conflits avant fusion. |
+| **Compléter** | Téléchargement à la demande d’un MP3 absent lorsqu’une URL est disponible dans le catalogue. |
+| **Organiser** | Suppression confirmée des MP3 écoutés en conservant le suivi et les favoris ; renommage facultatif sur Windows. |
+| **Personnaliser** | Thèmes clair et sombre ; interface Android adaptée au portrait et au paysage. |
 
-Avec Flutter 3.47.7 / Dart 3.13.5 activés, depuis la racine :
+Sur **Android**, la lecture continue en arrière-plan, avec commandes dans les
+notifications et sur l’écran verrouillé.
 
-```sh
-dart pub get --enforce-lockfile
-bash tools/lot4/check.sh
+## Prise en main
+
+### Windows
+
+1. Télécharger et décompresser l’archive portable.
+2. Conserver l’ensemble des dossiers extraits.
+3. Lancer **`IndeX.exe`**.
+4. Choisir le dossier des données utilisateur et, éventuellement, celui des MP3.
+
+Le dossier `IndeX/user` est proposé par défaut pour vos données ; cet emplacement
+reste modifiable.
+
+### Android
+
+1. Télécharger puis installer l’APK.
+2. Autoriser l’installation depuis cette source si Android le demande.
+3. Choisir le dossier contenant les MP3, ou commencer sans fichiers audio.
+
+Pour les mises à jour Android, installer le nouvel APK officiel **sans désinstaller
+IndeX**, afin de conserver les données.
+
+## Vos fichiers MP3
+
+L’association automatique reconnaît les noms d’origine et les titres système du
+catalogue, par exemple :
+
+```text
+mr_x_1997_01_04.mp3
+1997-01-04 La 5ème Colonne.mp3
 ```
 
-Dans l'environnement cloud préparé, activer d'abord le SDK avec
-`. /workspace/toolchains/activate-flutter.sh`. Le script de vérification réutilise
-ensuite les dépendances hors ligne, contrôle le formatage, l'analyse et les tests.
-L’import, la recherche et le scan restent sans réseau et ne modifient pas les
-fichiers fournis. Le service de téléchargement explicite utilise HTTP/HTTPS ; les
-tests emploient un serveur local, sans télécharger le corpus distant.
-Les tests sont validés sur Linux uniquement ; voir le bilan pour les limites natives.
+Les autres noms peuvent être associés manuellement. **Le scan ne modifie pas les
+fichiers.**
 
-## Régénérer le catalogue documentaire
+Le renommage, disponible uniquement sur Windows, convertit les noms d’origine vers
+les titres système du catalogue. Il est facultatif et nécessite un aperçu puis
+une confirmation.
 
-```sh
-dart run bin/build_catalogue.dart --output assets/catalogue.sqlite --version corpus-2026-10-26-noms-journal-r3 --generated-at 2026-10-26T00:00:00Z --report docs/lot3/catalogue-report.json --replace
-```
+La suppression des MP3 écoutés est accessible sur Windows et Android depuis
+**Paramètres → Fichiers audio**, avec aperçu et confirmation. Le suivi et les
+favoris sont conservés. **La suppression peut être définitive, sans passage par
+une corbeille.**
 
-Le catalogue préindexé actuel (schéma v4) contient **716 épisodes**, dont 603 avec
-résumé, 1896 références et 614 musiques. Les onze noms corrigés sur `main` sont
-intégrés, sans changement d'identité. Le rapport conserve les 29 avertissements historiques, sans
-erreur, quarantaine, divergence de nom TXT ni fiche à vérifier.
-Le SQLite n'embarque aucun MP3 ni donnée personnelle. `--replace` remplace uniquement
-l'artefact généré. Le Lot 4 l'intègre aux assets Flutter ; le CSV n'est pas nécessaire
-chez l'utilisateur.
+## Données et fonctionnement hors ligne
 
-## Rechercher depuis Dart
+Le catalogue, la recherche et l’écoute de fichiers locaux fonctionnent **hors
+ligne**. Aucun compte n’est requis et aucune synchronisation automatique n’est
+effectuée.
 
-```dart
-import 'package:index_core/index_storage.dart';
+| Données | Emplacement ou contenu |
+| --- | --- |
+| **Favoris, progressions et réglages** | Dossier utilisateur choisi sur Windows ; stockage interne de l’application sur Android. |
+| **MP3** | Dossier choisi par l’utilisateur ; aucun fichier audio dans les applications distribuées. |
+| **Export JSON** | Suivi d’écoute et favoris, pour sauvegarde ou fusion sur un autre appareil ; aucun MP3 inclus. |
 
-final store = CatalogStore.open('ma-base.sqlite');
-try {
-  store.importReference('assets/catalogue.sqlite');
-  final results = SqliteSearchEngine(store.database).search('guerre froide');
-  // results : identité, titre, date, extrait en texte brut, score et disponibilité.
-} finally {
-  store.close();
-}
-```
+Le téléchargement volontaire nécessite Internet. Un fournisseur de fichiers
+distant choisi sous Android peut également nécessiter une connexion.
 
-Les termes sont combinés avec AND ; accents et casse sont neutralisés, sans
-recherche sémantique ni syntaxe FTS avancée. Le titre est prioritaire. Voir le
-[bilan Lot 3](docs/lot3/bilan.md) pour les filtres et les limites.
+## Compatibilité vérifiée
 
-## Reproduire les sondes du Lot 0
+La version **0.7.01**, y compris sa mise à jour signée, a été déclarée fonctionnelle
+par l’utilisateur sur les appareils suivants :
 
-Cette section est historique : `tools/lot0/audit.py` vise l'échantillon initial de
-six lignes et ne valide pas le corpus complet actuel. Utiliser les tests des Lots 1–3
-et le générateur ci-dessus pour les 716 entrées ; ne pas supprimer des données pour
-faire passer une sonde historique.
+| Appareil | Version Android déclarée |
+| --- | --- |
+| Google Pixel 9 et Pixel 10 | Android 17 |
+| OnePlus 15 | Android 17 |
+| Samsung Galaxy S21 | Android 14 |
 
-Depuis la racine du dépôt, avec Python 3.11+ :
+Cette validation concerne ces appareils et cette version ; elle ne constitue pas
+une recette de toutes les configurations compatibles.
 
-```sh
-python3 -m venv /tmp/index-lot0-venv
-/tmp/index-lot0-venv/bin/python -m pip install -r tools/lot0/requirements.txt
-/tmp/index-lot0-venv/bin/python tools/lot0/audit.py > /tmp/index-lot0-resultats.json
-```
+## Documentation
 
-Sous Windows, utiliser un venv local hors dépôt et son `Scripts/python.exe` ; la
-sonde d'arrêt forcé utilise `selectors` sur un tube POSIX et doit être adaptée
-pour une exécution Windows. Elle a été exécutée **sur Linux seulement**.
-Les trois sondes SQLite écrivent dans des bases temporaires ; le corpus est lu
-sans modification et ses SHA-256 sont comparés avant/après. Le résultat JSON va
-sur stdout, les résultats des tests sur stderr ; tout échec retourne un code non nul.
-Ce script d'audit n'est ni le parseur de production ni le générateur du catalogue.
+| Besoin | Guide |
+| --- | --- |
+| Utiliser l’application sur Windows | [Mode d’emploi](docs/lot4/UTILISATION_WINDOWS.md) |
+| Comprendre les associations MP3 | [Règle d’association par noms du catalogue](docs/regle-association-noms-journal.md) |
+| Supprimer les MP3 écoutés | [Fonctionnement et contrôles](docs/suppression-mp3-ecoutes.md) |
+| Construire l’application | [Application Flutter et commandes de construction](apps/index_windows/README.md) |
+| Signer et distribuer Android | [Guide de distribution](docs/lot6/DISTRIBUTION_ANDROID.md) |
+| Comprendre les versions | [Politique de versionnement](tools/versioning/README.md) |
+| Consulter les notes de développement | [Ancien README et références techniques](docs/README-historique.md) |
 
-Pour revérifier les archives des dépendances (accès de développement à pub.dev) :
+## Retours et contributions
 
-```sh
-python3 tools/lot0/verify_dependencies.py
-```
+Pour signaler un problème ou proposer une amélioration, utilisez les
+**[Issues](https://github.com/Yavuplogu/IndeX/issues)**. Précisez la version d’IndeX,
+votre système et les étapes permettant de reproduire le problème.
 
-L’application ne contacte aucun serveur automatiquement. Depuis la décision du
-30 octobre, Télécharger utilise uniquement sur demande l’URL MP3 du journal intégré.
-Le fichier reçu est contrôlé puis associé à la fiche, sans écraser une cible.
-Les autres URL documentaires ne sont pas ouvertes automatiquement. Les MP3 déjà présents sont
-des fixtures existantes : ne pas en ajouter, dupliquer ou supprimer pendant l'audit.
-Seul le SQLite documentaire sera embarqué dans les futures distributions.
+IndeX est développé avec **Flutter et Dart**, avec un cœur partagé entre Windows
+et Android. Les scripts de construction et de vérification se trouvent dans
+[`tools/`](tools/). Les workflows GitHub Actions se lancent manuellement.
 
+## Licence
 
-## Licence du code et validation Android
+Le code original d’IndeX est distribué sous **GNU GPL v3 uniquement**
+(`GPL-3.0-only`).
 
-Le code original d’IndeX est sous **GNU GPL v3 uniquement** (`GPL-3.0-only`) :
-[texte intégral](LICENSE) et [périmètre/exclusions](LICENSE_SCOPE.md).
-Aucune licence n’est attribuée ici aux MP3, à la documentation ou aux contenus
-documentaires du catalogue. Les éléments tiers conservent leurs propres licences.
-
-L’utilisateur valide **0.7.01**, y compris la mise à jour signée, sur Pixel 9/10
-et OnePlus 15 sous Android 17, et Galaxy S21 sous Android 14. Voir la
-[recette consignée](docs/lot6/RECETTE_6D.md). La publication GitHub reste distincte.
-Le bouton GitHub d’À propos ouvre le dépôt dans le navigateur uniquement sur clic.
-
-
-## Compteurs de construction
-
-Versionnement centralisé sur `main` : politique et compteur dans
-`tools/versioning/`. Les constructions manuelles y ajoutent un commit de réservation.
-Le premier build après migration intégrera les dernières valeurs de l’ancienne
-branche et la supprimera dans la même transaction ; aucun compteur remis à zéro.
-Le code compilé reste le commit sélectionné au lancement, consigné séparément du
-commit de compteur. Voir [la procédure et les protections](tools/versioning/README.md).
-
-
-Suppression facultative des MP3 écoutés sur Windows/Android : **Paramètres →
-Fichiers audio**, aperçu filtrable et confirmation explicite, suivi et favoris
-conservés. Voir [le fonctionnement et la recette](docs/suppression-mp3-ecoutes.md).
-Cette fonction est postérieure au build 0.7.01 validé sur téléphone.
+Consultez [LICENSE](LICENSE) et [LICENSE_SCOPE.md](LICENSE_SCOPE.md) pour le texte et
+son périmètre. Cette licence du code ne s’applique pas aux MP3, à la documentation
+ni aux contenus documentaires. Les composants tiers conservent leurs propres
+licences.
