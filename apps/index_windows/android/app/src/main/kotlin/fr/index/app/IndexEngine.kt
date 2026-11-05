@@ -1,4 +1,4 @@
-package fr.index.index_windows
+package fr.index.app
 
 import android.content.Context
 import io.flutter.embedding.engine.FlutterEngine

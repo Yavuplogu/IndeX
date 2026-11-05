@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 String reference(String name) => Uri(
   scheme: 'content',
-  host: 'fr.index.index_windows.documents',
+  host: 'fr.index.app.documents',
   pathSegments: ['tree', 'mp3:', 'document', 'mp3:$name'],
 ).toString();
 
@@ -17,7 +17,7 @@ void main() {
   late String id, original, system, before, after;
   late Map<String, Map<String, Object?>> documents;
   var supported = true, failAfterMove = false, moves = 0;
-  const tree = 'content://fr.index.index_windows.documents/tree/mp3%3A';
+  const tree = 'content://fr.index.app.documents/tree/mp3%3A';
   Future<Object?> call(String method, Map<String, Object?> args) async {
     final ref = args['reference'] as String?;
     switch (method) {

@@ -263,7 +263,7 @@ flutter test integration_test/android_background_audio_test.dart -d <identifiant
 ```
 
 Pour diagnostiquer sur un poste ADB : `adb shell dumpsys media_session`,
-`adb shell dumpsys activity services fr.index.index_windows`, et
+`adb shell dumpsys activity services fr.index.app`, et
 `adb logcat -v time` pendant la reproduction. Retirer les informations personnelles
 avant partage. Une erreur FGS, une notification incorrecte ou un checkpoint absent
 reste un échec de recette même si l’APK compile.

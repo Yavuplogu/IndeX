@@ -1,4 +1,4 @@
-package fr.index.index_windows
+package fr.index.app
 
 import android.app.*
 import android.content.*
@@ -16,7 +16,7 @@ class IndexPlaybackService : Service() {
     companion object {
         private const val CHANNEL = "index-listening"
         private const val NOTIFICATION = 6003
-        private const val ACTION = "fr.index.index_windows.MEDIA_"
+        private const val ACTION = "fr.index.app.MEDIA_"
     }
     private val handler = Handler(Looper.getMainLooper())
     private var player: MediaPlayer? = null

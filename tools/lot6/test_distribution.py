@@ -12,8 +12,8 @@ from inspect_apk import ROOT, PERMISSIONS, inspect, validate_release_output
 import prepare_signing
 
 CERT = 'ab' * 32
-BADGING = "package: name='fr.index.index_windows' versionCode='31' versionName='0.6.30'\nsdkVersion:'24'\ntargetSdkVersion:'36'"
-XML = 'A: android:allowBackup(0x01010280)=(type 0x12)0x0'
+BADGING = "package: name='fr.index.app' versionCode='31' versionName='0.6.30'\nsdkVersion:'24'\ntargetSdkVersion:'36'"
+XML = 'A: android:allowBackup(0x01010280)=(type 0x12)0x0\nA: android:authorities(0x01010018)="fr.index.app.documents"'
 SIGNATURE = f'Signer #1 certificate SHA-256 digest: {CERT}\nSigner #1 certificate DN: CN=IndeX'
 PERMS = '\n'.join(f"uses-permission: name='{p}'" for p in PERMISSIONS)
 
@@ -28,6 +28,8 @@ class DistributionTest(unittest.TestCase):
     def test_release_requires_identity_version_permissions_and_certificate(self):
         self.assertEqual(self.check_output(), CERT)
         for change in [dict(expected_cert='cd' * 32), dict(build_number=32),
+                       dict(badging=BADGING.replace('fr.index.app', 'fr.index.index_windows')),
+                       dict(xml=XML.replace('fr.index.app.documents', 'fr.index.index_windows.documents')),
                        dict(build_name='0.6.31'), dict(badging=BADGING.replace('24', '23')),
                        dict(permissions=PERMS + "\nuses-permission: name='android.permission.READ_PHONE_STATE'"),
                        dict(permissions=PERMS.replace('INTERNET', 'CAMERA')),

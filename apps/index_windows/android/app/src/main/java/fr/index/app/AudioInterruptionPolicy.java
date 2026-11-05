@@ -1,4 +1,4 @@
-package fr.index.index_windows;
+package fr.index.app;
 
 /** Réservation de reprise limitée à la piste et à l'interruption qui l'ont créée. */
 public final class AudioInterruptionPolicy {

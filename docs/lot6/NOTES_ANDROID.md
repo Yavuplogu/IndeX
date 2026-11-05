@@ -1,5 +1,12 @@
 # IndeX Android — notes du Lot 6D
 
+Depuis le 5 novembre 2026, l’identifiant Android définitif est **`fr.index.app`**.
+Il remplace `fr.index.index_windows` : nouvelle installation indépendante,
+export/import JSON et nouveau choix du dossier MP3. Sauvegarder les MP3 privés
+avant toute suppression de l’ancienne application. La clé de signature déjà
+créée reste utilisable ; ne pas la recréer pour ce changement.
+Le X de l’icône est réduit de 12 %, centré sur le même fond beige adaptatif.
+
 Version bêta de la série **0.6** ; le mineur exact figure dans le nom de l’APK,
 À propos et `release-apk.json`. Android 7+/API 24, appareil ARM64.
 

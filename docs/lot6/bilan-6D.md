@@ -4,6 +4,50 @@ Lancé le **4 novembre 2026**, après validation utilisateur du dernier 6C.
 Le lot avance sans rouvrir cette validation. La chaîne de distribution est
 préparée ; la clôture physique du candidat release reste à consigner.
 
+## Actualisation du 5 novembre 2026 — identité définitive et icône
+
+Sur instruction utilisateur, adopter **`fr.index.app`** avant distribution durable.
+Application ID et namespace Gradle, packages et chemins Java/Kotlin, manifeste,
+actions média et fournisseur `fr.index.app.documents` alignés. La mention du
+fournisseur privé dans l’interface et les tests/contrôles de distribution suivent
+la nouvelle identité. Le contrôle release refuse aussi l’ancienne identité et
+une ancienne autorité documentaire. Aucun changement d’identité Windows, des
+schémas ou du compteur. Les résultats du 4 novembre ci-dessous restent historiques.
+
+Android crée une nouvelle installation indépendante, même à signature identique.
+Les deux applications peuvent coexister. Export/import JSON, nouveau choix SAF
+et copie externe des MP3 privés sont documentés avant retrait de l’ancienne.
+Un keystore déjà créé reste valable : aucun changement des secrets, de l’alias
+ou de l’empreinte GitHub requis pour ce changement de package.
+
+X de l’icône Android réduit de **12 %**, centré ; fond beige adaptatif conservé,
+replis Android 7/7.1 alignés. Icône blanche de notification et logo dans l’UI
+inchangés. Vérification de la géométrie et du XML, APK diagnostic compilé :
+identité/activité/service/fournisseur vérifiés dans le manifeste réel et absence
+des anciennes classes dans les DEX. Pas de recette sur téléphone depuis Linux.
+
+Vérifications du 5 novembre :
+
+- 257 tests du cœur et 94 tests Flutter, analyses/format : réussis ;
+  tests Java des publications
+  privées et des interruptions audio : réussis.
+- 5 tests de distribution : réussis, avec refus de l’ancienne identité et d’un
+  ancien fournisseur documentaire.
+- APK diagnostic : compilation et inspection réussies, SHA-256
+  `e11ecb112767adcf86836fafa9acaf984cf728ca76f293cf1c1a7122ddaaac22`.
+- APK release ARM64 : compilation et inspection réelle `aapt`/`apksigner` réussies,
+  SHA-256 `838d63a4648422e2b9a4480ad2e21120e9a64c5747704d87e74cfcd283087952`.
+  Clé jetable de validation, retirée après essai ; pas une clé de distribution.
+  Version locale `0.6.0-validation`, aucune réservation officielle.
+- YAML du workflow valide ; copies des guides liées incluses dans l’artefact
+  release pour garder leur consultation possible après décompression.
+- Sources natives déplacées comparées au commit précédent : seuls le package et
+  ses identifiants changent. Schémas, seed et lockfiles inchangés.
+
+Guide détaillé de création sur PC Windows :
+[SIGNATURE_ANDROID_DEPUIS_WINDOWS.md](SIGNATURE_ANDROID_DEPUIS_WINDOWS.md).
+Temurin n’est pas imposé si un autre JDK compatible est déjà disponible.
+
 ## Décisions et réalisation
 
 - Identifiant `fr.index.index_windows`, Android API 24 minimum/cible 36 ARM64,

@@ -12,6 +12,7 @@ Pour chaque APK release candidat, consigner :
 | Donnée | À renseigner sur le candidat |
 | --- | --- |
 | Version publique / versionCode | Rapport `release-apk.json` |
+| Identifiant définitif | `fr.index.app` (depuis le 5 novembre) |
 | Commit construit / run Actions | URL du run |
 | SHA-256 APK et certificat | Rapport et fichier `.sha256` |
 | Modèle(s), Android/API, RAM, forme de l’icône | Appareil(s) effectivement utilisé(s) |
@@ -39,6 +40,7 @@ preuve utilisateur utile ; son modèle et sa version exacte ne sont pas encore c
 | Seek fin (souris/tactile et ±10 s), réécoute et auto-suivant | Écouté au terme, nouvelle écoute remise à zéro, suivant non écouté | Dernier 6C validé ; vérifier release |
 | Arrêt processus/redémarrage téléphone | Dernier checkpoint durable récupéré, pas de lecture forcée | À consigner |
 | Mise à jour release N → N+1, même clé, sans désinstaller | VersionCode supérieur, suivi/favoris/réglages et droits SAF conservés | Deux releases nécessaires |
+| Passage ancien identifiant → `fr.index.app` | Installation indépendante, JSON exporté/importé et nouveau choix SAF ; MP3 privés sauvegardés avant retrait de l’ancienne | À consigner |
 | Passage debug → release avec certificat différent | Refus normal d’update ; sauvegarde externe avant réinstallation manuelle | À consigner si applicable |
 | Réseau au repos (capture si disponible) | Aucun trafic propre à IndeX hors téléchargement explicite | Revue statique faite, capture non réalisée |
 

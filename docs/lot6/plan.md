@@ -28,7 +28,7 @@ de test manuel. Il s’agit d’un socle à réévaluer, pas d’une version qua
 - le lecteur de MainActivity est suspendu dans onStop, sans service de lecture
   continue en arrière-plan ;
 - la configuration release utilisait la clé debug avant le 6D ; l’identifiant
-  historique `fr.index.index_windows` reste conservé.
+  historique `fr.index.index_windows` est remplacé le 5 novembre par `fr.index.app`.
 
 ## 6A — Audit Android et décisions de plateforme
 

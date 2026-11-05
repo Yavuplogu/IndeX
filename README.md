@@ -12,7 +12,10 @@ en français, avec catalogue et écoute locale hors ligne. Le téléchargement d
 MP3 manquant est facultatif et contacte le serveur source uniquement sur clic.
 
 **État : Lot 6D lancé — préparation de la distribution Android.**
-Le dernier 6C est validé par l’utilisateur le 4 novembre. Le 6D ajoute un mode
+Le dernier 6C est validé par l’utilisateur le 4 novembre.
+Depuis le 5 novembre, Android utilise l’identifiant définitif `fr.index.app` :
+installer la nouvelle application puis transférer le suivi par JSON et rechoisir
+le dossier MP3 ; sauvegarder les MP3 privés avant de retirer l’ancienne. Le 6D ajoute un mode
 release AOT signé, ses contrôles et son dossier de recette, sans publication.
 [Bilan 6D](docs/lot6/bilan-6D.md), [guide de signature/distribution](docs/lot6/DISTRIBUTION_ANDROID.md)
 et [fiche de recette](docs/lot6/RECETTE_6D.md). Une clé durable sauvegardée et une

@@ -1,4 +1,4 @@
-package fr.index.index_windows;
+package fr.index.app;
 
 public final class AudioInterruptionPolicyTest {
     private static void check(boolean condition) { if (!condition) throw new AssertionError(); }

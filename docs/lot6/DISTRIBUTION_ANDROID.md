@@ -15,7 +15,7 @@ Dans **Actions → Verification Android Lot 6D → Run workflow**, choisir :
 Les deux modes restent manuels, partagent le compteur/verrou Windows et consomment
 un nouveau mineur, même en échec. Aucun changement de majeur ou passage en finale.
 L’APK exige Android 7/API 24 minimum, cible API 36 et un appareil ARM64.
-Identifiant conservé : `fr.index.index_windows`. Aucun Google Play/AAB requis.
+Identifiant définitif depuis le 5 novembre 2026 : `fr.index.app`. Aucun Google Play/AAB requis.
 
 En release, télécharger l’artefact `IndeX-<version>-Android-arm64-release` : APK,
 SHA-256, rapport de contrôle, provenance du build, notices de licences, notes,
@@ -24,6 +24,12 @@ une GitHub Release publique. Le workflow ne publie rien et n’inclut jamais le 
 Les APK diagnostic restent identifiés `IndeX-<version>-Android-arm64-test`.
 
 ## Créer et conserver la clé durable
+
+Pour une première configuration depuis un PC Windows, suivre le
+[guide pas à pas illustré par les commandes PowerShell](SIGNATURE_ANDROID_DEPUIS_WINDOWS.md) :
+explication des clés/certificats, installation du JDK, création, sauvegardes,
+secrets et variable GitHub, premier build et passage du diagnostic à la release.
+
 
 À faire sur une machine de confiance avec le JDK (`keytool`), **hors du dépôt**.
 Cette clé Android peut être autosignée : aucun achat de certificat n’est requis.
@@ -67,10 +73,28 @@ en échec. Aucun cache de clé release, affichage de mot de passe ou repli debug
 L’accès en écriture aux workflows et aux secrets doit rester limité aux personnes
 de confiance. Exécuter la release sur une révision relue et contrôlée du dépôt.
 
+## Identifiant Android définitif — 5 novembre 2026
+
+`fr.index.app` remplace `fr.index.index_windows`. Le namespace, le service média,
+le fournisseur documentaire `fr.index.app.documents` et les contrôles APK sont
+alignés. Android considère cette version comme une nouvelle application, même
+avec la même signature : elle peut coexister avec l’ancienne, mais ne récupère pas
+son profil privé ni ses autorisations SAF. Exporter le JSON et copier les MP3
+privés hors de l’ancienne application avant toute désinstallation. Installer la
+nouvelle, rechoisir le dossier et importer le JSON. Les futures mises à jour
+conserveront `fr.index.app` et votre clé durable.
+
+Si le keystore a déjà été créé, **le conserver** : le certificat n’est pas lié à
+l’identifiant de package. Aucun changement des secrets, alias ou empreinte GitHub
+n’est nécessaire du seul fait de ce changement d’identifiant. Ne pas recréer la clé.
+
 ## Passer des tests à la signature durable
 
 Android refuse une mise à jour du même identifiant avec un certificat différent.
-La première release ne peut donc généralement pas remplacer l’APK debug actuel.
+Un diagnostic récent sous `fr.index.app` ne peut donc normalement pas être mis
+à jour directement par une release utilisant une autre clé. Les anciens APK sous
+`fr.index.index_windows` restent, eux, une application distincte : la nouvelle
+peut s’installer à côté, sans désinstallation préalable.
 **Avant toute désinstallation**, exporter le suivi JSON vers un dossier extérieur
 à l’application et le vérifier. Copier également ailleurs tous les MP3 du dossier
 privé « IndeX · MP3 » : ils sont supprimés à la désinstallation, comme le profil.
@@ -119,7 +143,7 @@ Permissions fusionnées autorisées :
 | ACCESS_NETWORK_STATE | Dépendance Android du moteur audio Flutter existant |
 | FOREGROUND_SERVICE / FOREGROUND_SERVICE_MEDIA_PLAYBACK | Lecture en arrière-plan |
 | WAKE_LOCK | Lecture/checkpoint lorsque l’écran s’éteint |
-| `fr.index.index_windows.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Récepteurs internes AndroidX, permission propre à l’application |
+| `fr.index.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Récepteurs internes AndroidX, permission propre à l’application |
 
 Pas de lecture des appels, permission globale de stockage ou accès contacts.
 Le fournisseur documentaire exposé est protégé par MANAGE_DOCUMENTS ; le service

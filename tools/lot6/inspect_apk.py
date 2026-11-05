@@ -13,7 +13,7 @@ PERMISSIONS = {
     'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE',
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'android.permission.WAKE_LOCK',
-    'fr.index.index_windows.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
+    'fr.index.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION',
 }
 
 
@@ -27,7 +27,7 @@ def fingerprint(value):
 def validate_release_output(badging, xml, permissions, signature, expected_cert,
                             build_name, build_number):
     package = re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", badging)
-    if not package or package.groups() != ('fr.index.index_windows', str(build_number), build_name):
+    if not package or package.groups() != ('fr.index.app', str(build_number), build_name):
         raise ValueError('Identité ou version Android inattendue.')
     if "sdkVersion:'24'" not in badging or "targetSdkVersion:'36'" not in badging:
         raise ValueError('Versions Android minimum/cible inattendues.')
@@ -36,6 +36,8 @@ def validate_release_output(badging, xml, permissions, signature, expected_cert,
         raise ValueError('APK debuggable ou testOnly interdit en release.')
     if not re.search(r'android:allowBackup\([^\n]*\)=\(type 0x12\)0x0\b', xml):
         raise ValueError('La sauvegarde automatique Android doit rester désactivée.')
+    if not re.search(r'android:authorities\([^\n]*\)="fr\.index\.app\.documents"', xml):
+        raise ValueError('Fournisseur documentaire Android inattendu.')
     found = set(re.findall(r"uses-permission: name='([^']+)'", permissions))
     if found != PERMISSIONS:
         raise ValueError(f'Permissions inattendues : ajoutées={sorted(found - PERMISSIONS)}, absentes={sorted(PERMISSIONS - found)}')

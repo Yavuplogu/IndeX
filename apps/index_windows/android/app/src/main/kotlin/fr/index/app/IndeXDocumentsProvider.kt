@@ -1,4 +1,4 @@
-package fr.index.index_windows
+package fr.index.app
 
 import android.database.Cursor
 import android.database.MatrixCursor
@@ -16,7 +16,7 @@ import java.util.Locale
 /** Seul le dossier MP3 géré est exposé : jamais le profil ni les sauvegardes. */
 class IndeXDocumentsProvider : DocumentsProvider() {
     companion object {
-        const val AUTHORITY = "fr.index.index_windows.documents"
+        const val AUTHORITY = "fr.index.app.documents"
         val lock = Any()
         fun root(context: android.content.Context) = File(context.filesDir, "mp3").apply { mkdirs() }
         fun key(name: String) = Normalizer.normalize(name, Normalizer.Form.NFC).lowercase(Locale.ROOT)

@@ -1,9 +1,12 @@
-<!-- Repli rond pour les lanceurs Android 7.1 ; Android 8+ utilise les couches adaptatives. -->
+<!-- Repli Android 7/7.1 : même réduction de 12 % que l’icône adaptative. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="48dp" android:height="48dp"
     android:viewportWidth="48" android:viewportHeight="48">
     <path android:fillColor="@color/index_icon_background"
         android:pathData="M24,0a24,24 0,1 0,0,48a24,24 0,1 0,0,-48z" />
-    <path android:fillColor="#99533D"
-        android:pathData="M10,8h8l6,10 6,-10h8L28,24 39,40h-8L24,29 17,40h-8L20,24z" />
+    <group android:scaleX="0.88" android:scaleY="0.88"
+        android:pivotX="24" android:pivotY="24">
+        <path android:fillColor="#99533D"
+            android:pathData="M10,8h8l6,10 6,-10h8L28,24 39,40h-8L24,29 17,40h-8L20,24z" />
+    </group>
 </vector>

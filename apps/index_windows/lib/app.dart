@@ -3178,7 +3178,7 @@ class ScanPage extends StatelessWidget {
                     SelectableText(model.folderLabel),
                     if (model.android &&
                         Uri.tryParse(model.mp3Path)?.authority ==
-                            'fr.index.index_windows.documents')
+                            'fr.index.app.documents')
                       const Text(
                         'Dossier géré accessible dans Fichiers Android sous IndeX · MP3. Stockage privé : les MP3 de ce dossier sont supprimés à la désinstallation. Conservez vos originaux ailleurs.',
                       ),

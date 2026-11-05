@@ -11,8 +11,10 @@
   exige une clé durable et une empreinte attendue, aucun repli sur la clé debug.
   Ne jamais committer/cacher/exporter la clé release ou ses mots de passe. Les tests
   locaux avec clé jetable ne qualifient pas une distribution signée durablement.
-  SQLite user v7/seed v4/JSON v2 (lecture v1), Android API 24/36 ARM64 et identifiant
-  fr.index.index_windows conservés. Renommage réservé à Windows, iOS exclu.
+  SQLite user v7/seed v4/JSON v2 (lecture v1), Android API 24/36 ARM64 ; identifiant
+  définitif fr.index.app (décision du 5 novembre 2026). Identité précédente remplacée :
+  nouvelle installation Android, export JSON et copie des MP3 privés avant retrait
+  de l’ancienne. Renommage réservé à Windows, iOS exclu.
   Aucun nouveau package runtime. Préserver moteur Flutter unique/service média.
   Distinguer validation utilisateur 6C, contrôles hors appareil et recette release.
 - L'utilisateur a validé l'interface Éditorial le 25 octobre 2026 pour le Lot 4.

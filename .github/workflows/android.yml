@@ -96,6 +96,8 @@ jobs:
           cp docs/lot6/DISTRIBUTION_ANDROID.md dist/LISEZ-MOI_ANDROID.md
           cp docs/lot6/RECETTE_6D.md dist/RECETTE_6D.md
           cp docs/lot6/NOTES_ANDROID.md dist/NOTES_ANDROID.md
+          # Garder les guides liés consultables dans l’artefact décompressé.
+          cp docs/lot6/DISTRIBUTION_ANDROID.md docs/lot6/SIGNATURE_ANDROID_DEPUIS_WINDOWS.md docs/lot6/RECETTE_ANDROID.md docs/lot6/bilan-6D.md dist/
           cd dist
           sha256sum *.apk > "IndeX_${INDEX_VERSION}_android_arm64_release.apk.sha256"
       - name: Notices et provenance de la construction

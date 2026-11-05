@@ -730,3 +730,16 @@ certificat, sauvegarder hors application le JSON et les éventuels MP3 privés.
 La recette physique du candidat release et sa mise à jour restent distinctes
 de la compilation et de la validation utilisateur du 6C.
 Voir `docs/lot6/DISTRIBUTION_ANDROID.md` et `RECETTE_6D.md`.
+
+
+## Avenant du 5 novembre 2026 — identité Android et icône
+
+Décision utilisateur : adopter `fr.index.app` comme identifiant Android définitif
+en remplacement de `fr.index.index_windows`, avec namespace, fournisseur
+`fr.index.app.documents`, actions média et contrôles APK alignés. Le projet Flutter
+partagé et l’identité Windows restent inchangés. Ce changement constitue une
+nouvelle application Android : exporter/importer le suivi et rechoisir le dossier
+MP3 ; sauvegarder les MP3 privés avant toute désinstallation de l’ancienne.
+Une clé de signature déjà créée reste utilisable sans modifier ses secrets GitHub.
+Réduire légèrement le X de l’icône Android : réduction de 12 % centrée, fond beige
+adaptatif conservé, replis Android 7/7.1 cohérents. Majeur 0.6 inchangé.

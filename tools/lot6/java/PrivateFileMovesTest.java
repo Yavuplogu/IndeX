@@ -1,4 +1,4 @@
-package fr.index.index_windows;
+package fr.index.app;
 
 import java.io.*;
 import java.nio.file.*;

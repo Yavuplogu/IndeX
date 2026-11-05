@@ -1,3 +1,7 @@
+> Actualisation du 5 novembre 2026 : décision utilisateur de remplacer
+> `fr.index.index_windows` par `fr.index.app` avant distribution durable.
+> Les identifiants et résultats de compilation ci-dessous sont historiques.
+
 # Lot 6A — Audit et décisions Android
 
 Lancé explicitement le 1er novembre 2026. Le périmètre de cette étape est la
