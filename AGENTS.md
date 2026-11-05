@@ -1,3 +1,17 @@
+# Identité Git des commits Codex
+
+- Pour tout nouveau commit créé dans l’environnement Codex pour ce dépôt,
+  utiliser `user.name = Monsieur K.` et
+  `user.email = 14062442+Yavuplogu@users.noreply.github.com`.
+- À chaque nouvel environnement/checkout, configurer ces valeurs avec
+  `git config --local user.name "Monsieur K."` et
+  `git config --local user.email "14062442+Yavuplogu@users.noreply.github.com"`.
+- Avant de committer, vérifier `git var GIT_AUTHOR_IDENT` et
+  `git var GIT_COMMITTER_IDENT` : les deux doivent utiliser cette identité.
+  Vérifier les éventuelles surcharges GIT_AUTHOR_* / GIT_COMMITTER_*.
+- Cette règle concerne les nouveaux commits Codex, sans réécriture de l’historique.
+  Conserver l’identité technique distincte des réservations automatiques CI.
+
 # Suppression facultative des MP3 écoutés
 
 - Autorisée explicitement sur Windows et Android depuis Paramètres/Fichiers audio.
