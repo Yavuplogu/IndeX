@@ -80,7 +80,7 @@ cet emplacement reste modifiable.
 Pour les mises à jour Android, installer le nouvel APK officiel **sans désinstaller
 IndeX**, afin de conserver les données.
 
-## Vos fichiers MP3
+## Gestion des fichiers MP3
 
 Si vous disposez déjà d'épisodes au format MP3, l'application va scanner le dossier défini
 et associera automatiquement les fichiers en prenant en compte uniquement ces deux formatages :
