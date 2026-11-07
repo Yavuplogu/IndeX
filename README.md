@@ -1,12 +1,8 @@
 <div align="center">
 
-<img src="apps/index_windows/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Logo IndeX" width="80" height="80">
+<img src="docs/images/index-logo.png" alt="Logo IndeX" width="400" height="133">
 
-<h1>IndeX</h1>
-
-<p><strong>Rechercher, explorer et écouter les épisodes de Rendez-vous avec X.</strong></p>
-
-<p>Windows portable · Android · Interface en français · Code sous GPL v3</p>
+<p><strong>Rechercher, explorer et écouter les épisodes de l'émission Rendez-vous avec X sur Windows et Android.</strong></p>
 
 <p>
   <a href="https://github.com/Yavuplogu/IndeX/releases"><strong>Télécharger</strong></a> ·
@@ -18,16 +14,20 @@
 </div>
 
 ---
+J’ai construit IndeX à partir d’une interrogation : serait-il possible de disposer d’un outil entièrement hors ligne permettant de gérer et d’écouter ma collection d’épisodes de Rendez-vous avec X ?
 
-IndeX rassemble le catalogue documentaire de **716 émissions**, représentant environ
-**420 heures d’écoute**, dans une interface claire. Consultez les résumés, retrouvez
-les références et écoutez vos MP3 depuis une même application.
+Cela faisait des années que l’idée me séduisait, en réalité depuis l’arrêt de l’émission en 2015. Puis, la mort de Patrick Pesnot en 2023 m’a remotivé et j’ai fait quelques tentatives, plutôt infructueuses, car je ne suis pas du tout développeur.
 
-Le catalogue est intégré : il reste entièrement consultable **sans MP3 et sans
-fichiers TXT ou CSV externes**.
+Il y a quelque temps, j’ai eu l’idée d’utiliser l’IA en me disant : « Bon, à mon avis, ça va me prendre quelques mois et j’aurai probablement un résultat nébuleux, fonctionnant à moitié, puis je tenterai à nouveau ma chance dans dix ans. »
 
-> **Version bêta** — Disponible pour Windows et Android. Aucun MP3 n’est embarqué
-> dans les applications.
+Finalement, le développement n’a duré qu’une semaine, pour un résultat parfaitement fonctionnel. Certes, il y a eu beaucoup de va-et-vient, pas mal de versions différentes et quelques adaptations, mais tout le processus a été beaucoup plus rapide et intuitif que prévu. C’est à la fois fascinant et terrifiant pour l’avenir.
+
+Quoi qu’il en soit, vous trouverez un peu plus bas un tour d’horizon des capacités de IndeX.
+
+Bonne écoute,
+
+Monsieur K.
+
 
 ## Télécharger
 
@@ -41,32 +41,35 @@ Choisissez le fichier correspondant à votre plateforme :
 
 ## Fonctionnalités
 
-| | Ce que propose IndeX |
-| --- | --- |
-| **Explorer** | Recherche dans les titres, résumés, sources et musiques ; tris, filtres et favoris. |
-| **Comprendre** | Fiches documentaires avec résumés, références, musiques et accès aux épisodes connexes. |
-| **Associer** | Reconnaissance automatique des noms de MP3, associations manuelles et diagnostic du dossier. |
-| **Écouter** | Lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes ; modes aléatoire et enchaînement. |
-| **Reprendre** | Progression sauvegardée localement, reprise d’écoute et états **Non écouté**, **En cours**, **Écouté**. |
-| **Transférer** | Export/import JSON entre Windows et Android, avec aperçu et résolution des conflits avant fusion. |
-| **Compléter** | Téléchargement à la demande d’un MP3 absent lorsqu’une URL est disponible dans le catalogue. |
-| **Organiser** | Suppression confirmée des MP3 écoutés en conservant le suivi et les favoris ; renommage facultatif sur Windows. |
-| **Personnaliser** | Thèmes clair et sombre ; interface Android adaptée au portrait et au paysage. |
+IndeX rassemble le catalogue documentaire de **716 émissions**, représentant environ
+**420 heures d’écoute**, dans une interface claire. Consultez les résumés, retrouvez
+les références et écoutez vos MP3 en local depuis une même application.
 
-Sur **Android**, la lecture continue en arrière-plan, avec commandes dans les
-notifications et sur l’écran verrouillé.
+Le catalogue est intégré : il reste entièrement consultable **sans MP3 et hors ligne**. 
+Si vous avez déjà un dossier personnel rempli d'épisodes, ils seront associés au catalogue 
+et disponible pour l'écoute, sinon un bouton permet le téléchargement des MP3 à la demande.
+
+- **Explorer** : Recherche dans les titres, résumés, sources et musiques ; tris, filtres et favoris.
+- **Comprendre** : Fiches documentaires avec résumés, références, musiques et accès aux épisodes connexes.
+- **Associer** : Reconnaissance automatique des noms de MP3, associations manuelles et diagnostic du dossier.
+- **Écouter** : Lecture, pause, arrêt, volume, déplacement dans la piste et sauts de dix secondes ; modes aléatoire et enchaînement.
+- **Reprendre** : Progression sauvegardée localement, reprise d’écoute et états d'écoute.
+- **Transférer** : Export/import des données via un fichier entre Windows et Android, avec aperçu et résolution des conflits avant fusion.
+- **Compléter** : Téléchargement à la demande d’un MP3 absent (sur http://rendezvousavecmrx.free.fr/) lorsqu’une URL est disponible dans le catalogue.
+- **Organiser** : Suppression optionnelle des MP3 écoutés en conservant le suivi et les favoris ; renommage facultatif des MP3 sur Windows.
+- **Personnaliser** : Thèmes clair et sombre ; interface Android adaptée au portrait et au paysage.
+
 
 ## Prise en main
 
 ### Windows
 
-1. Télécharger et décompresser l’archive portable.
-2. Conserver l’ensemble des dossiers extraits.
-3. Lancer **`IndeX.exe`**.
-4. Choisir le dossier des données utilisateur et, éventuellement, celui des MP3.
+1. Télécharger et décompresser le dossier "IndeX" dans n'importe quel emplacement.
+2. Lancer **`IndeX.exe`**.
+3. Choisir le dossier contenant les MP3, ou commencer sans fichiers audio.
 
-Le dossier `IndeX/user` est proposé par défaut pour vos données ; cet emplacement
-reste modifiable.
+Le dossier `IndeX/user` est proposé par défaut pour vos données (favoris, états d'écoute, progression...) ; 
+cet emplacement reste modifiable.
 
 ### Android
 
@@ -79,76 +82,58 @@ IndeX**, afin de conserver les données.
 
 ## Vos fichiers MP3
 
-L’association automatique reconnaît les noms d’origine et les titres système du
-catalogue, par exemple :
+Si vous disposez déjà d'épisodes au format MP3, l'application va scanner le dossier défini
+et associera automatiquement les fichiers en prenant en compte uniquement ces deux formatages :
+
+```text
+1997-01-04 La 5ème Colonne.mp3
+```
+Ou son équivalent :
 
 ```text
 mr_x_1997_01_04.mp3
-1997-01-04 La 5ème Colonne.mp3
 ```
 
-Les autres noms peuvent être associés manuellement. **Le scan ne modifie pas les
-fichiers.**
+Aucun autre type de formatage de nom n'est accepté, simplement car ces deux types sont les catalogues
+les plus répandus sur Internet. Les autres noms peuvent être associés manuellement. **Le scan ne modifie pas les
+fichiers locaux.**
 
-Le renommage, disponible uniquement sur Windows, convertit les noms d’origine vers
-les titres système du catalogue. Il est facultatif et nécessite un aperçu puis
+Le renommage de fichiers, disponible uniquement sur Windows, convertit les noms de type "mr_x_1997_01_04.mp3" vers
+son équivalent "1997-01-04 La 5ème Colonne.mp3". Il est facultatif et nécessite un aperçu puis
 une confirmation.
 
-La suppression des MP3 écoutés est accessible sur Windows et Android depuis
+La suppression des MP3 écoutés afin de libérer de la place est possible sur Windows et Android depuis
 **Paramètres → Fichiers audio**, avec aperçu et confirmation. Le suivi et les
 favoris sont conservés. **La suppression peut être définitive, sans passage par
 une corbeille.**
 
-## Données et fonctionnement hors ligne
-
 Le catalogue, la recherche et l’écoute de fichiers locaux fonctionnent **hors
 ligne**. Aucun compte n’est requis et aucune synchronisation automatique n’est
-effectuée.
+effectuée. Si un MP3 est téléchargé via rendezvousavecmrx.free.fr, la lecture se fait 
+à partir du fichier téléchargé, et non depuis le site (ce n'est pas du streaming audio).
 
-| Données | Emplacement ou contenu |
-| --- | --- |
-| **Favoris, progressions et réglages** | Dossier utilisateur choisi sur Windows ; stockage interne de l’application sur Android. |
-| **MP3** | Dossier choisi par l’utilisateur ; aucun fichier audio dans les applications distribuées. |
-| **Export JSON** | Suivi d’écoute et favoris, pour sauvegarde ou fusion sur un autre appareil ; aucun MP3 inclus. |
 
-Le téléchargement volontaire nécessite Internet. Un fournisseur de fichiers
-distant choisi sous Android peut également nécessiter une connexion.
+## Remarques
 
-## Compatibilité vérifiée
-
-La version **0.7.01**, y compris sa mise à jour signée, a été déclarée fonctionnelle
-par l’utilisateur sur les appareils suivants :
-
-| Appareil | Version Android déclarée |
-| --- | --- |
-| Google Pixel 9 et Pixel 10 | Android 17 |
-| OnePlus 15 | Android 17 |
-| Samsung Galaxy S21 | Android 14 |
-
-Cette validation concerne ces appareils et cette version ; elle ne constitue pas
-une recette de toutes les configurations compatibles.
-
-## Documentation
-
-| Besoin | Guide |
-| --- | --- |
-| Utiliser l’application sur Windows | [Mode d’emploi](docs/lot4/UTILISATION_WINDOWS.md) |
-| Comprendre les associations MP3 | [Règle d’association par noms du catalogue](docs/regle-association-noms-journal.md) |
-| Supprimer les MP3 écoutés | [Fonctionnement et contrôles](docs/suppression-mp3-ecoutes.md) |
-| Construire l’application | [Application Flutter et commandes de construction](apps/index_windows/README.md) |
-| Signer et distribuer Android | [Guide de distribution](docs/lot6/DISTRIBUTION_ANDROID.md) |
-| Comprendre les versions | [Politique de versionnement](tools/versioning/README.md) |
-| Consulter les notes de développement | [Ancien README et références techniques](docs/README-historique.md) |
-
-## Retours et contributions
+Cette application a été réalisée entièrement avec une IA. Je n'ai aucune compétence en développement et le code doit
+donc être assez bordélique aux yeux d'un professionnel. C'est néanmoins largement suffisant car j'ai construit
+IndeX pour mon usage personnel, avec l'idée de partager le résultat s'il s’avérait à la hauteur de mes
+propres standards d'utilisation. J'ai veillé à ce que IndeX fonctionne entièrement hors ligne, il n'y a
+aucune télémétrie, aucune dépendance externe ou aucun appel à un serveur quelconque (sauf évidemment pour le 
+téléchargement optionnel de MP3).
 
 Pour signaler un problème ou proposer une amélioration, utilisez les
 **[Issues](https://github.com/Yavuplogu/IndeX/issues)**. Précisez la version d’IndeX,
-votre système et les étapes permettant de reproduire le problème.
+votre système et les étapes permettant de reproduire le problème. Notez que je ne compte
+pas réaliser un suivi acharné de cette application et je peux décider ou non de corriger
+ou d'ajouter ce que vous souhaitez. IndeX étant totalement open source, vous pouvez d'ailleurs
+cloner ce repository et développer directement vos propres améliorations si je suis trop lent à réagir. 
+Rappelez-vous que j'ai tout fait avec une IA, ce n'est donc pas très compliqué.
 
 IndeX est développé avec **Flutter et Dart**, avec un cœur partagé entre Windows
 et Android. Les scripts de construction et de vérification se trouvent dans
 [`tools/`](tools/). Les workflows GitHub Actions se lancent manuellement.
+
 
 ## Licence
 
