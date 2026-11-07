@@ -240,3 +240,32 @@ plateformes, checkout fixé au SHA source, jetons de lecture et secrets Android
 transmis seulement au constructeur Android. Aucun compteur officiel modifié,
 aucune construction GitHub lancée. La paire native et la relance des seuls jobs
 échoués restent à vérifier dans GitHub Actions après commit/push.
+
+
+## Version dans les propriétés Windows
+
+Depuis le 7 novembre 2026, les exécutables du lanceur portable et du runner Flutter
+utilisent la version publique dans les champs textuels **FileVersion** et
+**ProductVersion** : par exemple `0.9.02`, sans `+9003` ni quatrième numéro de
+construction. Les ressources numériques Windows imposent quatre nombres :
+`0,9,2,0` dans cet exemple, qui peuvent apparaître comme `0.9.2.0` dans certains
+outils Windows. Ce zéro final est structurel ; ce n’est pas un compteur technique.
+Un champ numérique ne peut pas conserver le zéro initial de `02`.
+
+Le calcul CMake partagé est appliqué aux deux cibles et utilise les trois nombres
+Flutter réellement compilés ainsi que `minor_width` de la politique versionnée.
+Il ne se fonde pas sur un INDEX_VERSION ambiant : les tests d’intégration debug
+peuvent compiler la version du pubspec alors que la CI a réservé un autre mineur.
+Le packaging release refuse l’archive si les chaînes des deux exécutables ne
+correspondent pas exactement à la version réservée ou si leurs ressources
+numériques ne correspondent pas aux trois composantes officielles suivies de 0.
+Les champs de construction dans Flutter/Android et `documentation/version.json`
+conservent leur numéro technique pour la traçabilité et les mises à jour Android.
+
+Vérifications locales : **21 tests de versionnement réussis**, dont trois tests
+CMake exécutant réellement le calcul (padding, passage à 10/100, limites des
+composantes Windows et refus d’une politique invalide). CMake 3.31.10 utilisé
+hors dépôt ; le test est signalé ignoré si CMake manque. Syntaxe PowerShell du
+packaging validée. Aucune compilation native Windows depuis Linux : les contrôles
+PE sont exécutés par le packaging lors du prochain workflow Windows. Cette
+modification ne change pas les exécutables déjà distribués.

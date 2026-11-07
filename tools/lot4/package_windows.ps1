@@ -25,6 +25,23 @@ try {
   if (-not (Test-Path (Join-Path $built 'just_audio_windows_plugin.dll'))) { throw 'Plugin audio WinRT absent du bundle.' }
   $launcher = Join-Path $app 'build/windows/x64/launcher/Release/IndeX.exe'
   if (-not (Test-Path $launcher)) { throw 'Lanceur portable absent.' }
+  # Check the real PE resources of both executables, before copying or archiving.
+  $publicParts = @($version.display.Split('.') | ForEach-Object { [int]$_ })
+  foreach ($executable in @((Join-Path $built 'IndeX.exe'), $launcher)) {
+    $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($executable)
+    if ($info.FileVersion -cne $version.display -or $info.ProductVersion -cne $version.display) {
+      throw "Version publique incorrecte dans $executable : $($info.FileVersion) / $($info.ProductVersion), attendu $($version.display)."
+    }
+    foreach ($prefix in @('File','Product')) {
+      if ($info."${prefix}MajorPart" -ne $publicParts[0] -or
+          $info."${prefix}MinorPart" -ne $publicParts[1] -or
+          $info."${prefix}BuildPart" -ne $publicParts[2] -or
+          $info."${prefix}PrivatePart" -ne 0) {
+        throw "Version numérique Windows incorrecte dans $executable ($prefix)."
+      }
+    }
+  }
+  Write-Host "Version publique Windows vérifiée sur les deux exécutables : $($version.display)."
   $stage = Join-Path ([IO.Path]::GetTempPath()) ('index-package-' + [Guid]::NewGuid().ToString('N'))
   $portable = Join-Path $stage 'IndeX'
   . (Join-Path $PSScriptRoot 'portable_windows.ps1')

@@ -49,9 +49,19 @@ endfunction()
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
+# Derive the public text from Flutter's selected semantic version, with the
+# repository's padding. This also works for debug tests using pubspec's version.
+include(public_version.cmake)
+index_windows_public_version(INDEX_WINDOWS_PUBLIC_VERSION
+  "${FLUTTER_VERSION_MAJOR}" "${FLUTTER_VERSION_MINOR}" "${FLUTTER_VERSION_PATCH}")
+
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 add_subdirectory("launcher")
+foreach(target IN ITEMS ${BINARY_NAME} index_launcher)
+  target_compile_definitions(${target} PRIVATE
+    "INDEX_PUBLIC_VERSION=\"${INDEX_WINDOWS_PUBLIC_VERSION}\"")
+endforeach()
 add_dependencies(${BINARY_NAME} index_launcher)
 
 

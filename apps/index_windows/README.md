@@ -143,3 +143,13 @@ workflows par plateforme sont désormais réutilisables et ne se lancent plus
 séparément. **Re-run failed jobs** conserve la réservation réussie ; un lancement
 neuf ou une relance complète attribue une nouvelle version.
 Voir [le fonctionnement et les limites](../../tools/versioning/README.md).
+
+
+## Version affichée par Windows
+
+Le lanceur portable et l’exécutable sous `application/` utilisent la version
+publique dans leurs champs textuels FileVersion/ProductVersion (ex. `0.9.02`).
+Le numéro technique est conservé dans le manifeste de version, mais retiré des
+ressources de version des exécutables. La structure numérique imposée par Windows
+reste à quatre nombres, avec un zéro final (ex. `0.9.2.0`). Le packaging vérifie
+les deux exécutables avant de produire l’archive.

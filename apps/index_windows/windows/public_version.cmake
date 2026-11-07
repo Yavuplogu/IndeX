@@ -1,0 +1,25 @@
+# Public version for both PE resources. The technical build number remains in
+# Flutter/Android and documentation/version.json, never in the Windows version.
+set(INDEX_WINDOWS_VERSION_POLICY
+  "${CMAKE_CURRENT_LIST_DIR}/../../../tools/versioning/version.json")
+
+function(index_windows_public_version output stage major minor)
+  foreach(part IN ITEMS "${stage}" "${major}" "${minor}")
+    if(NOT "${part}" MATCHES "^(0|[1-9][0-9]*)$" OR part GREATER 65535)
+      message(FATAL_ERROR "Invalid Windows public version component: ${part}")
+    endif()
+  endforeach()
+  file(READ "${INDEX_WINDOWS_VERSION_POLICY}" policy)
+  string(REGEX MATCH "\"minor_width\"[ \t\r\n]*:[ \t\r\n]*([0-9]+)" width_match "${policy}")
+  set(width "${CMAKE_MATCH_1}")
+  if(NOT width_match OR width LESS 1 OR width GREATER 6)
+    message(FATAL_ERROR "Invalid public version padding policy")
+  endif()
+  set(padded_minor "${minor}")
+  string(LENGTH "${padded_minor}" length)
+  while(length LESS width)
+    set(padded_minor "0${padded_minor}")
+    string(LENGTH "${padded_minor}" length)
+  endwhile()
+  set(${output} "${stage}.${major}.${padded_minor}" PARENT_SCOPE)
+endfunction()

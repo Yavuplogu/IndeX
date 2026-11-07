@@ -1,3 +1,14 @@
+# Version publique des exécutables Windows — 7 novembre 2026
+
+- Ressources du lanceur et du runner : FileVersion/ProductVersion textuels =
+  version officielle avec padding, sans +build ; versions numériques = trois
+  composantes SemVer et quatrième composante 0, jamais le numéro technique.
+- public_version.cmake calcule le libellé à partir de la version Flutter réellement
+  compilée et de minor_width ; ne pas utiliser INDEX_VERSION ambiant pour les
+  tests natifs debug dont la version pubspec peut être différente.
+- package_windows.ps1 vérifie les ressources PE des deux exécutables avant ZIP.
+  Le code technique commun/Android et documentation/version.json sont conservés.
+
 # Version commune Windows/Android — décision du 7 novembre 2026
 
 - Point d’entrée manuel unique `.github/workflows/build.yml` : choix Windows et
