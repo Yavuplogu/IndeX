@@ -33,8 +33,9 @@ commune → Run workflow**, sur le `main` actuel :
 `reserve.py --ci`. `windows.yml` et `android.yml` sont des workflows réutilisables
 (`workflow_call`) : ils n’ont plus de bouton de lancement indépendant et ne
 réservent jamais de numéro. Ils reçoivent la même version publique, le même nom
-SemVer, le même code technique et les mêmes SHA source/réservation. Leur checkout
-est explicitement fixé au SHA source, même si `main` avance pendant l’exécution.
+SemVer, le même code technique et un unique commit de version. Leur checkout
+est explicitement fixé à ce commit incluant le compteur réservé, même si `main`
+avance ensuite pendant l’exécution.
 Le jeton est en lecture seule dans les constructions ; seul le job de réservation
 peut écrire le compteur sur `main`. Les secrets de signature passent uniquement
 au job Android. Le verrou commun est porté par le coordinateur, sans verrou
@@ -90,7 +91,10 @@ construction encore en cours. Les commits de réservation ne lancent pas de buil
 
 À chaque `reserve.py --ci` :
 
-1. Lire le dernier `main` distant, pas seulement le compteur du checkout du run.
+1. Lire la politique dans le commit sélectionné, puis le dernier `main` distant.
+   Comparer les deux arbres hors compteur : seuls des changements de compteur
+   sont acceptés. Toute autre différence arrête la réservation sans push et
+   demande un nouveau lancement depuis le `main` à jour.
 2. Pendant la migration, lire aussi le dernier ancien compteur distant et garder
    le maximum de chaque série. Un ancien nom `counters.json` suivi d’un CR est
    accepté uniquement sur cette branche historique.
@@ -100,8 +104,9 @@ construction encore en cours. Les commits de réservation ne lancent pas de buil
    existe, supprimer sa branche **dans la même transaction Git atomique**, avec
    vérification de son SHA attendu. Soit les deux opérations réussissent, soit
    aucune n’est appliquée.
-5. Exporter le numéro et les identifiants de traçabilité dans `GITHUB_OUTPUT`
+5. Exporter le numéro et le SHA du commit nouvellement réservé dans `GITHUB_OUTPUT`
    pour les deux jobs appelés, et dans `GITHUB_ENV` pour les usages existants.
+   Les constructeurs compilent ce commit ; il est aussi la cible du tag Release.
 
 Après la première transaction réussie, `index-build-versions` n’est plus utilisée
 et n’existe plus sur le serveur. Ne pas la supprimer manuellement avant cette
@@ -125,23 +130,40 @@ révisions restent dans l’historique Git, elles ne sont pas modifiées rétroa
 
 ## Code compilé et traçabilité
 
-Le checkout source commun reste celui sélectionné au lancement du coordinateur. Ni son HEAD, ni son
-index ni ses fichiers ne sont modifiés par la réservation : un index Git temporaire
-sert à construire le commit du compteur. Les nouveaux fichiers que des développeurs
-ont poussés sur main entre-temps sont préservés dans le commit distant, mais ne
-remplacent pas silencieusement les sources choisies pour le build en cours.
+Le coordinateur crée un commit « Réserver IndeX … » qui contient le code
+sélectionné et le compteur actualisé. **Ce même commit est compilé sur Windows et
+Android et doit être utilisé pour le tag de Release.** Les archives sources
+créées par GitHub depuis le tag correspondent donc au snapshot compilé, compteur
+inclus. Le résumé GitHub affiche une seule ligne **Commit de la version (code
+compilé et tag Release)** avec son SHA complet.
 
-Deux identifiants sont donc conservés :
+La réservation utilise toujours un index temporaire : le checkout de préparation
+(HEAD, index et fichiers) n’est pas modifié. Chaque constructeur effectue ensuite
+un checkout explicite du commit de version. Si le `main` distant a avancé avant
+réservation, ses changements sont acceptés uniquement s’ils concernent le compteur.
+Un changement de code, workflow, politique, donnée ou documentation fait échouer
+le job avant réservation ; lancer alors une nouvelle exécution sur le `main` à
+jour. Un push concurrent après comparaison reste protégé par le push atomique
+sans écrasement. La politique est lue dans le commit sélectionné, jamais depuis
+une édition locale non committée.
 
 | Variable CI | Signification |
 | --- | --- |
-| `INDEX_SOURCE_COMMIT` | HEAD réellement compilé, à utiliser pour le tag de la Release |
-| `INDEX_COUNTER_COMMIT` | Commit distant enregistrant cette réservation sur main |
+| `INDEX_SOURCE_COMMIT` | Commit de version, compteur inclus : code compilé et cible du tag |
+| `INDEX_COUNTER_COMMIT` | Alias de compatibilité : exactement le même SHA |
 
-`GITHUB_SHA` conserve sa signification d’origine. Android écrit ces valeurs dans
+Les deux noms sont conservés pour les scripts et manifestes existants ; ils ne
+désignent plus deux commits distincts. Android écrit ces valeurs identiques dans
 `build-info.json` ; Windows dans `documentation/version.json` (`source_commit`,
-`counter_commit`). Le compteur fournit aussi `INDEX_VERSION`, `INDEX_BUILD_NAME`
-et `INDEX_BUILD_NUMBER`. Les fichiers publiés gardent les noms existants :
+`counter_commit`). `GITHUB_SHA` reste imposé par GitHub et désigne techniquement
+l’événement initial du workflow : il n’est pas le SHA à taguer et n’est plus
+recopié dans le manifeste Android. L’historique Git conserve les commits de code
+puis le commit de réservation ; aucune fusion ni réécriture de l’historique
+existant n’est effectuée. La référence à utiliser pour distribuer la version
+est unique.
+
+Le compteur fournit aussi `INDEX_VERSION`, `INDEX_BUILD_NAME` et
+`INDEX_BUILD_NUMBER`. Les fichiers publiés gardent les noms existants :
 `IndeX_<version>_windows_x64_portable.zip` ou
 `IndeX_<version>_android_arm64_release.apk` / `_diagnostic.apk`.
 
@@ -170,7 +192,7 @@ Les tests utilisent uniquement des dépôts Git locaux temporaires. Ils vérifie
 incréments et majeurs, limites de padding, conservation de l’historique, migration
 CRLF, fusion des maxima, suppression atomique, refus d’un compteur absent/invalide,
 refus d’une suppression protégée, courses sur les deux branches, préservation du
-checkout/index et des nouveaux commits main, export des SHA de traçabilité.
+checkout/index, refus d’un main ayant changé hors compteur, export du SHA de version.
 Ils ne réservent aucun numéro sur GitHub et ne suppriment aucune branche réelle.
 
 
@@ -232,7 +254,8 @@ distribuable n’a été créé par ces contrôles.
 
 18 tests de versionnement et 5 tests de distribution Android réussis. Le test CLI
 vérifie que les sorties inter-jobs correspondent exactement à l’environnement du
-build, avec une seule réservation distante et le SHA source initial ; un échec
+build, avec une seule réservation distante (les deux SHA étaient encore distincts
+lors de cette validation initiale) ; un échec
 de réservation n’exporte aucune version et libère le verrou local. Les 3 workflows
 sont validés par `actionlint` 1.7.7 (sans shellcheck). Le graphe YAML est contrôlé :
 une seule réservation, dépendances sur son job, mêmes entrées pour les deux
@@ -269,3 +292,18 @@ hors dépôt ; le test est signalé ignoré si CMake manque. Syntaxe PowerShell 
 packaging validée. Aucune compilation native Windows depuis Linux : les contrôles
 PE sont exécutés par le packaging lors du prochain workflow Windows. Cette
 modification ne change pas les exécutables déjà distribués.
+
+
+## Validation du commit unique de version
+
+23 tests de versionnement et 5 tests de distribution Android réussis. Les tests
+vérifient l’égalité source/réservation, le compteur inclus dans un checkout neuf,
+la création d’un tag temporaire pointant sur ce même commit, les fichiers source
+préservés, les changements de compteur seuls acceptés, le refus sans réservation
+si main a changé hors compteur et la lecture de la politique depuis HEAD malgré
+une édition locale. Les protections existantes des pushs concurrents, migrations
+atomiques, compteurs et index local restent couvertes. Les 3 workflows sont
+validés avec `actionlint` 1.7.7 (sans shellcheck). Ces essais utilisent des dépôts
+locaux temporaires uniquement : aucun tag, numéro ou build créé sur GitHub.
+La compilation réelle des artefacts depuis le commit réservé reste à vérifier
+au prochain lancement du coordinateur après commit/push.

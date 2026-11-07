@@ -13,10 +13,11 @@ on:
         required: true
         type: string
       source_commit:
-        description: 'Commit source immuable commun aux deux plateformes'
+        description: 'Commit de version commun, réservation incluse'
         required: true
         type: string
       counter_commit:
+        description: 'Alias de compatibilité du même commit de version'
         required: true
         type: string
 # Version réservée une seule fois par build.yml. Aucun verrou imbriqué.

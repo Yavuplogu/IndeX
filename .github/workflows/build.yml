@@ -48,13 +48,11 @@ jobs:
       - name: Afficher la version et le commit communs
         env:
           VERSION: ${{ steps.reserve.outputs.display }}
-          SOURCE: ${{ steps.reserve.outputs.source_commit }}
-          COUNTER: ${{ steps.reserve.outputs.counter_commit }}
+          COMMIT: ${{ steps.reserve.outputs.source_commit }}
         run: |
           {
             echo "## IndeX $VERSION"
-            echo "Commit source commun : $SOURCE"
-            echo "Commit de réservation : $COUNTER"
+            echo "Commit de la version (code compilé et tag Release) : $COMMIT"
             echo "Pour reprendre un échec sans nouvelle version : Re-run failed jobs."
           } >> "$GITHUB_STEP_SUMMARY"
   windows:

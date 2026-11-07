@@ -138,7 +138,8 @@ La recette physique 6B et le service média 6C restent distincts.
 
 Dans **Actions → Construction IndeX — version commune → Run workflow**, choisir
 **Windows et Android** puis le mode Android souhaité. Le coordinateur réserve une
-seule version et transmet le même commit source aux deux constructeurs. Les anciens
+seule version et transmet le commit de cette réservation aux deux constructeurs.
+Ce commit unique identifie le code compilé et la cible du tag de Release. Les anciens
 workflows par plateforme sont désormais réutilisables et ne se lancent plus
 séparément. **Re-run failed jobs** conserve la réservation réussie ; un lancement
 neuf ou une relance complète attribue une nouvelle version.

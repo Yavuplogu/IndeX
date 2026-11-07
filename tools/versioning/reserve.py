@@ -76,7 +76,10 @@ def reserve_on_main(parent, legacy_parent, content, message):
 
 
 def reserve(ci=False):
-    policy = json.loads((ROOT / 'tools/versioning/version.json').read_text(encoding='utf-8'))
+    selected_commit = git('rev-parse', 'HEAD') if ci else None
+    # The policy must belong to the selected source, not a local uncommitted edit.
+    policy = json.loads(git('show', f'{selected_commit}:tools/versioning/version.json') if ci else
+                        (ROOT / 'tools/versioning/version.json').read_text(encoding='utf-8'))
     if policy['stage'] not in (0, 1) or policy['major'] < 0 or policy['first_minor'] < 0:
         raise ValueError('Politique de version invalide')
     build_base = policy.get('build_number_base', 0)
@@ -89,10 +92,15 @@ def reserve(ci=False):
     parent = None
     state_path = ROOT / 'dist/build-version-counter.json'
     legacy_parent = None
-    source_commit = None
     if ci:
-        source_commit = git('rev-parse', 'HEAD')
         parent = fetch_head(BRANCH)
+        # The reservation commit will be compiled. It may inherit newer counter
+        # commits, but must not silently include other changes made after dispatch.
+        changed = git('diff', '--name-only', selected_commit, parent, '--', '.',
+                      f':(exclude){COUNTER_FILE}')
+        if changed:
+            raise ValueError('Main contient des changements depuis le code selectionne ; '
+                             'relancer le workflow sur main a jour. Aucune version reservee.')
         counters = read_counters(parent, missing_ok=True)
         remote = git('ls-remote', '--heads', 'origin', f'refs/heads/{LEGACY_BRANCH}')
         if remote:
@@ -121,7 +129,9 @@ def reserve(ci=False):
     result = {'display': f'{key}.{minor:0{width}d}', 'build_name': f'{key}.{minor}',
               'build_number': build_base + minor + (1 if policy['first_minor'] == 0 else 0)}
     if ci:
-        result.update(source_commit=source_commit, counter_commit=commit)
+        # One immutable reference for checkout, binaries, source archives and tag.
+        # counter_commit remains a compatibility alias of the same reference.
+        result.update(source_commit=commit, counter_commit=commit)
     return result
 
 

@@ -1,3 +1,18 @@
+# Commit unique de version — décision du 7 novembre 2026
+
+- Le commit créé pour réserver le numéro est maintenant aussi compilé et tagué.
+  INDEX_SOURCE_COMMIT = INDEX_COUNTER_COMMIT = commit réservé. Garder le second
+  nom comme alias de compatibilité, une seule référence dans le résumé GitHub.
+- Comparer le HEAD sélectionné au dernier main hors counters.json avant push :
+  refuser toute autre différence et demander un nouveau lancement sur main à jour.
+  Lire la politique CI depuis HEAD versionné, pas depuis un fichier local édité.
+  Pas de checkout destructif du coordinateur ; les constructeurs font checkout
+  du commit réservé. Conserver push atomique, compteurs et protection des courses.
+- Les commits de développement restent dans l’historique. Cette modification
+  unifie la référence de build/Release ; elle ne réécrit ni ne fusionne l’historique.
+  GITHUB_SHA initial n’est plus copié dans le manifeste Android.
+- Cette décision prime sur les consignes historiques de deux SHA distincts.
+
 # Version publique des exécutables Windows — 7 novembre 2026
 
 - Ressources du lanceur et du runner : FileVersion/ProductVersion textuels =
@@ -67,8 +82,8 @@
   index-build-versions. Ne jamais supprimer cette branche manuellement avant
   déploiement, ni réinitialiser les compteurs. Aucun push forcé sur main.
 - Conserver le verrou partagé et les déclencheurs manuels. Les commits automatiques
-  de réservation sont attendus sur main. Le checkout compilé reste fixe ; consigner
-  INDEX_SOURCE_COMMIT et INDEX_COUNTER_COMMIT séparément. Tests dans dépôts temporaires.
+  de réservation sont attendus sur main. Le checkout compilé est le commit de réservation ;
+  INDEX_SOURCE_COMMIT et INDEX_COUNTER_COMMIT doivent être identiques. Tests dans dépôts temporaires.
 
 # Licence et recette utilisateur
 

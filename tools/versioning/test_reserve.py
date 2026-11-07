@@ -42,9 +42,11 @@ class Versions(unittest.TestCase):
         self.assertEqual(reserve.reserve(True)['display'], '0.5.01')
         policy = reserve.ROOT / 'tools/versioning/version.json'
         policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":1}', encoding='utf-8')
+        self.commit_policy()
         self.assertEqual(reserve.reserve(True)['display'], '0.6.0')
         self.assertEqual(reserve.reserve(True)['display'], '0.6.1')
         policy.write_text('{"stage":0,"major":6,"first_minor":0,"minor_width":2}', encoding='utf-8')
+        self.commit_policy()
         self.assertEqual(reserve.reserve(True)['display'], '0.6.02')
         reserve.git('fetch', 'origin', reserve.BRANCH)
         self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {'0.5': 1, '0.6': 2})
@@ -104,12 +106,29 @@ class Versions(unittest.TestCase):
     def test_persistent_ci_counter_updates_main_without_changing_checkout(self):
         self.init_remote()
         head = reserve.git('rev-parse', 'HEAD')
-        self.assertEqual(reserve.reserve(True)['display'], '0.5.01')
+        (reserve.ROOT / 'local-only.txt').write_text('ne pas compiler', encoding='utf-8')
+        reserve.git('add', 'local-only.txt')
+        index_before = reserve.git('write-tree')
+        first = reserve.reserve(True)
+        self.assertEqual(first['display'], '0.5.01')
+        self.assertEqual(first['source_commit'], first['counter_commit'])
+        self.assertEqual(reserve.git('rev-parse', first['source_commit'] + '^'), head)
+        self.assertEqual(reserve.git('diff-tree', '--no-commit-id', '--name-only', '-r', first['source_commit']), reserve.COUNTER_FILE)
         # Une nouvelle construction (même code, après échec ou relance) réserve 02.
         self.assertEqual(reserve.reserve(True)['display'], '0.5.02')
         self.assertEqual(reserve.git('rev-parse', 'HEAD'), head)
+        self.assertEqual(reserve.git('write-tree'), index_before)
         reserve.git('fetch', 'origin', reserve.BRANCH)
         self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {'0.5': 2})
+
+    def commit_policy(self):
+        # Reserve leaves this checkout untouched; integrate counter-only commits
+        # before publishing an intentional policy change in the temporary remote.
+        reserve.git('fetch', 'origin', 'main')
+        reserve.git('merge', '--ff-only', 'FETCH_HEAD')
+        reserve.git('add', 'tools/versioning/version.json')
+        reserve.git('commit', '-m', 'politique de version')
+        reserve.git('push', 'origin', 'main')
 
 
     def test_recovers_windows_cr_filename_without_reusing_version(self):
@@ -179,15 +198,14 @@ class Versions(unittest.TestCase):
         other_git('commit', '-m', 'avancement main')
         new_main = other_git('rev-parse', 'HEAD')
         other_git('push', 'origin', 'main')
-        result = reserve.reserve(True)
-        self.assertEqual(result['source_commit'], source)
+        with self.assertRaisesRegex(ValueError, 'relancer le workflow'):
+            reserve.reserve(True)
         self.assertEqual(reserve.git('rev-parse', 'HEAD'), source)
         self.assertEqual(reserve.git('write-tree'), index_before)
         self.assertEqual((reserve.ROOT / 'local-only.txt').read_text(encoding='utf-8'), 'ne pas toucher')
         reserve.git('fetch', 'origin', 'main')
-        self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD'), result['counter_commit'])
-        self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD^'), new_main)
-        self.assertEqual(reserve.git('diff-tree', '--no-commit-id', '--name-only', '-r', result['counter_commit']), reserve.COUNTER_FILE)
+        self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD'), new_main)
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {})
         self.assertEqual(reserve.git('show', 'FETCH_HEAD:nouveau code.txt'), 'nouvelle fonctionnalité')
 
     def test_missing_or_invalid_main_counter_fails_without_reset(self):
@@ -257,7 +275,7 @@ class Versions(unittest.TestCase):
         self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {})
         self.assertEqual(reserve.reserve(True)['display'], '0.5.01')
 
-    def test_main_cli_exports_original_source_and_counter_commit(self):
+    def test_main_cli_exports_one_version_commit_for_checkout_and_tag(self):
         import os
         self.init_remote()
         source = reserve.git('rev-parse', 'HEAD')
@@ -266,20 +284,57 @@ class Versions(unittest.TestCase):
         with patch.dict(os.environ, {'GITHUB_ENV':str(env_file), 'GITHUB_OUTPUT':str(output_file)}), patch('sys.argv', ['reserve.py','--ci']):
             reserve.main()
         values = dict(line.split('=', 1) for line in env_file.read_text(encoding='utf-8').splitlines())
-        self.assertEqual(values['INDEX_SOURCE_COMMIT'], source)
+        self.assertNotEqual(values['INDEX_SOURCE_COMMIT'], source)
         self.assertEqual(values['INDEX_VERSION'], '0.5.01')
         reserve.git('fetch', 'origin', 'main')
         self.assertEqual(values['INDEX_COUNTER_COMMIT'], reserve.git('rev-parse', 'FETCH_HEAD'))
+        self.assertEqual(values['INDEX_SOURCE_COMMIT'], values['INDEX_COUNTER_COMMIT'])
+        self.assertEqual(reserve.git('rev-parse', 'FETCH_HEAD^'), source)
         outputs = dict(line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines())
         self.assertEqual(outputs, {
             'display': values['INDEX_VERSION'],
             'build_name': values['INDEX_BUILD_NAME'],
             'build_number': values['INDEX_BUILD_NUMBER'],
-            'source_commit': source,
+            'source_commit': values['INDEX_SOURCE_COMMIT'],
             'counter_commit': values['INDEX_COUNTER_COMMIT'],
         })
         self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {'0.5':1})
         self.assertFalse((reserve.ROOT / 'dist/version-reservation.lock').exists())
+
+    def test_ci_policy_comes_from_versioned_source_not_dirty_checkout(self):
+        self.init_remote()
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":9,"first_minor":0}', encoding='utf-8')
+        result = reserve.reserve(True)
+        self.assertEqual(result['display'], '0.5.01')
+        committed_policy = json.loads(reserve.git('show', result['source_commit'] + ':tools/versioning/version.json'))
+        self.assertEqual(committed_policy['major'], 5)
+        self.assertEqual(json.loads(policy.read_text(encoding='utf-8'))['major'], 9)
+
+    def test_build_checkout_and_release_tag_use_the_reserved_commit(self):
+        self.init_remote()
+        source_file = reserve.ROOT / 'app.txt'
+        source_file.write_text('code selectionne', encoding='utf-8')
+        reserve.git('add', 'app.txt')
+        reserve.git('commit', '-m', 'code a compiler')
+        reserve.git('push', 'origin', 'main')
+        selected = reserve.git('rev-parse', 'HEAD')
+        result = reserve.reserve(True)
+        self.assertEqual(result['source_commit'], result['counter_commit'])
+        worker = Path(self.temporary.name) / 'build'
+        subprocess.run(['git', 'clone', '--no-checkout', '--branch', 'main',
+                        str(Path(self.temporary.name) / 'origin.git'), str(worker)],
+                       check=True, capture_output=True)
+        def worker_git(*args):
+            return subprocess.run(['git', '-C', str(worker), *args], check=True,
+                                  capture_output=True).stdout.decode('utf-8').strip()
+        worker_git('checkout', '--detach', result['source_commit'])
+        worker_git('tag', 'v' + result['display'])
+        self.assertEqual(worker_git('rev-parse', 'HEAD'), result['counter_commit'])
+        self.assertEqual(worker_git('rev-parse', 'v' + result['display']), result['source_commit'])
+        self.assertEqual((worker / 'app.txt').read_text(encoding='utf-8'), 'code selectionne')
+        self.assertEqual(json.loads((worker / reserve.COUNTER_FILE).read_text(encoding='utf-8')), {'0.5':1})
+        self.assertEqual(reserve.git('rev-parse', 'HEAD'), selected)
 
     def test_unicode_git_content_with_windows_default_encoding(self):
         # Simule Windows-1252 même sur Linux : sans encoding explicite, Path
