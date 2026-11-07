@@ -273,16 +273,19 @@ cette référence. Les droits d’administration du dépôt restent importants.
 ## 10. Lancer la première construction signée
 
 1. Ouvrir **Actions** dans le dépôt.
-2. Choisir **Verification Android Lot 6D**.
+2. Choisir **Construction IndeX — version commune**.
 3. Cliquer **Run workflow**.
 4. Sélectionner la branche **main** contenant les modifications validées.
-5. Pour **mode**, choisir **release**, pas diagnostic.
+5. Pour **platforms**, choisir **Windows et Android** (version commune), ou
+   **Android** (APK seul). Pour **android_mode**, choisir **release**, pas diagnostic.
 6. Cliquer sur le bouton de lancement.
 
 La construction peut attendre le verrou partagé si un autre build IndeX est déjà
 en cours. Le numéro mineur est réservé automatiquement ; ne pas le choisir à la
-main. Un échec consomme son numéro. **Release est ici le mode de compilation et
-de signature : la version publique reste bêta 0.7.** Ce lancement ne crée pas de
+main. Une seule réservation couvre les plateformes choisies. Un échec consomme
+son numéro ; **Re-run failed jobs** conserve une réservation réussie pour reprendre
+les travaux échoués. **Release est ici le mode de compilation et de signature :
+la version publique reste bêta 0.9.** Ce lancement ne crée pas de
 GitHub Release publique et ne met pas les sources en ligne à votre place.
 
 Le workflow :

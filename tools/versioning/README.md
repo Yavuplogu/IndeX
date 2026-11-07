@@ -15,10 +15,61 @@ et Android utilise `0.9.0+9001` comme version locale de départ. La CI fournit l
 version effectivement réservée. Aucun compteur historique n’est réinitialisé et
 aucun numéro 0.9 n’est préconsommé par cette modification.
 
-Windows et Android conservent le compteur et le verrou de concurrence communs.
-Chaque construction officielle réserve un numéro avant les tests : la première
-réserve 0.9.00, la suivante 0.9.01, quelle que soit la plateforme. Un échec après
-réservation consomme également ce numéro.
+## Construire Windows et Android avec la même version
+
+Depuis le 7 novembre 2026, utiliser **Actions → Construction IndeX — version
+commune → Run workflow**, sur le `main` actuel :
+
+1. Choisir **Windows et Android** (par défaut) pour obtenir les deux livrables
+   portant exactement la même version.
+2. Choisir **diagnostic** ou **release** pour Android. Le mode release exige les
+   secrets de signature existants ; Windows reste portable dans les deux cas.
+3. Lancer une seule fois le workflow. Le job **Réserver la version commune**
+   attribue le numéro, puis les constructions Windows et Android démarrent
+   indépendamment, en parallèle si des runners sont disponibles.
+4. Récupérer les deux artefacts dans cette même exécution GitHub Actions.
+
+`build.yml` est le seul point d’entrée manuel et le seul appelant CI de
+`reserve.py --ci`. `windows.yml` et `android.yml` sont des workflows réutilisables
+(`workflow_call`) : ils n’ont plus de bouton de lancement indépendant et ne
+réservent jamais de numéro. Ils reçoivent la même version publique, le même nom
+SemVer, le même code technique et les mêmes SHA source/réservation. Leur checkout
+est explicitement fixé au SHA source, même si `main` avance pendant l’exécution.
+Le jeton est en lecture seule dans les constructions ; seul le job de réservation
+peut écrire le compteur sur `main`. Les secrets de signature passent uniquement
+au job Android. Le verrou commun est porté par le coordinateur, sans verrou
+identique dans les workflows appelés, pour éviter un blocage entre parent/enfant.
+
+Les versions déjà utilisées **0.9.00 et 0.9.01 sont conservées**. La première paire
+utilisant ce nouveau parcours recevra **0.9.02** si aucune réservation n’intervient
+d’ici là, avec le code technique **9003** sur les deux plateformes. Chaque nouveau
+lancement manuel réserve le mineur suivant pour toute sa sélection de plateformes.
+
+Il reste possible de sélectionner seulement **Windows** ou **Android**. Ce choix
+réserve aussi une nouvelle version ; deux lancements manuels séparés ne forment
+pas une paire et ne partageront pas le même numéro. Pour une version commune,
+sélectionner les deux plateformes en un seul lancement.
+
+### Échec et relance
+
+- Un échec après réservation consomme le numéro, même si aucun artefact n’est créé.
+- Si une seule plateforme échoue, l’artefact réussi de l’autre reste disponible.
+  Utiliser **Re-run failed jobs** pour reprendre les jobs échoués avec les sorties
+  du job de réservation réussi : aucun numéro supplémentaire, même code source.
+- **Re-run all jobs** rejoue la réservation et les deux constructions sélectionnées :
+  une nouvelle version est attribuée. **Run workflow** crée également une nouvelle
+  réservation. Pour inclure une correction de code, pousser la correction puis
+  lancer ce nouveau workflow ; une relance d’un ancien run garde son ancien code.
+- Si la réservation elle-même échoue, aucun constructeur ne démarre. Une relance
+  de ce job effectue une nouvelle tentative ; un éventuel numéro déjà poussé reste
+  consommé. Aucun retour en arrière ni réemploi manuel des numéros.
+- Les envois d’artefacts autorisent le remplacement du même nom dans une même
+  exécution pour reprendre une étape d’envoi échouée. Cela ne remplace aucun
+  artefact d’une autre exécution. Une relance complète créant une nouvelle version
+  peut laisser les anciens artefacts versionnés visibles dans cette exécution ;
+  vérifier le numéro affiché par le nouveau job de réservation.
+- Ne pas relancer les anciens workflows indépendants antérieurs à cette adaptation :
+  leurs définitions historiques continuent de réserver un numéro par plateforme.
 
 ## Stockage sur main
 
@@ -31,8 +82,9 @@ La migration a conservé les anciennes séries 0.5, 0.6 et 0.7. Leurs dernières
 réservations restent dans `counters.json`. La nouvelle série 0.9 démarre à zéro
 lors de sa première réservation, sans modifier les mineurs des séries précédentes.
 
-Les workflows Windows/Android restent exclusivement manuels (`workflow_dispatch`),
-avec `contents: write` et le même groupe `index-windows-version-counter`.
+Le coordinateur reste exclusivement manuel (`workflow_dispatch`), avec
+`contents: write` sur le seul job de réservation et le groupe
+`index-windows-version-counter`. Les constructeurs sont appelés via `workflow_call`.
 Le nom historique du verrou est conservé afin de sérialiser aussi une ancienne
 construction encore en cours. Les commits de réservation ne lancent pas de build.
 
@@ -48,7 +100,8 @@ construction encore en cours. Les commits de réservation ne lancent pas de buil
    existe, supprimer sa branche **dans la même transaction Git atomique**, avec
    vérification de son SHA attendu. Soit les deux opérations réussissent, soit
    aucune n’est appliquée.
-5. Exporter le numéro et les identifiants de traçabilité aux étapes de construction.
+5. Exporter le numéro et les identifiants de traçabilité dans `GITHUB_OUTPUT`
+   pour les deux jobs appelés, et dans `GITHUB_ENV` pour les usages existants.
 
 Après la première transaction réussie, `index-build-versions` n’est plus utilisée
 et n’existe plus sur le serveur. Ne pas la supprimer manuellement avant cette
@@ -65,14 +118,14 @@ contourne pas les protections et ne réinitialise jamais un compteur absent,
 ambigu ou invalide. Si le serveur ne prend pas en charge les pushs atomiques,
 il refuse la réservation, sans repli partiel.
 
-Après migration, **utiliser Run workflow sur le main actuel**. Ne pas relancer
-un ancien run utilisant l’ancien script : une révision historique ne connaît pas
-le compteur centralisé et pourrait recréer l’ancienne branche. Les anciennes
+Après migration, **utiliser le coordinateur sur le main actuel**. Ne pas relancer
+un ancien run précédant la migration du compteur : une révision historique ne
+connaît pas le compteur centralisé et pourrait recréer l’ancienne branche. Les anciennes
 révisions restent dans l’historique Git, elles ne sont pas modifiées rétroactivement.
 
 ## Code compilé et traçabilité
 
-Le checkout du run reste celui sélectionné au lancement. Ni son HEAD, ni son
+Le checkout source commun reste celui sélectionné au lancement du coordinateur. Ni son HEAD, ni son
 index ni ses fichiers ne sont modifiés par la réservation : un index Git temporaire
 sert à construire le commit du compteur. Les nouveaux fichiers que des développeurs
 ont poussés sur main entre-temps sont préservés dans le commit distant, mais ne
@@ -136,7 +189,7 @@ après. **16 tests réussis** dans l’environnement Linux. La vérification nat
 Windows reste le prochain workflow, sans réattribuer le numéro 0.7.03 consommé.
 
 
-## Workflows Node.js 24 — 7 novembre 2026
+## Mise à jour des actions Node.js 24 — 7 novembre 2026
 
 Actions mises à jour sur les workflows Windows et Android :
 
@@ -162,8 +215,8 @@ ses outils de ligne de commande par défaut ; les plateformes/build-tools/NDK
 restent explicitement sélectionnés dans le workflow.
 
 La validation des workflows hébergés et des artefacts exige un nouveau lancement
-manuel Windows et Android depuis le commit mis à jour ; les contrôles locaux ne
-remplacent pas ces deux constructions.
+du coordinateur avec **Windows et Android** depuis le commit mis à jour ; les
+contrôles locaux ne remplacent pas ces deux constructions.
 
 Contrôles locaux de cette révision : **17 tests de versionnement** et **5 tests
 de distribution Android** réussis ; les réservations 0.9.00 à 0.9.10 sont
@@ -173,3 +226,17 @@ non exécutée). Les paramètres `with` sont comparés aux métadonnées amont d
 action ; tous sont reconnus. Les dépendances Flutter verrouillées sont résolues
 hors ligne avec succès. Aucun build GitHub, numéro officiel ou artefact
 distribuable n’a été créé par ces contrôles.
+
+
+## Validation du coordinateur commun
+
+18 tests de versionnement et 5 tests de distribution Android réussis. Le test CLI
+vérifie que les sorties inter-jobs correspondent exactement à l’environnement du
+build, avec une seule réservation distante et le SHA source initial ; un échec
+de réservation n’exporte aucune version et libère le verrou local. Les 3 workflows
+sont validés par `actionlint` 1.7.7 (sans shellcheck). Le graphe YAML est contrôlé :
+une seule réservation, dépendances sur son job, mêmes entrées pour les deux
+plateformes, checkout fixé au SHA source, jetons de lecture et secrets Android
+transmis seulement au constructeur Android. Aucun compteur officiel modifié,
+aucune construction GitHub lancée. La paire native et la relance des seuls jobs
+échoués restent à vérifier dans GitHub Actions après commit/push.

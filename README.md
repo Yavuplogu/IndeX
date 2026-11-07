@@ -33,7 +33,8 @@ Monsieur K.
 
 > **Version bêta · série 0.9** — Disponible pour Windows et Android. Aucun MP3
 > n’est embarqué dans les applications. La version de départ `0.9.0` est affichée
-> `0.9.00` ; chaque construction réserve ensuite le mineur suivant.
+> `0.9.00`. Un lancement commun construit Windows et Android avec le même numéro ;
+> chaque nouveau lancement réserve le mineur suivant.
 
 ## Télécharger
 
@@ -138,7 +139,10 @@ Rappelez-vous que j'ai tout fait avec une IA, ce n'est donc pas très compliqué
 
 IndeX est développé avec **Flutter et Dart**, avec un cœur partagé entre Windows
 et Android. Les scripts de construction et de vérification se trouvent dans
-[`tools/`](tools/). Les workflows GitHub Actions se lancent manuellement.
+[`tools/`](tools/). Dans GitHub Actions, lancer manuellement **Construction IndeX — version commune**
+et choisir **Windows et Android** pour produire les deux livrables avec la même
+version. Le choix d’une seule plateforme reste possible.
+Voir [le guide de versionnement et de relance](tools/versioning/README.md).
 
 
 ## Licence

@@ -139,6 +139,12 @@ def main():
                 out.write(f"INDEX_VERSION={version['display']}\nINDEX_BUILD_NAME={version['build_name']}\nINDEX_BUILD_NUMBER={version['build_number']}\n")
                 if args.ci:
                     out.write(f"INDEX_SOURCE_COMMIT={version['source_commit']}\nINDEX_COUNTER_COMMIT={version['counter_commit']}\n")
+        # Le job coordinateur transmet cette unique réservation aux deux jobs
+        # de construction, y compris lors d'une relance des seuls jobs échoués.
+        if os.environ.get('GITHUB_OUTPUT'):
+            with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+                for key, value in version.items():
+                    out.write(f'{key}={value}\n')
         print(json.dumps(version))
     finally:
         lock.unlink()

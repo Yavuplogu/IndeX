@@ -19,14 +19,19 @@ ne remplace pas la recette de cet APK sur téléphone : voir [la fiche 6D](RECET
 
 ## Deux modes dans GitHub Actions
 
-Dans **Actions → Verification Android Lot 6D → Run workflow**, choisir :
+Dans **Actions → Construction IndeX — version commune → Run workflow**, choisir
+**Windows et Android** pour les deux livrables, ou **Android** pour l’APK seul.
+Pour **android_mode**, choisir :
 
 - **diagnostic** (par défaut) : APK debug et clé de test mise en cache, comme au 6C ;
 - **release** : APK AOT ARM64, signé avec votre clé durable. Ce mode refuse une
   configuration absente, une signature incorrecte et une permission imprévue.
 
-Les deux modes restent manuels, partagent le compteur/verrou Windows et consomment
-un nouveau mineur, même en échec. Aucun changement de majeur ou passage en finale.
+Le lancement réserve un seul mineur pour toutes les plateformes sélectionnées,
+même en cas d’échec ultérieur. **Re-run failed jobs** conserve la réservation
+réussie ; un nouveau lancement ou **Re-run all jobs** en crée une nouvelle.
+Les deux plateformes utilisent le même commit source. Série bêta actuelle 0.9,
+sans passage en finale. Voir [le guide commun](../../tools/versioning/README.md).
 L’APK exige Android 7/API 24 minimum, cible API 36 et un appareil ARM64.
 Identifiant définitif depuis le 5 novembre 2026 : `fr.index.app`. Aucun Google Play/AAB requis.
 

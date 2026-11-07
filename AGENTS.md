@@ -1,3 +1,17 @@
+# Version commune Windows/Android — décision du 7 novembre 2026
+
+- Point d’entrée manuel unique `.github/workflows/build.yml` : choix Windows et
+  Android par défaut, ou une seule plateforme ; mode Android diagnostic/release.
+- Réserver une seule fois dans le job coordinateur ; transmettre GITHUB_OUTPUT
+  aux workflows réutilisables windows.yml/android.yml sans réservation ni verrou
+  imbriqué. Version, build number et SHA source/réservation identiques ; checkout
+  épinglé au SHA source dans les deux constructeurs, permissions contents read.
+- Préserver les numéros 0.9.00/0.9.01 consommés, prochain couple 0.9.02 sauf nouvelle
+  réservation concurrente. Ne pas forcer/réduire le compteur. Re-run failed jobs
+  conserve la réservation réussie ; Re-run all jobs ou nouveau lancement en crée
+  une nouvelle. Les deux plateformes sont indépendantes après réservation.
+- Cette décision remplace les anciennes réservations manuelles par plateforme.
+
 # Décision actuelle du 7 novembre 2026 — série 0.9
 
 - Passage explicitement autorisé à 0.9.0 pour Windows et Android ; affichage public

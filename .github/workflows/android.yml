@@ -1,32 +1,58 @@
-name: Verification Android Lot 6D
+name: Construction Android (réutilisable)
 on:
-  # APK diagnostic ou release Android : construction à la demande uniquement.
-  workflow_dispatch:
+  workflow_call:
     inputs:
+      version:
+        description: 'Version publique réservée par le workflow commun'
+        required: true
+        type: string
+      build_name:
+        required: true
+        type: string
+      build_number:
+        required: true
+        type: string
+      source_commit:
+        description: 'Commit source immuable commun aux deux plateformes'
+        required: true
+        type: string
+      counter_commit:
+        required: true
+        type: string
       mode:
-        description: 'Type d’APK (release exige les secrets de signature)'
-        type: choice
-        default: diagnostic
-        options:
-          - diagnostic
-          - release
+        description: 'diagnostic ou release'
+        required: true
+        type: string
+    secrets:
+      INDEX_ANDROID_KEYSTORE_BASE64:
+        required: false
+      INDEX_ANDROID_STORE_PASSWORD:
+        required: false
+      INDEX_ANDROID_KEY_ALIAS:
+        required: false
+      INDEX_ANDROID_KEY_PASSWORD:
+        required: false
+# Version réservée une seule fois par build.yml. Aucun verrou imbriqué.
 permissions:
-  contents: write
-# Même verrou que Windows : le compteur est commun aux deux plateformes.
-concurrency:
-  group: index-windows-version-counter
-  cancel-in-progress: false
+  contents: read
 jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    env:
+      INDEX_VERSION: ${{ inputs.version }}
+      INDEX_BUILD_NAME: ${{ inputs.build_name }}
+      INDEX_BUILD_NUMBER: ${{ inputs.build_number }}
+      INDEX_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      INDEX_COUNTER_COMMIT: ${{ inputs.counter_commit }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Réserver la version Android dans le compteur partagé
-        run: python tools/versioning/reserve.py --ci
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -124,5 +150,6 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: IndeX-${{ env.INDEX_VERSION }}-Android-arm64-${{ inputs.mode == 'diagnostic' && 'test' || 'release' }}
+          overwrite: true
           path: dist/*
           if-no-files-found: error

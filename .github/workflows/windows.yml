@@ -1,27 +1,45 @@
-name: Verification Windows portable
+name: Construction Windows portable (réutilisable)
 on:
-  # Construction Windows uniquement sur demande, comme Android.
-  workflow_dispatch:
-# Réservation persistante dans tools/versioning/counters.json sur main.
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version publique réservée par le workflow commun'
+        required: true
+        type: string
+      build_name:
+        required: true
+        type: string
+      build_number:
+        required: true
+        type: string
+      source_commit:
+        description: 'Commit source immuable commun aux deux plateformes'
+        required: true
+        type: string
+      counter_commit:
+        required: true
+        type: string
+# Version réservée une seule fois par build.yml. Aucun verrou imbriqué.
 permissions:
-  contents: write
-concurrency:
-  group: index-windows-version-counter
-  cancel-in-progress: false
+  contents: read
 jobs:
   windows:
     runs-on: windows-2022
     timeout-minutes: 35
+    env:
+      INDEX_VERSION: ${{ inputs.version }}
+      INDEX_BUILD_NAME: ${{ inputs.build_name }}
+      INDEX_BUILD_NUMBER: ${{ inputs.build_number }}
+      INDEX_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      INDEX_COUNTER_COMMIT: ${{ inputs.counter_commit }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Réserver la version du build (y compris en cas d'échec ultérieur)
-        shell: pwsh
-        run: |
-          python tools/versioning/reserve.py --ci
-          if ($LASTEXITCODE -ne 0) { throw 'Réservation de version échouée.' }
       - name: Tester le runtime, la disposition portable et les codes de sortie
         shell: pwsh
         run: |
@@ -45,6 +63,7 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: IndeX-${{ env.INDEX_VERSION }}-windows-x64-portable
+          overwrite: true
           path: |
             dist/*.zip
             dist/*.zip.sha256
@@ -54,5 +73,6 @@ jobs:
         if: always()
         with:
           name: IndeX-windows-diagnostics
+          overwrite: true
           path: dist/diagnostics-smoke/*
           if-no-files-found: ignore

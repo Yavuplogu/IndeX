@@ -262,13 +262,23 @@ class Versions(unittest.TestCase):
         self.init_remote()
         source = reserve.git('rev-parse', 'HEAD')
         env_file = Path(self.temporary.name) / 'github-env'
-        with patch.dict(os.environ, {'GITHUB_ENV':str(env_file)}), patch('sys.argv', ['reserve.py','--ci']):
+        output_file = Path(self.temporary.name) / 'github-output'
+        with patch.dict(os.environ, {'GITHUB_ENV':str(env_file), 'GITHUB_OUTPUT':str(output_file)}), patch('sys.argv', ['reserve.py','--ci']):
             reserve.main()
         values = dict(line.split('=', 1) for line in env_file.read_text(encoding='utf-8').splitlines())
         self.assertEqual(values['INDEX_SOURCE_COMMIT'], source)
         self.assertEqual(values['INDEX_VERSION'], '0.5.01')
         reserve.git('fetch', 'origin', 'main')
         self.assertEqual(values['INDEX_COUNTER_COMMIT'], reserve.git('rev-parse', 'FETCH_HEAD'))
+        outputs = dict(line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines())
+        self.assertEqual(outputs, {
+            'display': values['INDEX_VERSION'],
+            'build_name': values['INDEX_BUILD_NAME'],
+            'build_number': values['INDEX_BUILD_NUMBER'],
+            'source_commit': source,
+            'counter_commit': values['INDEX_COUNTER_COMMIT'],
+        })
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {'0.5':1})
         self.assertFalse((reserve.ROOT / 'dist/version-reservation.lock').exists())
 
     def test_unicode_git_content_with_windows_default_encoding(self):
@@ -278,6 +288,22 @@ class Versions(unittest.TestCase):
             return 'cp1252' if encoding is None else encoding
         with patch('pathlib.io.text_encoding', side_effect=windows_encoding):
             self.test_remote_new_code_and_local_index_are_preserved_with_exact_provenance()
+
+    def test_failed_reservation_exposes_no_build_outputs_and_releases_lock(self):
+        import os
+        self.init_remote()
+        env_file = Path(self.temporary.name) / 'github-env'
+        output_file = Path(self.temporary.name) / 'github-output'
+        with patch.dict(os.environ, {'GITHUB_ENV':str(env_file), 'GITHUB_OUTPUT':str(output_file)}), \
+                patch('sys.argv', ['reserve.py','--ci']), \
+                patch.object(reserve, 'reserve_on_main', side_effect=subprocess.CalledProcessError(1, ['git', 'push'])):
+            with self.assertRaises(subprocess.CalledProcessError):
+                reserve.main()
+        self.assertFalse(env_file.exists())
+        self.assertFalse(output_file.exists())
+        self.assertFalse((reserve.ROOT / 'dist/version-reservation.lock').exists())
+        reserve.git('fetch', 'origin', 'main')
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)), {})
 
 
 if __name__ == '__main__':

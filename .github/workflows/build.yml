@@ -1,0 +1,83 @@
+name: Construction IndeX — version commune
+run-name: IndeX · ${{ inputs.platforms }} · Android ${{ inputs.android_mode }}
+on:
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Plateformes à construire avec la même version'
+        type: choice
+        default: Windows et Android
+        options:
+          - Windows et Android
+          - Windows
+          - Android
+      android_mode:
+        description: 'APK Android (release exige les secrets de signature)'
+        type: choice
+        default: diagnostic
+        options:
+          - diagnostic
+          - release
+permissions:
+  contents: read
+# Un seul verrou pour la réservation et toute la paire de constructions.
+concurrency:
+  group: index-windows-version-counter
+  cancel-in-progress: false
+jobs:
+  version:
+    name: Réserver la version commune
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.reserve.outputs.display }}
+      build_name: ${{ steps.reserve.outputs.build_name }}
+      build_number: ${{ steps.reserve.outputs.build_number }}
+      source_commit: ${{ steps.reserve.outputs.source_commit }}
+      counter_commit: ${{ steps.reserve.outputs.counter_commit }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Réserver une fois avant les constructions
+        id: reserve
+        run: python tools/versioning/reserve.py --ci
+      - name: Afficher la version et le commit communs
+        env:
+          VERSION: ${{ steps.reserve.outputs.display }}
+          SOURCE: ${{ steps.reserve.outputs.source_commit }}
+          COUNTER: ${{ steps.reserve.outputs.counter_commit }}
+        run: |
+          {
+            echo "## IndeX $VERSION"
+            echo "Commit source commun : $SOURCE"
+            echo "Commit de réservation : $COUNTER"
+            echo "Pour reprendre un échec sans nouvelle version : Re-run failed jobs."
+          } >> "$GITHUB_STEP_SUMMARY"
+  windows:
+    name: Windows portable
+    needs: version
+    if: inputs.platforms == 'Windows et Android' || inputs.platforms == 'Windows'
+    uses: ./.github/workflows/windows.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      build_name: ${{ needs.version.outputs.build_name }}
+      build_number: ${{ needs.version.outputs.build_number }}
+      source_commit: ${{ needs.version.outputs.source_commit }}
+      counter_commit: ${{ needs.version.outputs.counter_commit }}
+  android:
+    name: Android
+    needs: version
+    if: inputs.platforms == 'Windows et Android' || inputs.platforms == 'Android'
+    uses: ./.github/workflows/android.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      build_name: ${{ needs.version.outputs.build_name }}
+      build_number: ${{ needs.version.outputs.build_number }}
+      source_commit: ${{ needs.version.outputs.source_commit }}
+      counter_commit: ${{ needs.version.outputs.counter_commit }}
+      mode: ${{ inputs.android_mode }}
+    secrets: inherit

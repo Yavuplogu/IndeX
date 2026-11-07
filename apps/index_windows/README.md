@@ -115,8 +115,8 @@ continue sans réinitialisation. Voir [le bilan](../../docs/lot5ter/bilan.md) et
 ## Lot 6A — diagnostic Android
 
 Lancement le 1er novembre 2026. APK ARM64 de diagnostic compilable, Android
-7.0 minimum (API 24), cible API 36. Le workflow Android manuel réserve une version
-dans le compteur commun Windows/Android. Renommage, JSON et téléchargement restent
+7.0 minimum (API 24), cible API 36. Le coordinateur manuel réserve une version
+commune avant les constructeurs Windows/Android (voir le guide ci-dessous). Renommage, JSON et téléchargement restent
 à porter en 6B ; la lecture continue écran éteint sera réalisée en 6C.
 Voir [audit et décisions](../../docs/lot6/audit-6A.md) et
 [recette sur téléphone](../../docs/lot6/RECETTE_ANDROID.md).
@@ -132,3 +132,14 @@ les MP3 gérés, jamais les données utilisateur. Renommage sans écrasement ré
 avec Windows, copie externe via sélecteur. Téléchargements HTTP/HTTPS explicites
 avec publication vérifiée et journal de récupération. Aucun nouveau package.
 La recette physique 6B et le service média 6C restent distincts.
+
+
+## Construire la même version sur Windows et Android
+
+Dans **Actions → Construction IndeX — version commune → Run workflow**, choisir
+**Windows et Android** puis le mode Android souhaité. Le coordinateur réserve une
+seule version et transmet le même commit source aux deux constructeurs. Les anciens
+workflows par plateforme sont désormais réutilisables et ne se lancent plus
+séparément. **Re-run failed jobs** conserve la réservation réussie ; un lancement
+neuf ou une relance complète attribue une nouvelle version.
+Voir [le fonctionnement et les limites](../../tools/versioning/README.md).

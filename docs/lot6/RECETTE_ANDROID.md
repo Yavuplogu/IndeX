@@ -22,8 +22,9 @@ historiques ou système du catalogue. Les tags COMM ne participent pas au scan.
 
 ## Récupérer et utiliser l’APK
 
-Après commit/push des changements, GitHub → Actions → Verification Android Lot 6D
-→ Run workflow, mode diagnostic, sur la branche contenant le lot. Rien n’est lancé automatiquement.
+Après commit/push des changements, GitHub → Actions → Construction IndeX — version
+commune → Run workflow, sur main. Choisir Windows et Android pour une version
+commune (ou Android seul), puis android_mode diagnostic. Rien n’est lancé automatiquement.
 Le résultat contient IndeX-<version>-Android-arm64-test : APK, empreinte SHA-256,
 rapport de contenu et ce guide. L’APK est signé pour le développement ; conserver
 le profil existant et sa sauvegarde avant toute réinstallation. L’identité et la
@@ -89,12 +90,13 @@ Si nécessaire, fournir à Java le magasin de confiance système via
 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts ; ne jamais désactiver TLS.
 
 
-Depuis la décision du 1er novembre 2026, Windows se lance également uniquement
-à la demande. Un push ne lance aucun des deux workflows. Si Windows est déjà
-en cours, Android attend encore sa fin : le verrou de version reste commun.
-Pour libérer la file immédiatement, le propriétaire peut annuler l’exécution
-Windows en cours depuis Actions → exécution → Cancel workflow. Son numéro déjà
-réservé reste consommé. Changer les déclencheurs n’annule aucune exécution existante.
+Depuis le 7 novembre 2026, le coordinateur manuel réserve une version commune
+puis lance les plateformes sélectionnées en parallèle si des runners sont
+disponibles. Le verrou reste commun entre deux exécutions du coordinateur, pas
+entre Windows et Android d’une même exécution. Un push ne lance aucune construction.
+Une annulation conserve le numéro déjà réservé. **Re-run failed jobs** reprend
+les travaux échoués avec la réservation réussie ; un nouveau lancement ou une
+relance complète réserve le numéro suivant.
 
 
 ## Recette Lot 6B — copies uniquement
