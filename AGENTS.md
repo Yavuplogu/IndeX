@@ -1,3 +1,13 @@
+# README d’accueil réservé à l’utilisateur — 7 novembre 2026
+
+- Ne jamais modifier automatiquement le fichier `README.md` à la racine du dépôt.
+  Sa rédaction et ses modifications sont réservées exclusivement à l’utilisateur.
+  Cette règle s’applique aussi aux mises à jour de version, de fonctionnalités,
+  de documentation et de workflows. Ne pas y appliquer de correction de forme,
+  de lien ou de contenu à l’occasion d’une autre tâche.
+- Les autres documents peuvent être actualisés dans le périmètre autorisé.
+  Cette consigne prime sur les anciennes demandes de maintien du README ci-dessous.
+
 # Commit unique de version — décision du 7 novembre 2026
 
 - Le commit créé pour réserver le numéro est maintenant aussi compilé et tagué.
@@ -188,7 +198,8 @@
   choix silencieux fondé sur l'horloge ou le maximum de position. Retraits/reset explicites.
 - Ne pas confondre statut ID3 du journal et vérification réelle du fichier local.
   Conflits et rubriques inconnues doivent être signalés sans perte du texte brut.
-- Maintenir README, décisions et tests reproductibles. Ne pas introduire de dépendance
+- Maintenir les autres documents, décisions et tests reproductibles ; le README
+  racine reste réservé à l’utilisateur. Ne pas introduire de dépendance
   avant vérification licence, API, versions, plateformes et absence d'accès réseau à l'usage.
 - Ne pas committer automatiquement ni ajouter des archives SDK, venv, bases temporaires
   ou MP3 supplémentaires. Ne jamais supprimer des fichiers existants pour satisfaire un test.
