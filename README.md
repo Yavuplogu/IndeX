@@ -11,9 +11,12 @@
   <a href="https://github.com/Yavuplogu/IndeX/issues">Signaler un problème</a>
 </p>
 
+<img src="docs/images/IndeX_app_screenshot.png" alt="App IndeX">
+
 </div>
 
----
+<h1>IndeX</h1>
+
 J’ai construit IndeX à partir d’une interrogation : serait-il possible de disposer d’un outil entièrement hors ligne permettant de gérer et d’écouter ma collection d’épisodes de Rendez-vous avec X ?
 
 Cela faisait des années que l’idée me séduisait, en réalité depuis l’arrêt de l’émission en 2015. Puis, la mort de Patrick Pesnot en 2023 m’a remotivé et j’ai fait quelques tentatives, plutôt infructueuses, car je ne suis pas du tout développeur.
