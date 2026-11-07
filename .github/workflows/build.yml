@@ -14,10 +14,10 @@ on:
       android_mode:
         description: 'APK Android (release exige les secrets de signature)'
         type: choice
-        default: diagnostic
+        default: release
         options:
-          - diagnostic
           - release
+          - diagnostic
 permissions:
   contents: read
 # Un seul verrou pour la réservation et toute la paire de constructions.

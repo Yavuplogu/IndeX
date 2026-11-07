@@ -23,9 +23,9 @@ Dans **Actions → Construction IndeX — version commune → Run workflow**, ch
 **Windows et Android** pour les deux livrables, ou **Android** pour l’APK seul.
 Pour **android_mode**, choisir :
 
-- **diagnostic** (par défaut) : APK debug et clé de test mise en cache, comme au 6C ;
-- **release** : APK AOT ARM64, signé avec votre clé durable. Ce mode refuse une
+- **release** (par défaut) : APK AOT ARM64, signé avec votre clé durable. Ce mode refuse une
   configuration absente, une signature incorrecte et une permission imprévue.
+- **diagnostic** : APK debug et clé de test mise en cache, comme au 6C.
 
 Le lancement réserve un seul mineur pour toutes les plateformes sélectionnées,
 même en cas d’échec ultérieur. **Re-run failed jobs** conserve la réservation
