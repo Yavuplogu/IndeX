@@ -86,6 +86,21 @@ class Versions(unittest.TestCase):
         reserve.git('remote', 'add', 'origin', str(remote))
         reserve.git('push', 'origin', 'main')
 
+    def test_major_nine_shared_ci_starts_at_zero_and_preserves_history(self):
+        policy = reserve.ROOT / 'tools/versioning/version.json'
+        policy.write_text('{"stage":0,"major":9,"first_minor":0,"minor_width":2,"build_number_base":9000}', encoding='utf-8')
+        self.init_remote()
+        history = {'0.5':16, '0.6':29, '0.7':8}
+        self.set_main_counters(history)
+        for minor in range(11):
+            result = reserve.reserve(True)
+            self.assertEqual(result['display'], f'0.9.{minor:02d}')
+            self.assertEqual(result['build_name'], f'0.9.{minor}')
+            self.assertEqual(result['build_number'], 9001 + minor)
+        reserve.git('fetch', 'origin', 'main')
+        self.assertEqual(json.loads(reserve.git('show', 'FETCH_HEAD:' + reserve.COUNTER_FILE)),
+                         {**history, '0.9':10})
+
     def test_persistent_ci_counter_updates_main_without_changing_checkout(self):
         self.init_remote()
         head = reserve.git('rev-parse', 'HEAD')

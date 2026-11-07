@@ -2,16 +2,23 @@
 
 ## Série actuelle
 
-Série bêta **0.7**, premier numéro **0.7.01**, mineur affiché sur au moins deux
-chiffres : 0.7.08, 0.7.09, 0.7.10, puis 0.7.99, 0.7.100. Ne pas changer le majeur
-ou passer en finale sans ordre utilisateur. `version.json` fixe la politique.
-Flutter reçoit la forme SemVer sans zéro initial (0.7.1). L’interface et le nom
-des artefacts reçoivent la version publique (0.7.01).
+Série bêta **0.9**, premier numéro **0.9.00** (version Flutter **0.9.0**),
+autorisée par l’utilisateur le 7 novembre 2026. Le mineur reste affiché sur au
+moins deux chiffres : 0.9.00, 0.9.01…0.9.09, 0.9.10, puis 0.9.99, 0.9.100.
+Ne pas changer le majeur ou passer en finale sans ordre utilisateur.
+`version.json` fixe la politique. L’interface et le nom des artefacts reçoivent
+la version publique ; Flutter reçoit la forme SemVer sans zéro initial.
 
-`build_number_base: 7000` et `first_minor: 1` donnent les codes techniques 7001,
-7002, etc., supérieurs aux APK de la série 0.6. Windows et Android conservent
-le compteur et le verrou de concurrence communs. Une construction officielle
-réserve un numéro avant les tests : un échec ultérieur consomme ce numéro.
+`build_number_base: 9000` et `first_minor: 0` donnent les codes techniques 9001,
+9002, etc., supérieurs aux APK de la série 0.7. Le `pubspec.yaml` commun Windows
+et Android utilise `0.9.0+9001` comme version locale de départ. La CI fournit la
+version effectivement réservée. Aucun compteur historique n’est réinitialisé et
+aucun numéro 0.9 n’est préconsommé par cette modification.
+
+Windows et Android conservent le compteur et le verrou de concurrence communs.
+Chaque construction officielle réserve un numéro avant les tests : la première
+réserve 0.9.00, la suivante 0.9.01, quelle que soit la plateforme. Un échec après
+réservation consomme également ce numéro.
 
 ## Stockage sur main
 
@@ -20,10 +27,9 @@ la politique et **`tools/versioning/counters.json`** y sont désormais réunis.
 Ce fichier contient le dernier mineur réservé par série, pas le prochain numéro.
 Ne jamais le supprimer, le réduire ou supprimer ses anciennes séries.
 
-La migration préparée importe les valeurs effectivement lues dans l’ancienne
-branche : `0.5: 16`, `0.6: 29`, `0.7: 1`. Le prochain numéro est donc 0.7.02 si
-aucune nouvelle réservation n’intervient avant le premier nouveau build.
-Les anciens historiques ne sont pas réinitialisés.
+La migration a conservé les anciennes séries 0.5, 0.6 et 0.7. Leurs dernières
+réservations restent dans `counters.json`. La nouvelle série 0.9 démarre à zéro
+lors de sa première réservation, sans modifier les mineurs des séries précédentes.
 
 Les workflows Windows/Android restent exclusivement manuels (`workflow_dispatch`),
 avec `contents: write` et le même groupe `index-windows-version-counter`.
@@ -128,3 +134,42 @@ précise également cet encodage. Un test impose un encodage par défaut Windows
 même sous Linux : il reproduit le UnicodeDecodeError avant correction et passe
 après. **16 tests réussis** dans l’environnement Linux. La vérification native
 Windows reste le prochain workflow, sans réattribuer le numéro 0.7.03 consommé.
+
+
+## Workflows Node.js 24 — 7 novembre 2026
+
+Actions mises à jour sur les workflows Windows et Android :
+
+| Action | Version retenue |
+| --- | --- |
+| `actions/checkout` | `v6` |
+| `actions/setup-python` | `v6` |
+| `actions/setup-java` | `v5` (Android) |
+| `actions/upload-artifact` | `v6` |
+| `actions/cache` | `v5` (signature de diagnostic Android) |
+| `android-actions/setup-android` | `v4` |
+
+Les métadonnées et notes de migration amont de ces versions indiquent Node.js 24.
+Le minimum des actions officielles est le runner 2.327.1 ; le runner 2.338.2
+consigné dans les dernières constructions est supérieur. `checkout@v6` conserve
+les commandes Git authentifiées depuis le shell, avec les identifiants dans
+un fichier temporaire du runner. Le script de réservation n’utilise pas Docker.
+`subosito/flutter-action@v2` est une action composite utilisant `actions/cache@v5` ;
+elle est conservée avec Flutter 3.47.7. Python 3.12, Java 21, SDK Android 36,
+NDK 28.2.13676358, signature, noms d’artefacts, clé de cache de diagnostic,
+permissions et déclenchement manuel sont conservés. `setup-android@v4` actualise
+ses outils de ligne de commande par défaut ; les plateformes/build-tools/NDK
+restent explicitement sélectionnés dans le workflow.
+
+La validation des workflows hébergés et des artefacts exige un nouveau lancement
+manuel Windows et Android depuis le commit mis à jour ; les contrôles locaux ne
+remplacent pas ces deux constructions.
+
+Contrôles locaux de cette révision : **17 tests de versionnement** et **5 tests
+de distribution Android** réussis ; les réservations 0.9.00 à 0.9.10 sont
+vérifiées dans des dépôts temporaires, avec codes 9001 à 9011 et anciens
+compteurs préservés. `actionlint` 1.7.7 valide les deux workflows (analyse shellcheck
+non exécutée). Les paramètres `with` sont comparés aux métadonnées amont de chaque
+action ; tous sont reconnus. Les dépendances Flutter verrouillées sont résolues
+hors ligne avec succès. Aucun build GitHub, numéro officiel ou artefact
+distribuable n’a été créé par ces contrôles.

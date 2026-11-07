@@ -1,7 +1,7 @@
 name: index_windows
 description: IndeX portable Windows — catalogue documentaire hors ligne.
 publish_to: none
-version: 0.7.1+7001
+version: 0.9.0+9001
 environment:
   sdk: '>=3.13.5 <4.0.0'
 dependencies:

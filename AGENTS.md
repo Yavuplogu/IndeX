@@ -1,3 +1,14 @@
+# Décision actuelle du 7 novembre 2026 — série 0.9
+
+- Passage explicitement autorisé à 0.9.0 pour Windows et Android ; affichage public
+  0.9.00 puis 0.9.01 selon le padding existant. Politique : majeur 9, first_minor 0,
+  minor_width 2, base technique 9000, premier code 9001. Pubspec 0.9.0+9001.
+  Conserver tous les anciens compteurs, le verrou et les réservations partagées.
+- Actions Node.js 24 : checkout v6, setup-python v6, setup-java v5,
+  upload-artifact v6, cache v5, setup-android v4 ; Flutter et SDK épinglés conservés.
+  Constructions manuelles, aucun lancement ni publication automatique ajouté.
+  Cette décision prime sur les mentions historiques 0.7 ci-dessous.
+
 # Identité Git des commits Codex
 
 - Pour tout nouveau commit créé dans l’environnement Codex pour ce dépôt,

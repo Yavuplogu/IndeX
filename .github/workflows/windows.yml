@@ -13,8 +13,8 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Réserver la version du build (y compris en cas d'échec ultérieur)
@@ -42,7 +42,7 @@ jobs:
       - name: Lancement de l'archive extraite
         shell: pwsh
         run: ./tools/lot4/smoke_archive.ps1 -Archive "./dist/IndeX_$($env:INDEX_VERSION)_windows_x64_portable.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: IndeX-${{ env.INDEX_VERSION }}-windows-x64-portable
           path: |
@@ -50,7 +50,7 @@ jobs:
             dist/*.zip.sha256
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: IndeX-windows-diagnostics

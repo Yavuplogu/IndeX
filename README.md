@@ -31,6 +31,9 @@ Bonne écoute,
 
 Monsieur K.
 
+> **Version bêta · série 0.9** — Disponible pour Windows et Android. Aucun MP3
+> n’est embarqué dans les applications. La version de départ `0.9.0` est affichée
+> `0.9.00` ; chaque construction réserve ensuite le mineur suivant.
 
 ## Télécharger
 
