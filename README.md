@@ -31,11 +31,6 @@ Bonne écoute,
 
 Monsieur K.
 
-> **Version bêta · série 0.9** — Disponible pour Windows et Android. Aucun MP3
-> n’est embarqué dans les applications. La version de départ `0.9.0` est affichée
-> `0.9.00`. Un lancement commun construit Windows et Android avec le même numéro ;
-> chaque nouveau lancement réserve le mineur suivant.
-
 ## Télécharger
 
 Les versions publiées sont disponibles dans les **[Releases](https://github.com/Yavuplogu/IndeX/releases)**.
@@ -45,6 +40,13 @@ Choisissez le fichier correspondant à votre plateforme :
 | --- | --- | --- |
 | **Windows** | Archive portable `.zip`, sans installateur | Windows 10 ou 11 · x64 |
 | **Android** | Application `.apk` | Android 7 ou supérieur · ARM64 |
+
+Sur Windows, une fenêtre SmartScreen peut apparapitre, indiquant que votre ordinateur pourrait être
+en danger si vous exécutez ce programme. Ce message s'affiche car le code de IndeX n'est pas signé
+et nécessiterait pour cela un certificat payant à l'année (environ 700€). Certaines entreprises proposent
+un certificat gratuit mais l'obtention est soumise à un processus assez rigoureux. IndeX étant une toute petite
+application, je ne compte pas réaliser ces démarches. Vous pouvez toujours retrouver les rapports de VirusTotal
+de la dernière version sur [Windows](https://www.virustotal.com/gui/file/33e73f3508f56a51ce7f55a87fb4f85c35c6c542e746e436d7cb4d9a773a1898/) et [Android](https://www.virustotal.com/gui/file/4b46edc6f740405e80a72181b3ab282d1df95555e8f1eeabd62ecb68e22ac2ac).
 
 ## Fonctionnalités
 
