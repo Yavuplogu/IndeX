@@ -144,7 +144,6 @@ et Android. Les scripts de construction et de vérification se trouvent dans
 [`tools/`](tools/). Dans GitHub Actions, lancer manuellement **Construction IndeX — version commune**
 et choisir **Windows et Android** pour produire les deux livrables avec la même
 version. Le choix d’une seule plateforme reste possible.
-Voir [le guide de versionnement et de relance](tools/versioning/README.md).
 
 
 ## Licence
